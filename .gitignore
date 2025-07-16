@@ -1,0 +1,12 @@
+# .gitignore
+__pycache__/
+*.pyc
+*.antlr
+*.log
+.idea/
+.vscode/
+*.DS_Store
+*.svg
+*.png
+build/
+
