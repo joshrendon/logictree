@@ -1,0 +1,31 @@
+    AST_MODULE <golden_circuits/mux2.sv:1.1-16.10> [0x6000003b2c00] str='\mux2'
+      AST_WIRE <golden_circuits/mux2.sv:2.15-2.16> [0x6000003b2d00] str='\a' input logic port=1
+      AST_WIRE <golden_circuits/mux2.sv:3.15-3.16> [0x6000003b2e00] str='\b' input logic port=2
+      AST_WIRE <golden_circuits/mux2.sv:4.15-4.16> [0x6000003b2f00] str='\s' input logic port=3
+      AST_WIRE <golden_circuits/mux2.sv:5.16-5.19> [0x6000003b3000] str='\out' output logic port=4
+      AST_ALWAYS <golden_circuits/mux2.sv:0.0-0.0> [0x6000003b3100]
+        ATTR \always_comb:
+          AST_CONSTANT <golden_circuits/mux2.sv:0.0-0.0> [0x6000003b3200] bits='00000000000000000000000000000001'(32) range=[31:0] int=1 in_param
+        AST_BLOCK <golden_circuits/mux2.sv:0.0-0.0> [0x6000003b3300]
+          AST_BLOCK <golden_circuits/mux2.sv:8.15-14.6> [0x6000003b3400]
+            AST_CASE <golden_circuits/mux2.sv:9.5-13.12> [0x6000003b3600]
+              AST_IDENTIFIER <golden_circuits/mux2.sv:9.11-9.12> [0x6000003b3500] str='\s'
+              AST_COND <golden_circuits/mux2.sv:0.0-0.0> [0x6000003b3700]
+                AST_CONSTANT <golden_circuits/mux2.sv:10.7-10.8> [0x6000003b3800] bits='00000000000000000000000000000000'(32) signed range=[31:0]
+                AST_BLOCK <golden_circuits/mux2.sv:10.9-10.18> [0x6000003b3900]
+                  AST_ASSIGN_EQ <golden_circuits/mux2.sv:10.10-10.17> [0x6000003b3c00]
+                    AST_IDENTIFIER <golden_circuits/mux2.sv:10.10-10.13> [0x6000003b3a00] str='\out' in_lvalue
+                    AST_IDENTIFIER <golden_circuits/mux2.sv:10.16-10.17> [0x6000003b3b00] str='\a'
+              AST_COND <golden_circuits/mux2.sv:0.0-0.0> [0x6000003b3d00]
+                AST_CONSTANT <golden_circuits/mux2.sv:11.7-11.8> [0x6000003b3e00] bits='00000000000000000000000000000001'(32) signed range=[31:0] int=1
+                AST_BLOCK <golden_circuits/mux2.sv:11.9-11.18> [0x6000003b3f00]
+                  AST_ASSIGN_EQ <golden_circuits/mux2.sv:11.10-11.17> [0x6000003b8200]
+                    AST_IDENTIFIER <golden_circuits/mux2.sv:11.10-11.13> [0x6000003b8000] str='\out' in_lvalue
+                    AST_IDENTIFIER <golden_circuits/mux2.sv:11.16-11.17> [0x6000003b8100] str='\b'
+              AST_COND <golden_circuits/mux2.sv:0.0-0.0> [0x6000003b8300]
+                AST_DEFAULT <golden_circuits/mux2.sv:12.7-12.14> [0x6000003b8400]
+                AST_BLOCK <golden_circuits/mux2.sv:12.15-12.24> [0x6000003b8500]
+                  AST_ASSIGN_EQ <golden_circuits/mux2.sv:12.16-12.23> [0x6000003b8800]
+                    AST_IDENTIFIER <golden_circuits/mux2.sv:12.16-12.19> [0x6000003b8600] str='\out' in_lvalue
+                    AST_CONSTANT <golden_circuits/mux2.sv:12.22-12.23> [0x6000003b8700] bits='00000000000000000000000000000000'(32) signed range=[31:0]
+
