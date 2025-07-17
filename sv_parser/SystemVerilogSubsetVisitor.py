@@ -29,6 +29,11 @@ class SystemVerilogSubsetVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by SystemVerilogSubsetParser#range.
+    def visitRange(self, ctx:SystemVerilogSubsetParser.RangeContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by SystemVerilogSubsetParser#data_type.
     def visitData_type(self, ctx:SystemVerilogSubsetParser.Data_typeContext):
         return self.visitChildren(ctx)
@@ -69,63 +74,13 @@ class SystemVerilogSubsetVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by SystemVerilogSubsetParser#default_item.
-    def visitDefault_item(self, ctx:SystemVerilogSubsetParser.Default_itemContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by SystemVerilogSubsetParser#expression.
-    def visitExpression(self, ctx:SystemVerilogSubsetParser.ExpressionContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by SystemVerilogSubsetParser#OrExpr.
-    def visitOrExpr(self, ctx:SystemVerilogSubsetParser.OrExprContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by SystemVerilogSubsetParser#OrPass.
-    def visitOrPass(self, ctx:SystemVerilogSubsetParser.OrPassContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by SystemVerilogSubsetParser#XorExpr.
-    def visitXorExpr(self, ctx:SystemVerilogSubsetParser.XorExprContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by SystemVerilogSubsetParser#XorPass.
-    def visitXorPass(self, ctx:SystemVerilogSubsetParser.XorPassContext):
-        return self.visitChildren(ctx)
-
-
     # Visit a parse tree produced by SystemVerilogSubsetParser#AndExpr.
     def visitAndExpr(self, ctx:SystemVerilogSubsetParser.AndExprContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by SystemVerilogSubsetParser#AndPass.
-    def visitAndPass(self, ctx:SystemVerilogSubsetParser.AndPassContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by SystemVerilogSubsetParser#NotExpr.
-    def visitNotExpr(self, ctx:SystemVerilogSubsetParser.NotExprContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by SystemVerilogSubsetParser#BitNotExpr.
-    def visitBitNotExpr(self, ctx:SystemVerilogSubsetParser.BitNotExprContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by SystemVerilogSubsetParser#NegateExpr.
-    def visitNegateExpr(self, ctx:SystemVerilogSubsetParser.NegateExprContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by SystemVerilogSubsetParser#PrimaryPass.
-    def visitPrimaryPass(self, ctx:SystemVerilogSubsetParser.PrimaryPassContext):
+    # Visit a parse tree produced by SystemVerilogSubsetParser#ConstExpr.
+    def visitConstExpr(self, ctx:SystemVerilogSubsetParser.ConstExprContext):
         return self.visitChildren(ctx)
 
 
@@ -134,13 +89,48 @@ class SystemVerilogSubsetVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by SystemVerilogSubsetParser#NumExpr.
-    def visitNumExpr(self, ctx:SystemVerilogSubsetParser.NumExprContext):
+    # Visit a parse tree produced by SystemVerilogSubsetParser#XorExpr.
+    def visitXorExpr(self, ctx:SystemVerilogSubsetParser.XorExprContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by SystemVerilogSubsetParser#BitwiseNotExpr.
+    def visitBitwiseNotExpr(self, ctx:SystemVerilogSubsetParser.BitwiseNotExprContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by SystemVerilogSubsetParser#EqExpr.
+    def visitEqExpr(self, ctx:SystemVerilogSubsetParser.EqExprContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by SystemVerilogSubsetParser#XnorExpr.
+    def visitXnorExpr(self, ctx:SystemVerilogSubsetParser.XnorExprContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by SystemVerilogSubsetParser#LogicalNotExpr.
+    def visitLogicalNotExpr(self, ctx:SystemVerilogSubsetParser.LogicalNotExprContext):
         return self.visitChildren(ctx)
 
 
     # Visit a parse tree produced by SystemVerilogSubsetParser#ParenExpr.
     def visitParenExpr(self, ctx:SystemVerilogSubsetParser.ParenExprContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by SystemVerilogSubsetParser#OrExpr.
+    def visitOrExpr(self, ctx:SystemVerilogSubsetParser.OrExprContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by SystemVerilogSubsetParser#NegateExpr.
+    def visitNegateExpr(self, ctx:SystemVerilogSubsetParser.NegateExprContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by SystemVerilogSubsetParser#literal.
+    def visitLiteral(self, ctx:SystemVerilogSubsetParser.LiteralContext):
         return self.visitChildren(ctx)
 
 

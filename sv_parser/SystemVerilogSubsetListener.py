@@ -44,6 +44,15 @@ class SystemVerilogSubsetListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by SystemVerilogSubsetParser#range.
+    def enterRange(self, ctx:SystemVerilogSubsetParser.RangeContext):
+        pass
+
+    # Exit a parse tree produced by SystemVerilogSubsetParser#range.
+    def exitRange(self, ctx:SystemVerilogSubsetParser.RangeContext):
+        pass
+
+
     # Enter a parse tree produced by SystemVerilogSubsetParser#data_type.
     def enterData_type(self, ctx:SystemVerilogSubsetParser.Data_typeContext):
         pass
@@ -116,60 +125,6 @@ class SystemVerilogSubsetListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by SystemVerilogSubsetParser#default_item.
-    def enterDefault_item(self, ctx:SystemVerilogSubsetParser.Default_itemContext):
-        pass
-
-    # Exit a parse tree produced by SystemVerilogSubsetParser#default_item.
-    def exitDefault_item(self, ctx:SystemVerilogSubsetParser.Default_itemContext):
-        pass
-
-
-    # Enter a parse tree produced by SystemVerilogSubsetParser#expression.
-    def enterExpression(self, ctx:SystemVerilogSubsetParser.ExpressionContext):
-        pass
-
-    # Exit a parse tree produced by SystemVerilogSubsetParser#expression.
-    def exitExpression(self, ctx:SystemVerilogSubsetParser.ExpressionContext):
-        pass
-
-
-    # Enter a parse tree produced by SystemVerilogSubsetParser#OrExpr.
-    def enterOrExpr(self, ctx:SystemVerilogSubsetParser.OrExprContext):
-        pass
-
-    # Exit a parse tree produced by SystemVerilogSubsetParser#OrExpr.
-    def exitOrExpr(self, ctx:SystemVerilogSubsetParser.OrExprContext):
-        pass
-
-
-    # Enter a parse tree produced by SystemVerilogSubsetParser#OrPass.
-    def enterOrPass(self, ctx:SystemVerilogSubsetParser.OrPassContext):
-        pass
-
-    # Exit a parse tree produced by SystemVerilogSubsetParser#OrPass.
-    def exitOrPass(self, ctx:SystemVerilogSubsetParser.OrPassContext):
-        pass
-
-
-    # Enter a parse tree produced by SystemVerilogSubsetParser#XorExpr.
-    def enterXorExpr(self, ctx:SystemVerilogSubsetParser.XorExprContext):
-        pass
-
-    # Exit a parse tree produced by SystemVerilogSubsetParser#XorExpr.
-    def exitXorExpr(self, ctx:SystemVerilogSubsetParser.XorExprContext):
-        pass
-
-
-    # Enter a parse tree produced by SystemVerilogSubsetParser#XorPass.
-    def enterXorPass(self, ctx:SystemVerilogSubsetParser.XorPassContext):
-        pass
-
-    # Exit a parse tree produced by SystemVerilogSubsetParser#XorPass.
-    def exitXorPass(self, ctx:SystemVerilogSubsetParser.XorPassContext):
-        pass
-
-
     # Enter a parse tree produced by SystemVerilogSubsetParser#AndExpr.
     def enterAndExpr(self, ctx:SystemVerilogSubsetParser.AndExprContext):
         pass
@@ -179,48 +134,12 @@ class SystemVerilogSubsetListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by SystemVerilogSubsetParser#AndPass.
-    def enterAndPass(self, ctx:SystemVerilogSubsetParser.AndPassContext):
+    # Enter a parse tree produced by SystemVerilogSubsetParser#ConstExpr.
+    def enterConstExpr(self, ctx:SystemVerilogSubsetParser.ConstExprContext):
         pass
 
-    # Exit a parse tree produced by SystemVerilogSubsetParser#AndPass.
-    def exitAndPass(self, ctx:SystemVerilogSubsetParser.AndPassContext):
-        pass
-
-
-    # Enter a parse tree produced by SystemVerilogSubsetParser#NotExpr.
-    def enterNotExpr(self, ctx:SystemVerilogSubsetParser.NotExprContext):
-        pass
-
-    # Exit a parse tree produced by SystemVerilogSubsetParser#NotExpr.
-    def exitNotExpr(self, ctx:SystemVerilogSubsetParser.NotExprContext):
-        pass
-
-
-    # Enter a parse tree produced by SystemVerilogSubsetParser#BitNotExpr.
-    def enterBitNotExpr(self, ctx:SystemVerilogSubsetParser.BitNotExprContext):
-        pass
-
-    # Exit a parse tree produced by SystemVerilogSubsetParser#BitNotExpr.
-    def exitBitNotExpr(self, ctx:SystemVerilogSubsetParser.BitNotExprContext):
-        pass
-
-
-    # Enter a parse tree produced by SystemVerilogSubsetParser#NegateExpr.
-    def enterNegateExpr(self, ctx:SystemVerilogSubsetParser.NegateExprContext):
-        pass
-
-    # Exit a parse tree produced by SystemVerilogSubsetParser#NegateExpr.
-    def exitNegateExpr(self, ctx:SystemVerilogSubsetParser.NegateExprContext):
-        pass
-
-
-    # Enter a parse tree produced by SystemVerilogSubsetParser#PrimaryPass.
-    def enterPrimaryPass(self, ctx:SystemVerilogSubsetParser.PrimaryPassContext):
-        pass
-
-    # Exit a parse tree produced by SystemVerilogSubsetParser#PrimaryPass.
-    def exitPrimaryPass(self, ctx:SystemVerilogSubsetParser.PrimaryPassContext):
+    # Exit a parse tree produced by SystemVerilogSubsetParser#ConstExpr.
+    def exitConstExpr(self, ctx:SystemVerilogSubsetParser.ConstExprContext):
         pass
 
 
@@ -233,12 +152,48 @@ class SystemVerilogSubsetListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by SystemVerilogSubsetParser#NumExpr.
-    def enterNumExpr(self, ctx:SystemVerilogSubsetParser.NumExprContext):
+    # Enter a parse tree produced by SystemVerilogSubsetParser#XorExpr.
+    def enterXorExpr(self, ctx:SystemVerilogSubsetParser.XorExprContext):
         pass
 
-    # Exit a parse tree produced by SystemVerilogSubsetParser#NumExpr.
-    def exitNumExpr(self, ctx:SystemVerilogSubsetParser.NumExprContext):
+    # Exit a parse tree produced by SystemVerilogSubsetParser#XorExpr.
+    def exitXorExpr(self, ctx:SystemVerilogSubsetParser.XorExprContext):
+        pass
+
+
+    # Enter a parse tree produced by SystemVerilogSubsetParser#BitwiseNotExpr.
+    def enterBitwiseNotExpr(self, ctx:SystemVerilogSubsetParser.BitwiseNotExprContext):
+        pass
+
+    # Exit a parse tree produced by SystemVerilogSubsetParser#BitwiseNotExpr.
+    def exitBitwiseNotExpr(self, ctx:SystemVerilogSubsetParser.BitwiseNotExprContext):
+        pass
+
+
+    # Enter a parse tree produced by SystemVerilogSubsetParser#EqExpr.
+    def enterEqExpr(self, ctx:SystemVerilogSubsetParser.EqExprContext):
+        pass
+
+    # Exit a parse tree produced by SystemVerilogSubsetParser#EqExpr.
+    def exitEqExpr(self, ctx:SystemVerilogSubsetParser.EqExprContext):
+        pass
+
+
+    # Enter a parse tree produced by SystemVerilogSubsetParser#XnorExpr.
+    def enterXnorExpr(self, ctx:SystemVerilogSubsetParser.XnorExprContext):
+        pass
+
+    # Exit a parse tree produced by SystemVerilogSubsetParser#XnorExpr.
+    def exitXnorExpr(self, ctx:SystemVerilogSubsetParser.XnorExprContext):
+        pass
+
+
+    # Enter a parse tree produced by SystemVerilogSubsetParser#LogicalNotExpr.
+    def enterLogicalNotExpr(self, ctx:SystemVerilogSubsetParser.LogicalNotExprContext):
+        pass
+
+    # Exit a parse tree produced by SystemVerilogSubsetParser#LogicalNotExpr.
+    def exitLogicalNotExpr(self, ctx:SystemVerilogSubsetParser.LogicalNotExprContext):
         pass
 
 
@@ -248,6 +203,33 @@ class SystemVerilogSubsetListener(ParseTreeListener):
 
     # Exit a parse tree produced by SystemVerilogSubsetParser#ParenExpr.
     def exitParenExpr(self, ctx:SystemVerilogSubsetParser.ParenExprContext):
+        pass
+
+
+    # Enter a parse tree produced by SystemVerilogSubsetParser#OrExpr.
+    def enterOrExpr(self, ctx:SystemVerilogSubsetParser.OrExprContext):
+        pass
+
+    # Exit a parse tree produced by SystemVerilogSubsetParser#OrExpr.
+    def exitOrExpr(self, ctx:SystemVerilogSubsetParser.OrExprContext):
+        pass
+
+
+    # Enter a parse tree produced by SystemVerilogSubsetParser#NegateExpr.
+    def enterNegateExpr(self, ctx:SystemVerilogSubsetParser.NegateExprContext):
+        pass
+
+    # Exit a parse tree produced by SystemVerilogSubsetParser#NegateExpr.
+    def exitNegateExpr(self, ctx:SystemVerilogSubsetParser.NegateExprContext):
+        pass
+
+
+    # Enter a parse tree produced by SystemVerilogSubsetParser#literal.
+    def enterLiteral(self, ctx:SystemVerilogSubsetParser.LiteralContext):
+        pass
+
+    # Exit a parse tree produced by SystemVerilogSubsetParser#literal.
+    def exitLiteral(self, ctx:SystemVerilogSubsetParser.LiteralContext):
         pass
 
 

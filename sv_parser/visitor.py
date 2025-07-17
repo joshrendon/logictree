@@ -1,91 +1,93 @@
-from sv_parser.ast_nodes import (
-    IdNode, Number, BinaryOp, UnaryOp, Assign,
-    CaseStatement, CaseItem
-)
+# Visitor for AST
+from logictree.nodes import LogicOp, LogicHole
+
+def BinaryOp(op, lhs, rhs):
+    return LogicOp(op, [lhs, rhs])
+
+def UnaryOp(op, val):
+    return LogicOp(op, [val])
+
 from sv_parser.SystemVerilogSubsetVisitor import SystemVerilogSubsetVisitor
+from sv_parser.SystemVerilogSubsetParser import *
 
 class ASTBuilder(SystemVerilogSubsetVisitor):
     def visitCompilation_unit(self, ctx):
-        return [self.visit(mod) for mod in ctx.module_declaration()]
+        return {'modules': [self.visit(mod) for mod in ctx.module_declaration()]}
 
     def visitModule_declaration(self, ctx):
-        name = ctx.Identifier().getText()
-        ports = []
-        if ctx.port_list():
-            ports = [p.Identifier().getText() for p in ctx.port_list().port()]
-        items = [self.visit(item) for item in ctx.module_item()]
-        from sv_parser.ast_nodes import Module
-        return Module(name=name, ports=ports, items=items)
-        #return type('Module', (object,), {
-        #    'name': name, 'ports': ports, 'items': items
-        #})()
+        return {
+            'type': 'module',
+            'name': ctx.Identifier().getText(),
+            'ports': [],
+            'items': [self.visit(item) for item in ctx.module_item()]
+        }
 
-    def visitNet_declaration(self, ctx):
-        return None
+    def visitModule_item(self, ctx):
+        if ctx.continuous_assign():
+            return self.visit(ctx.continuous_assign())
+        return {'type': 'unhandled', 'ctx': ctx}
 
     def visitContinuous_assign(self, ctx):
-        return Assign(target=ctx.Identifier().getText(), source=self.visit(ctx.expression()))
-
-    def visitAlways_comb_block(self, ctx):
-        return self.visit(ctx.statement())
-
-    def visitStatement(self, ctx):
-        if ctx.getChildCount() == 1:
-            return self.visit(ctx.getChild(0))  # block or case
-        if ctx.getChildCount() == 4 and ctx.getChild(1).getText() == '=':
-            return Assign(target=ctx.Identifier().getText(), source=self.visit(ctx.expression()))
-        return [self.visit(child) for child in ctx.statement()]  # compound block
-
-    def visitCase_statement(self, ctx):
-        expr = self.visit(ctx.expression())
-        items = [self.visit(item) for item in ctx.case_item()]
-        default = self.visit(ctx.default_item()) if ctx.default_item() else None
-        return CaseStatement(expr=expr, items=items, default=default)
-
-    def visitCase_item(self, ctx):
-        pattern = self.visit(ctx.expression())
-        stmt = self.visit(ctx.statement())
-        return CaseItem(pattern=pattern, statements=[stmt] if not isinstance(stmt, list) else stmt)
-
-    def visitDefault_item(self, ctx):
-        stmt = self.visit(ctx.statement())
-        return [stmt] if not isinstance(stmt, list) else stmt
-
-    def visitOrExpr(self, ctx):
-        return BinaryOp('|', self.visit(ctx.logical_or_expression()), self.visit(ctx.logical_xor_expression()))
-
-    def visitOrPass(self, ctx):
-        return self.visit(ctx.logical_xor_expression())
-
-    def visitXorExpr(self, ctx):
-        return BinaryOp('^', self.visit(ctx.logical_xor_expression()), self.visit(ctx.logical_and_expression()))
-
-    def visitXorPass(self, ctx):
-        return self.visit(ctx.logical_and_expression())
+        return {
+            'type': 'assign',
+            'target': ctx.Identifier().getText(),
+            'source': self.visit(ctx.expression()),
+            'ctx': ctx  # attach for lowering
+        }
 
     def visitAndExpr(self, ctx):
-        return BinaryOp('&', self.visit(ctx.logical_and_expression()), self.visit(ctx.unary_expression()))
+        left  = self.visit(ctx.expression(0))
+        right = self.visit(ctx.expression(0))
+        if left is None or right is None:
+            print("DEBUG: visitAndExpr with", ctx.getText())
+        return BinaryOp('AND', left, right)
 
-    def visitAndPass(self, ctx):
-        return self.visit(ctx.unary_expression())
+    def visitOrExpr(self, ctx):
+        print("DEBUG: visitOrExpr with", ctx.getText())
+        return BinaryOp('OR', self.visit(ctx.expression(0)), self.visit(ctx.expression(1)))
 
-    def visitNotExpr(self, ctx):
-        return UnaryOp('!', self.visit(ctx.unary_expression()))
+    def visitXorExpr(self, ctx):
+        print("DEBUG: visitXOrExpr with", ctx.getText())
+        return BinaryOp('XOR', self.visit(ctx.expression(0)), self.visit(ctx.expression(1)))
 
-    def visitBitNotExpr(self, ctx):
-        return UnaryOp('~', self.visit(ctx.unary_expression()))
+    def visitXnorExpr(self, ctx):
+        print("DEBUG: visitXnorExpr with", ctx.getText())
+        return BinaryOp('XNOR', self.visit(ctx.expression(0)), self.visit(ctx.expression(1)))
+
+    def visitLogicalNotExpr(self, ctx):
+        print("DEBUG: visitLogicalNotExpr with", ctx.getText())
+        sub = self.visit(ctx.expression())
+        if sub is None:
+            print("DEBUG: visitLogicalNotExpr() got None for sub-expression")
+        return UnaryOp('NOT', sub)
+
+    def visitBitwiseNotExpr(self, ctx):
+        print("DEBUG: visitBitwiseNotExpr with", ctx.getText())
+        sub = self.visit(ctx.expression())
+        if sub is None:
+            print("DEBUG: visitBitwiseNotExpr() got None for sub-expression")
+        return UnaryOp('NOT', sub)
 
     def visitNegateExpr(self, ctx):
-        return UnaryOp('-', self.visit(ctx.unary_expression()))
+        print("DEBUG: visitNegateExpr with", ctx.getText())
+        sub = self.visit(ctx.expression())
+        if sub is None:
+            print("DEBUG: visitNegateExpr() got None for sub-expression")
+        return UnaryOp('NOT', sub) # or NEGATE if added to gate types
 
-    def visitPrimaryPass(self, ctx):
-        return self.visit(ctx.primary_expression())
+    def visitEqExpr(self, ctx):
+        print("DEBUG: visitEqExpr with", ctx.getText())
+        return BinaryOp('XNOR', self.visit(ctx.expression(0)), self.visit(ctx.expression(1)))
 
     def visitParenExpr(self, ctx):
+        print("DEBUG: visitParenExpr with", ctx.getText())
         return self.visit(ctx.expression())
 
-    def visitIdExpr(self, ctx):
-        return IdNode(ctx.Identifier().getText())
+    def visitConstExpr(self, ctx):
+        print("DEBUG: visitConstExpr with", ctx.getText())
+        return LogicHole(ctx.getText())
 
-    def visitNumExpr(self, ctx):
-        return Number(int(ctx.Number().getText()))
+    def visitIdExpr(self, ctx):
+        print("DEBUG: visitIdExpr with", ctx.getText())
+        return LogicHole(ctx.getText())
+
