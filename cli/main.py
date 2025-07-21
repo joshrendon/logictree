@@ -11,11 +11,12 @@ from utils.graphviz_export import logic_tree_to_dot, save_dot_svg_png
 from utils.utils_cli import write_golden_file
 from pprint import pprint
 import logging
+import json
 
 log = logging.getLogger(__name__)
 
 
-def parse_sv_to_logic_tree(path, args):
+def parse_sv_to_logictree(path, args):
     print(f"\nAnalyzing: {path}")
     #from scripts.parse_sv import parse_sv_file
     input_stream = FileStream(path)
@@ -94,6 +95,7 @@ def main():
     parser.add_argument('--sympy_expr', help='Print Sympy-form Boolean expression of the logic tree')
     
     parser.add_argument('--save_golden', type=str, help="Save golden hash + inputs + expression to golden_hashes/<name>.json")
+    parser.add_argument('--check_golden', type=str, help="Compare the current logic hash and inputs against a golden JSON entry")
 
     args = parser.parse_args()
     if args.debug_log:
@@ -106,7 +108,7 @@ def main():
             format="%(message)s")
 
     if args.hash_tree:
-        tree = parse_sv_to_logic_tree(args.hash_tree, args)
+        tree = parse_sv_to_logictree(args.hash_tree, args)
         print("Inputs (raw):", tree.inputs)
         print("Inputs (sorted):", sorted(tree.inputs()))
         logic_hash, expr_str = get_logic_hash(tree, return_expr=True)
@@ -118,6 +120,25 @@ def main():
             write_golden_file(golden_path, name=args.save_golden, logic_hash=logic_hash,
                               expr_str=expr_str, inputs_flat=inputs_flat, inputs_decl=[])
             print(f"Golden Hash written to: {golden_path}")
+
+    elif args.check_golden:
+        name = args.check_golden
+        golden_file = f"golden_hashes/{name}.json"
+        source_file = f"golden_circuits/{name}.sv"
+
+        with open(golden_file) as f:
+            golden = json.load(f)
+
+        tree = parse_sv_to_logictree(source_file, args)
+        hash_now, expr_now = get_logic_hash(tree, return_expr=True)
+        inputs_now = sorted(tree.inputs())
+
+        if hash_now != golden["hash"]:
+            print(f"Hash mismatch!\n  Golden: {golden['hash']}\n  Current: {hash_now}")
+        elif sorted(golden["inputs"]["flat"]) != inputs_now:
+            print(f"Input set mismatch!\n  Golden: {golden['inputs']['flat']}\n  Current: {inputs_now}")
+        else:
+            print(f"{name} logic matches golden entry!")
 
     elif args.explain_hash:
         tree = parse_sv_to_logictree(args.explain_hash)
