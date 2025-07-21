@@ -1,0 +1,19 @@
+{
+  "name": "expr_simp",
+  "hash": "c40e01c1e61cfbe936ef714e3ae122f2dbbfdbea34a72ba32a3115cd1bed7a39",
+  "expr": "((valid & (((opcode_0 ~^ 1) & ((opcode_1 ~^ 1) & (opcode_2 ~^ 0))) & (((opcode_3 ~^ 0) & (opcode_4 ~^ 1)) & ((opcode_5 ~^ 1) & (opcode_6 ~^ 0))))) & ~(funct7b5))",
+  "inputs": {
+    "flat": [
+      "funct7b5",
+      "opcode_0",
+      "opcode_1",
+      "opcode_2",
+      "opcode_3",
+      "opcode_4",
+      "opcode_5",
+      "opcode_6",
+      "valid"
+    ],
+    "decl": []
+  }
+}
