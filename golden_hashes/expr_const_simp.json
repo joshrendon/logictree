@@ -1,0 +1,15 @@
+{
+  "name": "expr_const_simp",
+  "hash": "60081cd4c52c4a54ccf1863d8c541e9d0ef7d1904c37af53023e040bb24676c9",
+  "expr": "(valid & (((opcode_0 ~^ 1) & (opcode_1 ~^ 1)) & ((opcode_2 ~^ 0) & (opcode_3 ~^ 0))))",
+  "inputs": {
+    "flat": [
+      "opcode_0",
+      "opcode_1",
+      "opcode_2",
+      "opcode_3",
+      "valid"
+    ],
+    "decl": []
+  }
+}

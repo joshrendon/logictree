@@ -1,22 +1,107 @@
+from antlr4 import FileStream, CommonTokenStream
+from sv_parser.SystemVerilogSubsetLexer import SystemVerilogSubsetLexer
 from sv_parser.SystemVerilogSubsetParser import SystemVerilogSubsetParser
 from sv_parser.SystemVerilogSubsetVisitor import SystemVerilogSubsetVisitor
 from logictree.nodes import LogicVar, LogicConst, LogicOp, LogicHole
 import logging
 log = logging.getLogger(__name__)
+AssignStmtCtxtClass = SystemVerilogSubsetParser.Continuous_assignContext
 
 class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
     def __init__(self):
         self.logic_by_signal = {}  # Collect (signal_name → LogicTree)
+    
+    def lower_file(self, filepath):
+        # 1. REad and lex/parse the SystemVerilog source
+        with open(filepath, 'r') as f:
+            code = f.read()
+
+        input_stream = FileStream(filepath)
+        lexer = SystemVerilogSubsetLexer(input_stream)
+        tokens = CommonTokenStream(lexer)
+        parser = SystemVerilogSubsetParser(tokens)
+        tree = parser.compilation_unit()
+
+        # 2. Optionally return to ast
+        # ast = ASTBuilder().visit(tree)
+
+        # 3. Convert to LogicTree IR
+        return self.visit(tree)
+
+    def extract_lhs_signal(self, ctx):
+        """
+        Extracts the left-hand side signal name from an assign_stmt.
+        Assumes: assign identifier = expr ;
+        """
+        if hasattr(ctx, "Identifier"):
+            return ctx.Identifier().getText()
+        raise ValueError("continuous_assign context missing net_lvalue")
+            #id_node = ctx.identifier()
+            #return id_node.getText()  # or id_node.ID().getText() if nested
+        #else:
+        #    raise ValueError("assign_stmt context missing identifier()")
+
+
+    def visitCompilation_unit(self, ctx):
+        # For now, just visit the first module
+        return self.visit(ctx.module_declaration(0))
+
+    def visitModule_declaration(self, ctx):
+        self.signal_map = {}
+        
+        print("visiting module_declaration")
+        result = self.visitChildren(ctx)
+        #for child in ctx.children:
+        #    if isinstance(child, AssignStmtCtxtClass):
+        #        logic_tree = self.visit(child)
+        #        lhs_signal = self.extract_lhs_signal(child)
+        #        self.signal_map[lhs_signal] = logic_tree
+        #        print(f"[assign] {lhs_signal} = {logic_tree}")
+        print("signal_map contents:", self.signal_map)
+    
+        return next(iter(self.signal_map.values())) if self.signal_map else None
+
+    #def visitModule_declaration(self, ctx):
+    #    # Visit the assign or case statement inside the module
+    #    for stmt in ctx.children:
+    #        if isinstance(stmt, AssignStmtCtxtClass):
+    #            return self.visit(stmt)
+    #def visitContinuousAssign_statement(self, ctx):
+    #    lhs = ctx.Identifier().getText()
+    #    rhs_expr = self.visit(ctx.expression())
+    #    print(f"\n[DEBUG] Assign to {lhs}: parsed logic tree:")
+    #    print(f"{rhs_expr}")
+    #def visitAssign_statement(self, ctx):
+    #    lhs = ctx.Identifier().getText()
+    #    rhs_expr = self.visit(ctx.expression())
+    #    print(f"\n[DEBUG] Assign to {lhs}: parsed logic tree:")
+    #    print(f"{rhs_expr}")
+    #    ctx.logic_tree = rhs_expr
+    #    self.logic_by_signal[lhs] = rhs_expr
+    #    return (lhs, rhs_expr)
+
+    def visitModule_item(self, ctx):
+        return self.visitChildren(ctx)
+
+    def visitContinuous_assign_statement(self, ctx):
+        print("visitContinuousAssign_statement")
+        logic_tree = self.visit(ctx.expr())
+        lhs_signal = self.extract_lhs_signal(ctx)
+        self.signal_map[lhs_signal] = logic_tree
+        return logic_tree
+            
+    def visitContinuous_assign(self, ctx):
+        print("visitContinuous_assign")
+        logic_tree = self.visit(ctx.expression())
+        lhs_signal = self.extract_lhs_signal(ctx)
+        self.signal_map[lhs_signal] = logic_tree
+        return logic_tree
 
     def visitAssign_statement(self, ctx):
-        lhs = ctx.Identifier().getText()
-        rhs_expr = self.visit(ctx.expression())
-        print(f"\n[DEBUG] Assign to {lhs}: parsed logic tree:")
-        print(f"{rhs_expr}")
-
-        ctx.logic_tree = rhs_expr
-        self.logic_by_signal[lhs] = rhs_expr
-        return (lhs, rhs_expr)
+        logic_tree = self.visit(ctx.expr())
+        lhs_signal = self.extract_lhs_signal(ctx)
+        self.signal_map[lhs_signal] = logic_tree
+        return logic_tree
 
     def visitExpression(self, ctx):
         if ctx.getChildCount() == 1:

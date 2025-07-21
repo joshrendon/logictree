@@ -7,7 +7,9 @@
 - Planned: `mux` lowering for synthesis-friendly structure
 - Planned: Add support for comments to grammar
 
-## [0.1.0] – 2025-07-17
+## [0.1.0] – 2025-07-21
+- Added --save_golden and --hash-tree outputs
+- Enabled outputting simple expression statements to BDD and .json output.
 - Added support for `case` statements in parser
 - Added balanced tree reduction for AND/OR fan-in
 - Enabled LogicTree depth analysis
