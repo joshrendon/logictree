@@ -2,14 +2,42 @@ from antlr4 import FileStream, CommonTokenStream
 from sv_parser.SystemVerilogSubsetLexer import SystemVerilogSubsetLexer
 from sv_parser.SystemVerilogSubsetParser import SystemVerilogSubsetParser
 from sv_parser.SystemVerilogSubsetVisitor import SystemVerilogSubsetVisitor
-from logictree.nodes import LogicVar, LogicConst, LogicOp, LogicHole
+from logictree.nodes import LogicNode, LogicVar, LogicConst, LogicOp, LogicHole, NotOp
 import logging
 log = logging.getLogger(__name__)
 AssignStmtCtxtClass = SystemVerilogSubsetParser.Continuous_assignContext
+LOGIC_NODE_TYPES = (LogicHole, LogicVar, LogicConst, LogicOp, NotOp)
 
 class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
     def __init__(self):
         self.logic_by_signal = {}  # Collect (signal_name → LogicTree)
+
+    def lower(self, ast):
+        assert isinstance(ast, dict) and ast.get("modules"), "Expected a parsed AST with modules"
+        mod = ast["modules"][0]  # just the first module for now
+
+        if not mod["items"]:
+            return None
+
+        items = mod["items"][0]
+        if not items:
+            return None
+
+        stmt = items[0]
+        return self.lower_stmt(stmt)
+
+    def lower_stmt(self, stmt):
+        if isinstance(stmt, LogicNode):
+            return stmt
+
+        if stmt["type"] == "if":
+            cond = stmt["cond"]
+            then_branch = self.lower_stmt(stmt["then"])
+            else_branch = self.lower_stmt(stmt["else"])
+            return LogicOp("MUX", [cond, then_branch, else_branch])
+
+        raise ValueError(f"Unsupported statement type: {stmt}")
+
     
     def lower_file(self, filepath):
         # 1. REad and lex/parse the SystemVerilog source

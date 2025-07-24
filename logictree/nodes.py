@@ -1,7 +1,7 @@
 from typing import List, Union
 from .graphviz_utils import to_svg, to_png
 import itertools
-GATE_TYPES = ['AND', 'OR', 'NOT', 'XNOR']
+GATE_TYPES = ['AND', 'OR', 'NOT', 'XNOR', 'MUX']
 
 class LogicNode:
     def depth(self):
@@ -156,6 +156,9 @@ class LogicOp(LogicNode):
             names.update(c.collect_input_names())
         return names
 
+class NotOp(LogicOp):
+    def __init__(self, child):
+        super().__init__('NOT', [child])
 
 # Utility API
 def repair_tree_inputs(node):

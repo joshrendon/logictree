@@ -26,6 +26,15 @@ class SystemVerilogSubsetListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by SystemVerilogSubsetParser#module_identifier.
+    def enterModule_identifier(self, ctx:SystemVerilogSubsetParser.Module_identifierContext):
+        pass
+
+    # Exit a parse tree produced by SystemVerilogSubsetParser#module_identifier.
+    def exitModule_identifier(self, ctx:SystemVerilogSubsetParser.Module_identifierContext):
+        pass
+
+
     # Enter a parse tree produced by SystemVerilogSubsetParser#port_list.
     def enterPort_list(self, ctx:SystemVerilogSubsetParser.Port_listContext):
         pass
@@ -104,6 +113,24 @@ class SystemVerilogSubsetListener(ParseTreeListener):
 
     # Exit a parse tree produced by SystemVerilogSubsetParser#statement.
     def exitStatement(self, ctx:SystemVerilogSubsetParser.StatementContext):
+        pass
+
+
+    # Enter a parse tree produced by SystemVerilogSubsetParser#begin_end_block.
+    def enterBegin_end_block(self, ctx:SystemVerilogSubsetParser.Begin_end_blockContext):
+        pass
+
+    # Exit a parse tree produced by SystemVerilogSubsetParser#begin_end_block.
+    def exitBegin_end_block(self, ctx:SystemVerilogSubsetParser.Begin_end_blockContext):
+        pass
+
+
+    # Enter a parse tree produced by SystemVerilogSubsetParser#ifStatement.
+    def enterIfStatement(self, ctx:SystemVerilogSubsetParser.IfStatementContext):
+        pass
+
+    # Exit a parse tree produced by SystemVerilogSubsetParser#ifStatement.
+    def exitIfStatement(self, ctx:SystemVerilogSubsetParser.IfStatementContext):
         pass
 
 

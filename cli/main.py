@@ -2,12 +2,15 @@ import argparse
 from antlr4 import FileStream, CommonTokenStream
 from sv_parser.SystemVerilogSubsetLexer import SystemVerilogSubsetLexer
 from sv_parser.SystemVerilogSubsetParser import SystemVerilogSubsetParser
-from sv_parser.visitor import ASTBuilder
+from sv_parser.visitor import ASTBuilder, lower_stmt_to_logic_tree
 from logictree.SVToLogicTreeLowerer import SVToLogicTreeLowerer
 from logictree.nodes import repair_tree_inputs, gate_summary
-from logictree.utils import get_logic_hash, explain_logic_hash, to_sympy_expr
+from logictree.utils import get_logic_hash, explain_logic_hash, to_sympy_expr, pretty_print, to_dot
 from utils.ascii_tree import logic_tree_to_ascii
+
+#TODO: Check if I want to re-use these utils still:
 from utils.graphviz_export import logic_tree_to_dot, save_dot_svg_png
+
 from utils.utils_cli import write_golden_file
 from pprint import pprint
 import logging
@@ -15,37 +18,35 @@ import json
 
 log = logging.getLogger(__name__)
 
-
-def parse_sv_to_logictree(path, args):
-    print(f"\nAnalyzing: {path}")
-    #from scripts.parse_sv import parse_sv_file
+def parse_sv_file(path):
     input_stream = FileStream(path)
     lexer = SystemVerilogSubsetLexer(input_stream)
     tokens = CommonTokenStream(lexer)
     parser = SystemVerilogSubsetParser(tokens)
     tree = parser.compilation_unit()
+    return tree
 
-    ast = ASTBuilder().visit(tree)
-    logic_tree_lowerer = SVToLogicTreeLowerer()
-    tree = logic_tree_lowerer.lower_file(path)
+def parse_sv_to_logictree(path, args=None):
+    print(f"\nAnalyzing: {path}")
+    parse_tree = parse_sv_file(path)
 
-    if args.to_png:
-        tree.to_png("logic_tree.png")
-    if args.to_svg:
-        tree.to_svg("logic_tree.svg")
-    if args.to_dot:
-        tree.to_dot("logic_tree.dot")
+    ast = ASTBuilder().visit(parse_tree)
+    print("AST:\n", ast)
+    print("\n")
+    print("AST.print:\n", parse_tree.toStringTree(recog=parse_tree.parser))
 
+    lowerer = SVToLogicTreeLowerer()
+
+    print("DEBUG: parse_sv_to_logictree() lowerer:", lowerer)
+    print("DEBUG: parse_sv_to_logictree() ast:", [mod for mod in ast["modules"]])
+
+    tree = lowerer.lower(ast)
+    print("DEBUG: parse_sv_to_logictree() tree:", tree)
     return tree
 
 def analyze_file(path, args):
     print(f"\nAnalyzing: {path}")
-    #from scripts.parse_sv import parse_sv_file
-    input_stream = FileStream(path)
-    lexer = SystemVerilogSubsetLexer(input_stream)
-    tokens = CommonTokenStream(lexer)
-    parser = SystemVerilogSubsetParser(tokens)
-    tree = parser.compilation_unit()
+    tree = parse_sv_file(path)
 
     ast = ASTBuilder().visit(tree)
     logic_tree_lowerer = SVToLogicTreeLowerer()
@@ -109,10 +110,20 @@ def main():
 
     if args.hash_tree:
         tree = parse_sv_to_logictree(args.hash_tree, args)
-        print("Inputs (raw):", tree.inputs)
-        print("Inputs (sorted):", sorted(tree.inputs()))
-        logic_hash, expr_str = get_logic_hash(tree, return_expr=True)
-        print("Logic SHA256 Hash:\n", logic_hash)
+        print("DEBUG: tree:", tree)
+        if tree:
+            print("Inputs (raw):", tree.inputs)
+            print("Inputs (sorted):", sorted(tree.inputs()))
+            logic_hash, expr_str = get_logic_hash(tree, return_expr=True)
+            print("Logic SHA256 Hash:\n", logic_hash)
+
+            print("\nPretty Logic Tree:")
+            print(pretty_print(tree))
+            dot = to_dot(tree)
+            dot.render('output/logic_tree', format='png', cleanup=False)
+            print("Generated logic_tree.png")
+        else:
+            print("X No logic tree generated")
         
         if args.save_golden:
             golden_path = f"golden_hashes/{args.save_golden}.json"

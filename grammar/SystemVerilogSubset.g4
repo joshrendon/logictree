@@ -4,10 +4,14 @@ grammar SystemVerilogSubset;
 compilation_unit: module_declaration+ ;
 
 module_declaration:
-    'module' Identifier '(' port_list? ')' ';'
+    'module' module_identifier '(' port_list? ')' ';'
     module_item*
     'endmodule'
     ;
+
+module_identifier
+      : Identifier
+      ;
 
 port_list: port (',' port)* ;
 port:
@@ -36,17 +40,29 @@ always_comb_block:
 
 statement:
       '{' statement* '}'                   // SystemVerilog block
-    | 'begin' statement* 'end'             // Verilog-style block
+    | begin_end_block
     | Identifier '=' expression ';'       // assignment
+    | ifStatement
     | case_statement
+    ;
+
+begin_end_block
+    : 'begin' statement* 'end'
+    ;
+
+ELSE: 'else' ;
+
+ifStatement
+    : 'if' '(' expression ')' statement (ELSE statement)?
     ;
 
 case_statement:
     'case' '(' expression ')' case_item+ 'endcase'
     ;
 
-case_item:
-    literal ':' statement
+case_item
+    : literal ':' statement
+    | 'default' ':' statement
     ;
 
 expression
@@ -73,4 +89,10 @@ Identifier: [a-zA-Z_][a-zA-Z_0-9]* ;
 DecimalNumber: [0-9]+ ;
 
 WS: [ \t\r\n]+ -> skip ;
+LINE_COMMENT
+    : '//' ~[\r\n]* -> skip
+    ;
 
+BLOCK_COMMENT
+    : '/*' .*? '*/' -> skip
+    ;

@@ -19,6 +19,11 @@ class SystemVerilogSubsetVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by SystemVerilogSubsetParser#module_identifier.
+    def visitModule_identifier(self, ctx:SystemVerilogSubsetParser.Module_identifierContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by SystemVerilogSubsetParser#port_list.
     def visitPort_list(self, ctx:SystemVerilogSubsetParser.Port_listContext):
         return self.visitChildren(ctx)
@@ -61,6 +66,16 @@ class SystemVerilogSubsetVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by SystemVerilogSubsetParser#statement.
     def visitStatement(self, ctx:SystemVerilogSubsetParser.StatementContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by SystemVerilogSubsetParser#begin_end_block.
+    def visitBegin_end_block(self, ctx:SystemVerilogSubsetParser.Begin_end_blockContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by SystemVerilogSubsetParser#ifStatement.
+    def visitIfStatement(self, ctx:SystemVerilogSubsetParser.IfStatementContext):
         return self.visitChildren(ctx)
 
 

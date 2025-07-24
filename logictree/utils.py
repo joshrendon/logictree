@@ -9,6 +9,7 @@ from sympy import symbols
 from sympy.logic.boolalg import And, Or, Not
 from rich.console import Console
 from rich.text import Text
+import graphviz
 
 def balanced_tree_reduce(op_name, inputs):
     """Builds a balanced binary tree of LogicOps over the inputs."""
@@ -96,6 +97,21 @@ def explain_logic_hash(tree, ordering=None):
     print("\nSHA256 Logic Hash:\n", hash_str)
     return expr_str, hash_str
 
+def pretty_print(tree, indent=0):
+    spacer = "  " * indent
+    if isinstance(tree, LogicOp):
+        op_str = f"{spacer}{tree.op}"
+        children_str = "\n".join(pretty_print(child, indent + 1) for child in tree.children)
+        return f"{op_str}\n{children_str}"
+    elif isinstance(tree, LogicVar):
+        return f"{spacer}VAR({tree.name})"
+    elif isinstance(tree, LogicConst):
+        return f"{spacer}CONST({tree.value})"
+    elif isinstance(tree, LogicHole):
+        return f"{spacer}HOLE({tree.name})"
+    else:
+        return f"{spacer}UNKNOWN({tree})"
+
 def _pretty_print_expr(expr_str):
     console = Console()
     tokens = re.findall(r'[\w\[\]]+|[~&|()!^]', expr_str)
@@ -111,6 +127,35 @@ def _pretty_print_expr(expr_str):
             styled.append(token, style="white")
         styled.append(' ')
     console.print(styled)
+
+def to_dot(tree, g=None, parent=None, node_id_gen=[0]):
+    if g is None:
+        g = graphviz.Digraph()
+
+    my_id = f"n{node_id_gen[0]}"
+    node_id_gen[0] += 1
+
+    label = ""
+    if isinstance(tree, LogicOp):
+        label = tree.op
+    elif isinstance(tree, LogicVar):
+        label = tree.name
+    elif isinstance(tree, LogicConst):
+        label = str(tree.value)
+    elif isinstance(tree, LogicHole):
+        label = f"?{tree.name}"
+    else:
+        label = "UNKNOWN"
+
+    g.node(my_id, label)
+    if parent:
+        g.edge(parent, my_id)
+
+    if isinstance(tree, LogicOp):
+        for child in tree.children:
+            to_dot(child, g, my_id, node_id_gen)
+
+    return g
 
 def to_symbolic_expr_str(node):
     if isinstance(node, LogicVar) or isinstance(node, LogicHole):
@@ -167,6 +212,12 @@ def _build_bdd(tree, bdd):
         elif tree.op == 'XNOR':
             a, b = tree.children
             return ~bdd.apply('xor', _build_bdd(a, bdd), _build_bdd(b, bdd))
+        elif tree.op == "MUX":
+            # Mux(cond, a, b) = (cond & a) | (~cond & b)
+            cond, a, b = (_build_bdd(c, bdd) for c in tree.children)
+            return bdd.apply("or", 
+                             bdd.apply("and", cond, a),
+                             bdd.apply("and", bdd.apply("not", cond), b))
         else:
             raise ValueError(f"Unknown logic operator: {tree.op}")
 
