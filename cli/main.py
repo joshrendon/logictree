@@ -2,13 +2,16 @@ import argparse
 from antlr4 import FileStream, CommonTokenStream
 from sv_parser.SystemVerilogSubsetLexer import SystemVerilogSubsetLexer
 from sv_parser.SystemVerilogSubsetParser import SystemVerilogSubsetParser
-from sv_parser.visitor import ASTBuilder, lower_stmt_to_logic_tree
 from logictree.SVToLogicTreeLowerer import SVToLogicTreeLowerer
 from logictree.nodes import repair_tree_inputs, gate_summary
+from logictree.graphviz_utils import to_svg, to_png
 from logictree.utils import get_logic_hash, explain_logic_hash, to_sympy_expr, pretty_print, to_dot
 from utils.ascii_tree import logic_tree_to_ascii
 
-#TODO: Check if I want to re-use these utils still:
+#TODO: Check if I want to continue to import: 
+# lower_stmt_to_logic_tree
+# logic_tree_to_dot, save_dot_svg_png
+from sv_parser.visitor import ASTBuilder, lower_stmt_to_logic_tree
 from utils.graphviz_export import logic_tree_to_dot, save_dot_svg_png
 
 from utils.utils_cli import write_golden_file
@@ -23,8 +26,7 @@ def parse_sv_file(path):
     lexer = SystemVerilogSubsetLexer(input_stream)
     tokens = CommonTokenStream(lexer)
     parser = SystemVerilogSubsetParser(tokens)
-    tree = parser.compilation_unit()
-    return tree
+    return parser.compilation_unit()
 
 def parse_sv_to_logictree(path, args=None):
     print(f"\nAnalyzing: {path}")
@@ -112,6 +114,7 @@ def main():
         tree = parse_sv_to_logictree(args.hash_tree, args)
         print("DEBUG: tree:", tree)
         if tree:
+            print("module_name: ", tree.name)
             print("Inputs (raw):", tree.inputs)
             print("Inputs (sorted):", sorted(tree.inputs()))
             logic_hash, expr_str = get_logic_hash(tree, return_expr=True)
@@ -119,9 +122,21 @@ def main():
 
             print("\nPretty Logic Tree:")
             print(pretty_print(tree))
+
+            dot_str = logic_tree_to_dot(tree)
+            save_dot_svg_png(dot_str, "if_tree")
+
             dot = to_dot(tree)
             dot.render('output/logic_tree', format='png', cleanup=False)
-            print("Generated logic_tree.png")
+            print("Generated logic_tree.dot")
+
+            if args.to_png:
+                png = to_png(args.hash_tree)
+                print(f"Generated png: {png}")
+            elif args.to_svg:
+                svg = to_svg(args.to_svg)
+                print(f"Generated svg: {svg}")
+
         else:
             print("X No logic tree generated")
         

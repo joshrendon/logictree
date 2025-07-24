@@ -37,7 +37,6 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
             return LogicOp("MUX", [cond, then_branch, else_branch])
 
         raise ValueError(f"Unsupported statement type: {stmt}")
-
     
     def lower_file(self, filepath):
         # 1. REad and lex/parse the SystemVerilog source
@@ -64,11 +63,6 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
         if hasattr(ctx, "Identifier"):
             return ctx.Identifier().getText()
         raise ValueError("continuous_assign context missing net_lvalue")
-            #id_node = ctx.identifier()
-            #return id_node.getText()  # or id_node.ID().getText() if nested
-        #else:
-        #    raise ValueError("assign_stmt context missing identifier()")
-
 
     def visitCompilation_unit(self, ctx):
         # For now, just visit the first module
@@ -88,25 +82,6 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
         print("signal_map contents:", self.signal_map)
     
         return next(iter(self.signal_map.values())) if self.signal_map else None
-
-    #def visitModule_declaration(self, ctx):
-    #    # Visit the assign or case statement inside the module
-    #    for stmt in ctx.children:
-    #        if isinstance(stmt, AssignStmtCtxtClass):
-    #            return self.visit(stmt)
-    #def visitContinuousAssign_statement(self, ctx):
-    #    lhs = ctx.Identifier().getText()
-    #    rhs_expr = self.visit(ctx.expression())
-    #    print(f"\n[DEBUG] Assign to {lhs}: parsed logic tree:")
-    #    print(f"{rhs_expr}")
-    #def visitAssign_statement(self, ctx):
-    #    lhs = ctx.Identifier().getText()
-    #    rhs_expr = self.visit(ctx.expression())
-    #    print(f"\n[DEBUG] Assign to {lhs}: parsed logic tree:")
-    #    print(f"{rhs_expr}")
-    #    ctx.logic_tree = rhs_expr
-    #    self.logic_by_signal[lhs] = rhs_expr
-    #    return (lhs, rhs_expr)
 
     def visitModule_item(self, ctx):
         return self.visitChildren(ctx)

@@ -1,5 +1,3 @@
-# logictree/utils.py
-
 from logictree.nodes import LogicOp, LogicVar, LogicConst, LogicHole
 import hashlib
 import itertools

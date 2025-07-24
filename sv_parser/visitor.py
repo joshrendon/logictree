@@ -1,5 +1,7 @@
 # Visitor for AST
 from logictree.nodes import LogicOp, LogicHole, LogicConst, LogicHole, NotOp
+from sv_parser.SystemVerilogSubsetVisitor import SystemVerilogSubsetVisitor
+from sv_parser.SystemVerilogSubsetParser import *
 
 def BinaryOp(op, lhs, rhs):
     return LogicOp(op, [lhs, rhs])
@@ -71,20 +73,6 @@ def simplify_xnor(lhs, rhs):
 
     return LogicOp('XNOR', [lhs, rhs])
 
-#def simplify_xnor(expr):
-
-    #print("DEBUG: simplify_xnor() expr:", dir(expr))
-    #if isinstance(expr, LogicOp) and expr.op == 'XNOR':
-    #    a, b = expr.args
-    #    if isinstance(b, LogicConst):
-    #        if b.value in ('1', "1'b1"): # Normalize this format if needed
-    #            return a
-    #        elif b.value in ('0', "1'b0"):
-    #            return LogicOp('NOT', [a])
-    #return expr
-
-from sv_parser.SystemVerilogSubsetVisitor import SystemVerilogSubsetVisitor
-from sv_parser.SystemVerilogSubsetParser import *
 
 class ASTBuilder(SystemVerilogSubsetVisitor):
     def visitCompilation_unit(self, ctx):
