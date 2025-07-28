@@ -1,1 +1,1 @@
-# LogicTree module
+# logictree package
