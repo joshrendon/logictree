@@ -45,7 +45,7 @@ def logic_tree_to_dot(logic_tree, signal_name="logic", gate_colors=None):
         lines.append(f'  {curr_id} [label="{label}", fillcolor="{color}"];')
 
         if hasattr(node, 'inputs'):
-            for child in node.inputs:
+            for child in node.inputs():
                 if child is not None:
                     child_id = visit(child)
                     lines.append(f"  {child_id} -> {curr_id};")

@@ -116,6 +116,24 @@ class SystemVerilogSubsetListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by SystemVerilogSubsetParser#blocking_assignment.
+    def enterBlocking_assignment(self, ctx:SystemVerilogSubsetParser.Blocking_assignmentContext):
+        pass
+
+    # Exit a parse tree produced by SystemVerilogSubsetParser#blocking_assignment.
+    def exitBlocking_assignment(self, ctx:SystemVerilogSubsetParser.Blocking_assignmentContext):
+        pass
+
+
+    # Enter a parse tree produced by SystemVerilogSubsetParser#variable_lvalue.
+    def enterVariable_lvalue(self, ctx:SystemVerilogSubsetParser.Variable_lvalueContext):
+        pass
+
+    # Exit a parse tree produced by SystemVerilogSubsetParser#variable_lvalue.
+    def exitVariable_lvalue(self, ctx:SystemVerilogSubsetParser.Variable_lvalueContext):
+        pass
+
+
     # Enter a parse tree produced by SystemVerilogSubsetParser#begin_end_block.
     def enterBegin_end_block(self, ctx:SystemVerilogSubsetParser.Begin_end_blockContext):
         pass
@@ -125,12 +143,12 @@ class SystemVerilogSubsetListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by SystemVerilogSubsetParser#ifStatement.
-    def enterIfStatement(self, ctx:SystemVerilogSubsetParser.IfStatementContext):
+    # Enter a parse tree produced by SystemVerilogSubsetParser#if_statement.
+    def enterIf_statement(self, ctx:SystemVerilogSubsetParser.If_statementContext):
         pass
 
-    # Exit a parse tree produced by SystemVerilogSubsetParser#ifStatement.
-    def exitIfStatement(self, ctx:SystemVerilogSubsetParser.IfStatementContext):
+    # Exit a parse tree produced by SystemVerilogSubsetParser#if_statement.
+    def exitIf_statement(self, ctx:SystemVerilogSubsetParser.If_statementContext):
         pass
 
 
@@ -149,6 +167,15 @@ class SystemVerilogSubsetListener(ParseTreeListener):
 
     # Exit a parse tree produced by SystemVerilogSubsetParser#case_item.
     def exitCase_item(self, ctx:SystemVerilogSubsetParser.Case_itemContext):
+        pass
+
+
+    # Enter a parse tree produced by SystemVerilogSubsetParser#expression_list.
+    def enterExpression_list(self, ctx:SystemVerilogSubsetParser.Expression_listContext):
+        pass
+
+    # Exit a parse tree produced by SystemVerilogSubsetParser#expression_list.
+    def exitExpression_list(self, ctx:SystemVerilogSubsetParser.Expression_listContext):
         pass
 
 

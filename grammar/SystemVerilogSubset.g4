@@ -1,6 +1,18 @@
 
 grammar SystemVerilogSubset;
 
+COLON: ':' ;
+COMMA: ',' ;
+SEMICOLON: ';' ;
+ASSIGN: '=' ;
+DEFAULT: 'default' ;
+CASE: 'case' ;
+ENDCASE: 'endcase' ;
+BEGIN: 'begin' ;
+END: 'end' ;
+IF: 'if' ;
+ELSE: 'else' ;
+
 compilation_unit: module_declaration+ ;
 
 module_declaration:
@@ -29,40 +41,49 @@ module_item:
     ;
 
 net_declaration:
-    ('logic' | 'wire') Identifier ';' ;
+    ('logic' | 'wire') Identifier SEMICOLON ;
 
 continuous_assign:
-    'assign' Identifier '=' expression ';'
+    'assign' variable_lvalue ASSIGN expression SEMICOLON
     ;
 
 always_comb_block:
     'always_comb' statement ;
 
 statement:
-      '{' statement* '}'                   // SystemVerilog block
+      '{' statement* '}'                   
     | begin_end_block
-    | Identifier '=' expression ';'       // assignment
-    | ifStatement
+    | blocking_assignment
+    | if_statement
     | case_statement
     ;
 
-begin_end_block
-    : 'begin' statement* 'end'
+blocking_assignment
+    : variable_lvalue ASSIGN expression SEMICOLON
     ;
 
-ELSE: 'else' ;
+variable_lvalue
+    : Identifier ( '[' expression ']' | COLON Identifier )*
+    ;
 
-ifStatement
-    : 'if' '(' expression ')' statement (ELSE statement)?
+begin_end_block
+    : BEGIN statement* END
+    ;
+
+if_statement
+    : IF '(' expression ')' statement (ELSE statement)?
     ;
 
 case_statement:
-    'case' '(' expression ')' case_item+ 'endcase'
+    CASE '(' expression ')' case_item+ ENDCASE
     ;
 
 case_item
-    : literal ':' statement
-    | 'default' ':' statement
+    : expression_list COLON statement
+    | DEFAULT COLON statement
+    ;
+expression_list
+    : expression (COMMA expression)*
     ;
 
 expression

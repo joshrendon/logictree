@@ -69,13 +69,23 @@ class SystemVerilogSubsetVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by SystemVerilogSubsetParser#blocking_assignment.
+    def visitBlocking_assignment(self, ctx:SystemVerilogSubsetParser.Blocking_assignmentContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by SystemVerilogSubsetParser#variable_lvalue.
+    def visitVariable_lvalue(self, ctx:SystemVerilogSubsetParser.Variable_lvalueContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by SystemVerilogSubsetParser#begin_end_block.
     def visitBegin_end_block(self, ctx:SystemVerilogSubsetParser.Begin_end_blockContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by SystemVerilogSubsetParser#ifStatement.
-    def visitIfStatement(self, ctx:SystemVerilogSubsetParser.IfStatementContext):
+    # Visit a parse tree produced by SystemVerilogSubsetParser#if_statement.
+    def visitIf_statement(self, ctx:SystemVerilogSubsetParser.If_statementContext):
         return self.visitChildren(ctx)
 
 
@@ -86,6 +96,11 @@ class SystemVerilogSubsetVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by SystemVerilogSubsetParser#case_item.
     def visitCase_item(self, ctx:SystemVerilogSubsetParser.Case_itemContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by SystemVerilogSubsetParser#expression_list.
+    def visitExpression_list(self, ctx:SystemVerilogSubsetParser.Expression_listContext):
         return self.visitChildren(ctx)
 
 

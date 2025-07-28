@@ -1,7 +1,20 @@
 # Visitor for AST
-from logictree.nodes import LogicOp, LogicHole, LogicConst, LogicHole, NotOp
+from logictree.nodes import LogicOp, LogicHole, LogicConst, LogicHole, NotOp, LogicVar
 from sv_parser.SystemVerilogSubsetVisitor import SystemVerilogSubsetVisitor
 from sv_parser.SystemVerilogSubsetParser import *
+AssignStmtCtxtClass = SystemVerilogSubsetParser.Continuous_assignContext
+IfStmtCtxtClass = SystemVerilogSubsetParser.If_statementContext
+IdExprCtxtClass = SystemVerilogSubsetParser.IdExprContext
+EqExprCtxtClass = SystemVerilogSubsetParser.EqExprContext
+AndExprCtxtClass = SystemVerilogSubsetParser.AndExprContext
+OrExprCtxtClass = SystemVerilogSubsetParser.OrExprContext
+XorExprCtxtClass = SystemVerilogSubsetParser.XorExprContext
+XnorExprCtxtClass = SystemVerilogSubsetParser.XnorExprContext
+NegateExprCtxtClass = SystemVerilogSubsetParser.NegateExprContext
+BitwiseNotExprCtxtClass = SystemVerilogSubsetParser.BitwiseNotExprContext
+LogicalNotExprCtxtClass = SystemVerilogSubsetParser.LogicalNotExprContext
+ParenExprCtxtClass = SystemVerilogSubsetParser.ParenExprContext
+ConstExprCtxtClass = SystemVerilogSubsetParser.ConstExprContext
 
 def BinaryOp(op, lhs, rhs):
     return LogicOp(op, [lhs, rhs])
@@ -29,7 +42,7 @@ def lower_expr_to_logic_tree(expr):
 def lower_stmt_to_logic_tree(stmt):
     if isinstance(stmt, AssignStmtCtxtClass):
         return lower_expr_to_logic_tree(stmt.source)
-    elif isinstance(stmt, IfStatement):
+    elif isinstance(stmt, IfStmtCtxtClass):
         cond = lower_expr_to_logic_tree(stmt.condition)
         then = lower_stmt_to_logic_tree(stmt.then_body)
         if stmt.else_body:
@@ -41,8 +54,47 @@ def lower_stmt_to_logic_tree(stmt):
             LogicOp("AND", [cond, then]),
             LogicOp("AND", [LogicOp("NOT", [cond]), elze])
         ])
+    elif isinstance(stmt, ParenExprCtxtClass):
+        expr = lower_stmt_to_logic_tree(stmt.expression())
+        return expr
+    elif isinstance(stmt, IdExprCtxtClass):
+        name = stmt.getText()
+        return LogicVar(name)
+    elif isinstance(stmt, ConstExprCtxtClass):
+        name = stmt.getText()
+        return LogicVar(name)
+    elif isinstance(stmt, EqExprCtxtClass):
+        lhs = lower_stmt_to_logic_tree(stmt.expression(0))
+        rhs = lower_stmt_to_logic_tree(stmt.expression(1))
+        return LogicOp("EQ", [lhs, rhs])
+    elif isinstance(stmt, AndExprCtxtClass):
+        lhs = lower_stmt_to_logic_tree(stmt.expression(0))
+        rhs = lower_stmt_to_logic_tree(stmt.expression(1))
+        return LogicOp("AND", [lhs, rhs])
+    elif isinstance(stmt, OrExprCtxtClass):
+        lhs = lower_stmt_to_logic_tree(stmt.expression(0))
+        rhs = lower_stmt_to_logic_tree(stmt.expression(1))
+        return LogicOp("OR", [lhs, rhs])
+    elif isinstance(stmt, XorExprCtxtClass):
+        lhs = lower_stmt_to_logic_tree(stmt.expression(0))
+        rhs = lower_stmt_to_logic_tree(stmt.expression(1))
+        return LogicOp("XOR", [lhs, rhs])
+    elif isinstance(stmt, XnorExprCtxtClass):
+        lhs = lower_stmt_to_logic_tree(stmt.expression(0))
+        rhs = lower_stmt_to_logic_tree(stmt.expression(1))
+        return LogicOp("XNOR", [lhs, rhs])
+    elif isinstance(stmt, NegateExprCtxtClass):
+        expr = lower_stmt_to_logic_tree(stmt.expression())
+        return LogicOp("NOT", [expr])
+    elif isinstance(stmt, BitwiseNotExprCtxtClass):
+        expr = lower_stmt_to_logic_tree(stmt.expression())
+        return LogicOp("NOT", [expr])
+    elif isinstance(stmt, LogicalNotExprCtxtClass):
+        expr = lower_stmt_to_logic_tree(stmt.expression())
+        return LogicOp("NOT", [expr])
     else:
-        print(f"[lower_stmt_to_logic_tree] Unhandled: {stmt}")
+        print("DEBUG lower_stmt_to_logic_tree() class of stmt:", type(stmt).__name__)
+        print(f"WARNING! [lower_stmt_to_logic_tree] Unhandled: {stmt.getText()}")
         return LogicHole("unhandled_stmt")
 
 def flatten_stmt(stmt):
@@ -189,8 +241,8 @@ class ASTBuilder(SystemVerilogSubsetVisitor):
            "value": rhs,
         }
     
-    def visitIfStatement(self, ctx):
-        print("DEBUG: visitIfStatement()")
+    def visitIf_statement(self, ctx):
+        print("DEBUG: visitIf_statement()")
         cond_expr_ctx = ctx.expression()
         then_stmt_ctx = ctx.statement(0)
         print("Condition:",   cond_expr_ctx.getText())

@@ -1,7 +1,13 @@
 from typing import List, Union
 from .graphviz_utils import to_svg, to_png
 import itertools
-GATE_TYPES = ['AND', 'OR', 'NOT', 'XNOR', 'MUX']
+from dataclasses import dataclass
+from typing import List, Optional, Union, Set
+GATE_TYPES = ['AND', 'OR', 'NOT', 'XNOR', 'MUX', 'IF', 'EQ']
+
+def indent(text, spaces):
+    pad = " " * spaces
+    return "\n".join(pad + line for line in text.splitlines())
 
 class LogicNode:
     def depth(self):
@@ -75,6 +81,9 @@ class LogicConst(LogicNode):
 
     def __repr__(self):
         return f"LogicConst({self.value})"
+
+    def __str__(self):
+        return "True" if self.value == 1 else "False"
 
     def collect_input_names(self) -> set[str]:
         return set()
@@ -159,6 +168,68 @@ class LogicOp(LogicNode):
 class NotOp(LogicOp):
     def __init__(self, child):
         super().__init__('NOT', [child])
+
+@dataclass
+class LogicAssign(LogicNode):
+    def __init__(self, lhs: str, rhs: LogicNode):
+        self.lhs = lhs
+        self.rhs = rhs
+    lhs: str
+    rhs: LogicNode
+
+    def inputs(self) -> Set[str]:
+        print(f"[DEBUG] Calling inputs() on LogicAssign with lhs={self.lhs}")
+        return self.rhs.inputs()
+
+    def __str__(self):
+        return f"{self.lhs} = {self.rhs}"
+
+@dataclass
+class CaseItem(LogicNode):
+    def __init__(self, *, labels: list[LogicNode], body: LogicNode):
+        self.labels = labels
+        self.body   = body
+
+    def __repr__(self):
+        return f"CaseItem(labels={len(self.labels)}, body={type(self.body).__name__})"
+
+    def __str__(self):
+        #return f"CaseItem({self.labels}, {self.body})"
+        label_str = ", ".join(str(l) for l in self.labels)
+        return f"CASE_ITEM:\n   labels: {label_str}\n   body:\n      {indent(str(self.body), 6)}"
+
+    def inputs(self):
+        inputs = set()
+        inputs.update(self.labels.inputs())
+        for item in self.labels:
+            inputs.update(item.body.inputs())
+        return list(inputs)
+
+    match: Optional[LogicNode]  # None if default
+    body: LogicNode
+    default: bool = False
+    #default: LogicConst(0)
+
+@dataclass
+class CaseStatement(LogicNode):
+    selector: LogicNode
+    items: List[CaseItem]
+    def inputs(self):
+        inputs = set()
+        inputs.update(self.selector.inputs())
+        for item in self.items:
+            inputs.update(item.body.inputs())
+        return list(inputs)
+    def __str__(self):
+        #return f"CASE({self.selector}, {self.items})"
+        case_items_str = "\n".join(indent(str(item), 2) for item in self.items)
+        return f"CASE(\n  {str(self.selector)}\n{case_items_str}\n)"
+
+class IfStatement(LogicNode):
+    def __init__(self, condition, then_body, else_body=None):
+        self.condition = condition        # Expression node
+        self.then_body = then_body        # Could be assignment or block
+        self.else_body = else_body        # Optional: either another IfStatement or block
 
 # Utility API
 def repair_tree_inputs(node):
