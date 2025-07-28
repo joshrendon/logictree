@@ -4,6 +4,13 @@ class LogicHole(LogicTreeNode):
     def __init__(self, name="UNSPECIFIED"):
         self.name = name
 
+    @property
+    def children(self):
+        return  []
+
+    def equals(self, other):
+        return isinstance(other, LogicHole) and self.name == other.name
+
     def simplify(self):
         return self
 

@@ -16,7 +16,15 @@ import graphviz
 
 def pretty_print(tree, indent=0):
     spacer = "  " * indent
-    if isinstance(tree, ops.LogicOp):
+    label = tree.__class__.__name__
+
+    from logictree.nodes.ops.gates import NotOp
+
+    if isinstance(tree, NotOp):
+        op_str = f"{spacer}NOT"
+        children_str = pretty_print(tree.operand, indent + 1)
+        return f"{op_str}\n{children_str}"
+    elif isinstance(tree, ops.LogicOp):
         op_str = f"{spacer}{tree.op}"
         children_str = "\n".join(pretty_print(child, indent + 1) for child in tree.children)
         return f"{op_str}\n{children_str}"
@@ -37,7 +45,7 @@ def pretty_print(tree, indent=0):
     elif isinstance(tree, control.IfStatement):
         lines = [f"{spacer}IF:"]
         lines.append(f"{spacer} condition:")
-        lines.append(pretty_print(tree.codnition, indent + 1))
+        lines.append(pretty_print(tree.condition, indent + 1))
         lines.append(f"{spacer} then_body:")
         lines.append(pretty_print(tree.then_body, indent + 2))
         lines.append(f"{spacer} else_body:")
@@ -54,7 +62,7 @@ def pretty_print(tree, indent=0):
     elif isinstance(tree, hole.LogicHole):
         return f"{spacer}HOLE({tree.name})"
     else:
-        return f"{spacer}UNKNOWN({tree})"
+        return f"{spacer}UNKNOWN<{type(tree).__name__}>: {str(tree)}"
 
 def _pretty_print_expr(expr_str):
     console = Console()

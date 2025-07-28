@@ -1,20 +1,24 @@
 from logictree.nodes.base import LogicTreeNode
 from typing import List, Union
 from logictree.utils.display import indent
-from logictree.nodes.types import GATE_TYPES
+from logictree.nodes.types import GATE_TYPES, COMMUTATIVE_OPS
 
 class LogicConst(LogicTreeNode):
     def __init__(self, value):
         self.value = value
+
+    @property
+    def children(self):
+        return  []
+    
+    def equals(self, other):
+        return isinstance(other, LogicConst) and self.value == other.value
 
     def simplify(self):
         return self
 
     def __str__(self):
         return str(self.value)
-
-    #def __str__(self):
-    #    return "True" if self.value == 1 else "False"
 
     def inputs(self) -> set[str]:
         return self.collect_input_names()
@@ -43,6 +47,13 @@ class LogicConst(LogicTreeNode):
 class LogicVar(LogicTreeNode):
     def __init__(self, name):
         self.name = name
+        
+    @property
+    def children(self):
+        return  []
+
+    def equals(self, other):
+        return isinstance(other, LogicVar) and self.name == other.name
 
     def simplify(self):
         return self
@@ -75,23 +86,61 @@ class LogicVar(LogicTreeNode):
 
 
 class LogicOp(LogicTreeNode):
-    def __init__(self, op, inputs):
+    def __init__(self, op, operands):
         assert op in GATE_TYPES
         assert isinstance(op, str)
         self.name = op
         self.op = op
+        self.operands = operands
         self.children = [
                 inp if isinstance(inp, LogicTreeNode) else LogicHole(f"input_{i}")
-                for i, inp in enumerate(inputs)
+                for i, inp in enumerate(operands)
         ]
 
+    def equals(self, other):
+        if not isinstance(other, LogicOp):
+            return False
+
+        if self.op != other.op:
+            return False
+        if len(self.operands) != len(other.operands):
+            return False
+
+        # Commutative ops: Check operands ignoring order
+        if self.op in COMMUTATIVE_OPS:
+            self_sorted = sorted(self.operands, key=lambda x: str(x))
+            other_sorted = sorted(self.operands, key=lambda x: str(x))
+            return all(a.equals(b) for a, b in zip(self_sorted, other_sorted))
+
+        # Non-commutative: preserve order
+        return all(a.equals(b) for a, b in zip(self.operands, other.operands))
+
     def simplify(self):
-        simplified_ops = [op.simplify() for op in self.inputs]
-        # Simple constant folding example
+        simplified_ops = [op.simplify() for op in self.operands]
+
+        # Constant short-circuits
         if self.op == 'AND':
             if any(isinstance(op, LogicConst) and op.value == 0 for op in simplified_ops):
                 return LogicConst(0)
+            # Remove 1's
             simplified_ops = [op for op in simplified_ops if not (isinstance(op, LogicConst) and op.value == 1)]
+        elif self.op == 'OR':
+            if any(isinstance(op, LogicConst) and op.value == 1 for op in simplified_ops):
+                return LogicConst(1)
+            # Remove 0's
+            simplified_ops = [op for op in simplified_ops if not (isinstance(op, LogicConst) and op.value == 0)]
+
+        # Remove duplicates for idempotence
+        unique_ops = []
+        for op in simplified_ops:
+            if all(not op.equals(o) for o in unique_ops):
+                unique_ops.append(op)
+        simplified_ops = unique_ops
+
+        # Degenerate form: one operand left
+        if len(simplified_ops) == 1:
+            return simplified_ops[0]
+
         return LogicOp(self.op, simplified_ops)
 
     def __str__(self):
@@ -123,7 +172,7 @@ class LogicOp(LogicTreeNode):
         return any(inp.contains_hole() for inp in self.children)
 
     def __repr__(self):
-        return f"LogicOp({self.name}, {self.children})"
+        return f"LogicOp({self.op}, {self.operands})"
 
     def collect_input_names(self) -> set[str]:
         names = set()
