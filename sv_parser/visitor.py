@@ -1,5 +1,6 @@
 # Visitor for AST
-from logictree.nodes import LogicOp, LogicHole, LogicConst, LogicHole, NotOp, LogicVar
+from logictree.nodes import ops, control, base, hole
+#from logictree.nodes.ops import LogicOp, LogicHole, LogicConst, LogicHole, NotOp, LogicVar
 from sv_parser.SystemVerilogSubsetVisitor import SystemVerilogSubsetVisitor
 from sv_parser.SystemVerilogSubsetParser import *
 AssignStmtCtxtClass = SystemVerilogSubsetParser.Continuous_assignContext
@@ -17,27 +18,27 @@ ParenExprCtxtClass = SystemVerilogSubsetParser.ParenExprContext
 ConstExprCtxtClass = SystemVerilogSubsetParser.ConstExprContext
 
 def BinaryOp(op, lhs, rhs):
-    return LogicOp(op, [lhs, rhs])
+    return ops.LogicOp(op, [lhs, rhs])
 
 def UnaryOp(op, val):
-    return LogicOp(op, [val])
+    return ops.LogicOp(op, [val])
 
 # This lives in visitor.py or a separate lowerer.py
 def lower_expr_to_logic_tree(expr):
     if isinstance(expr, BinaryOp):
         lhs = lower_expr_to_logic_tree(expr.left)
         rhs = lower_expr_to_logic_tree(expr.right)
-        return LogicOp(expr.op.upper(), [lhs, rhs])
+        return ops.LogicOp(expr.op.upper(), [lhs, rhs])
     elif isinstance(expr, UnaryOp):
         val = lower_expr_to_logic_tree(expr.operand)
-        return LogicOp(expr.op.upper(), [val])
+        return ops.LogicOp(expr.op.upper(), [val])
     elif isinstance(expr, IdNode):
-        return LogicVar(expr.name)
+        return ops.LogicVar(expr.name)
     elif isinstance(expr, Number):
-        return LogicConst(str(expr.value))
+        return ops.LogicConst(str(expr.value))
     else:
         print(f"[lower_expr_to_logic_tree] Unhandled: {expr}")
-        return LogicHole("unhandled_expr")
+        return hole.LogicHole("unhandled_expr")
 
 def lower_stmt_to_logic_tree(stmt):
     if isinstance(stmt, AssignStmtCtxtClass):
@@ -48,11 +49,11 @@ def lower_stmt_to_logic_tree(stmt):
         if stmt.else_body:
             elze = lower_stmt_to_logic_tree(stmt.else_body)
         else:
-            elze = LogicHole("missing_else")
+            elze = hole.LogicHole("missing_else")
         # return a 2:1 mux: (cond AND then) OR (~cond AND else)
-        return LogicOp("OR", [
-            LogicOp("AND", [cond, then]),
-            LogicOp("AND", [LogicOp("NOT", [cond]), elze])
+        return ops.LogicOp("OR", [
+            ops.LogicOp("AND", [cond, then]),
+            ops.LogicOp("AND", [ops.LogicOp("NOT", [cond]), elze])
         ])
     elif isinstance(stmt, ParenExprCtxtClass):
         expr = lower_stmt_to_logic_tree(stmt.expression())
@@ -66,36 +67,36 @@ def lower_stmt_to_logic_tree(stmt):
     elif isinstance(stmt, EqExprCtxtClass):
         lhs = lower_stmt_to_logic_tree(stmt.expression(0))
         rhs = lower_stmt_to_logic_tree(stmt.expression(1))
-        return LogicOp("EQ", [lhs, rhs])
+        return ops.LogicOp("EQ", [lhs, rhs])
     elif isinstance(stmt, AndExprCtxtClass):
         lhs = lower_stmt_to_logic_tree(stmt.expression(0))
         rhs = lower_stmt_to_logic_tree(stmt.expression(1))
-        return LogicOp("AND", [lhs, rhs])
+        return ops.LogicOp("AND", [lhs, rhs])
     elif isinstance(stmt, OrExprCtxtClass):
         lhs = lower_stmt_to_logic_tree(stmt.expression(0))
         rhs = lower_stmt_to_logic_tree(stmt.expression(1))
-        return LogicOp("OR", [lhs, rhs])
+        return ops.LogicOp("OR", [lhs, rhs])
     elif isinstance(stmt, XorExprCtxtClass):
         lhs = lower_stmt_to_logic_tree(stmt.expression(0))
         rhs = lower_stmt_to_logic_tree(stmt.expression(1))
-        return LogicOp("XOR", [lhs, rhs])
+        return ops.LogicOp("XOR", [lhs, rhs])
     elif isinstance(stmt, XnorExprCtxtClass):
         lhs = lower_stmt_to_logic_tree(stmt.expression(0))
         rhs = lower_stmt_to_logic_tree(stmt.expression(1))
-        return LogicOp("XNOR", [lhs, rhs])
+        return ops.LogicOp("XNOR", [lhs, rhs])
     elif isinstance(stmt, NegateExprCtxtClass):
         expr = lower_stmt_to_logic_tree(stmt.expression())
-        return LogicOp("NOT", [expr])
+        return ops.LogicOp("NOT", [expr])
     elif isinstance(stmt, BitwiseNotExprCtxtClass):
         expr = lower_stmt_to_logic_tree(stmt.expression())
-        return LogicOp("NOT", [expr])
+        return ops.LogicOp("NOT", [expr])
     elif isinstance(stmt, LogicalNotExprCtxtClass):
         expr = lower_stmt_to_logic_tree(stmt.expression())
-        return LogicOp("NOT", [expr])
+        return ops.LogicOp("NOT", [expr])
     else:
         print("DEBUG lower_stmt_to_logic_tree() class of stmt:", type(stmt).__name__)
         print(f"WARNING! [lower_stmt_to_logic_tree] Unhandled: {stmt.getText()}")
-        return LogicHole("unhandled_stmt")
+        return hole.LogicHole("unhandled_stmt")
 
 def flatten_stmt(stmt):
     # If we have a list with one item, unwrap it
@@ -111,19 +112,19 @@ def simplify_xnor(lhs, rhs):
 
     # Case: XNOR(x, 1) => x
     # Case: XNOR(x, 0) => NOT(x)
-    if isinstance(rhs, LogicConst):
+    if isinstance(rhs, ops.LogicConst):
         if rhs.value == "1'b1":
             return lhs # A == 1 -> A
         if rhs.value == "1'b0":
-            return NotOp(lhs)  # A == 0 -> ~A
+            return gates.NotOp(lhs)  # A == 0 -> ~A
 
-    if isinstance(lhs, LogicConst):
+    if isinstance(lhs, ops.LogicConst):
         if lhs.value == "1":
             return rhs
         if lhs.value == "0":
-            return NotOp(rhs)
+            return gates.NotOp(rhs)
 
-    return LogicOp('XNOR', [lhs, rhs])
+    return ops.LogicOp('XNOR', [lhs, rhs])
 
 
 class ASTBuilder(SystemVerilogSubsetVisitor):
@@ -174,9 +175,9 @@ class ASTBuilder(SystemVerilogSubsetVisitor):
             case_value_exprs = item.constant_expression()
             case_result_stmt = self.visit(item.statement())
             if case_value_exprs:
-                conds = [LogicOp("EQ", [cond_expr, self.visit(expr)]) for expr in case_value_exprs]
-                total_cond = conds[0] if len(conds) == 1 else LogicOp("OR", conds)
-                result = LogicOp("ITE", [total_cond, case_result_stmt, result or LogicConst(0)])
+                conds = [ops.LogicOp("EQ", [cond_expr, self.visit(expr)]) for expr in case_value_exprs]
+                total_cond = conds[0] if len(conds) == 1 else ops.LogicOp("OR", conds)
+                result = ops.LogicOp("ITE", [total_cond, case_result_stmt, result or ops.LogicConst(0)])
             else:
                 # default
                 result = case_result_stmt if result is None else result
@@ -271,22 +272,22 @@ class ASTBuilder(SystemVerilogSubsetVisitor):
         if left is None or right is None:
             print("DEBUG: visitAndExpr with", ctx.getText())
         #return BinaryOp('AND', left, right)
-        return LogicOp('AND', [left, right])
+        return ops.LogicOp('AND', [left, right])
 
     def visitOrExpr(self, ctx):
         print("DEBUG: visitOrExpr with", ctx.getText())
         #return BinaryOp('OR', self.visit(ctx.expression(0)), self.visit(ctx.expression(1)))
-        return LogicOp('OR', [self.visit(ctx.expression(0)), self.visit(ctx.expression(1))])
+        return ops.LogicOp('OR', [self.visit(ctx.expression(0)), self.visit(ctx.expression(1))])
 
     def visitXorExpr(self, ctx):
         print("DEBUG: visitXOrExpr with", ctx.getText())
         #return BinaryOp('XOR', self.visit(ctx.expression(0)), self.visit(ctx.expression(1)))
-        return LogicOp('XOR', [self.visit(ctx.expression(0)), self.visit(ctx.expression(1))])
+        return ops.LogicOp('XOR', [self.visit(ctx.expression(0)), self.visit(ctx.expression(1))])
 
     def visitXnorExpr(self, ctx):
         print("DEBUG: visitXnorExpr with", ctx.getText())
         #return BinaryOp('XNOR', self.visit(ctx.expression(0)), self.visit(ctx.expression(1)))
-        return LogicOp('XNOR', [self.visit(ctx.expression(0)), self.visit(ctx.expression(1))])
+        return ops.LogicOp('XNOR', [self.visit(ctx.expression(0)), self.visit(ctx.expression(1))])
 
     def visitLogicalNotExpr(self, ctx):
         print("DEBUG: visitLogicalNotExpr with", ctx.getText())
@@ -333,11 +334,11 @@ class ASTBuilder(SystemVerilogSubsetVisitor):
 
     def visitConstExpr(self, ctx):
         print("DEBUG: visitConstExpr with", ctx.getText())
-        return LogicHole(ctx.getText())
+        return hole.LogicHole(ctx.getText())
 
     def visitIdExpr(self, ctx):
         print("DEBUG: visitIdExpr with", ctx.getText())
-        return LogicHole(ctx.getText())
+        return hole.LogicHole(ctx.getText())
 
 
 

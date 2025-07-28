@@ -3,14 +3,16 @@ from sv_parser.SystemVerilogSubsetLexer import SystemVerilogSubsetLexer
 from sv_parser.SystemVerilogSubsetParser import SystemVerilogSubsetParser
 from sv_parser.SystemVerilogSubsetVisitor import SystemVerilogSubsetVisitor
 from sv_parser.visitor import lower_stmt_to_logic_tree
-from logictree.nodes import LogicNode, LogicVar, LogicConst, LogicOp, LogicHole, NotOp, CaseStatement, CaseItem, LogicAssign
-from logictree.utils import pretty_print
+
+from logictree.nodes import ops, control, base, hole
+#from logictree.nodes import LogicNode, LogicVar, LogicConst, LogicOp, LogicHole, NotOp, CaseStatement, CaseItem, LogicAssign
+
+from logictree.utils.display import pretty_print
 import logging
 log = logging.getLogger(__name__)
 AssignStmtCtxtClass = SystemVerilogSubsetParser.Continuous_assignContext
 IfStmtCtxtClass = SystemVerilogSubsetParser.If_statementContext
 Expression_listCtxClass = SystemVerilogSubsetParser.Expression_listContext
-LOGIC_NODE_TYPES = (LogicHole, LogicVar, LogicConst, LogicOp, NotOp)
 
 class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
     def __init__(self):
@@ -43,14 +45,14 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
         return stmt
     
         def lower_stmt(self, stmt):
-            if isinstance(stmt, LogicNode):
+            if isinstance(stmt, base.LogicTreeNode):
                 return stmt
     
             if stmt["type"] == "if":
                 cond = stmt["cond"]
                 then_branch = self.lower_stmt(stmt["then"])
                 else_branch = self.lower_stmt(stmt["else"])
-                return LogicOp("MUX", [cond, then_branch, else_branch])
+                return ops.LogicOp("MUX", [cond, then_branch, else_branch])
     
             raise ValueError(f"Unsupported statement type: {stmt}")
         
@@ -166,7 +168,7 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
         elif ctx.case_statement():
             log.debug("visitStatement case_statement")
             case_node = self.visit(ctx.case_statement())
-            if isinstance(case_node, CaseStatement):
+            if isinstance(case_node, control.CaseStatement):
                 # Extract LHS from teh first case item (assumes consistemnt assignment target)
                 lhs = case_node.items[0].body.lhs
                 self.signal_map[lhs] = case_node
@@ -181,7 +183,7 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
             lhs        = lhs_name
             rhs_expr   = assign_ctx.expression()
             rhs_tree   = self.visit(rhs_expr)
-            assign_node  = LogicAssign(lhs=lhs, rhs=rhs_tree)
+            assign_node  = control.LogicAssign(lhs=lhs, rhs=rhs_tree)
             self.signal_map[lhs] = rhs_tree
             ##self.signal_map[lhs] = assign_node
             #log.info(f"[statement assign] {lhs} = {rhs_tree}")
@@ -194,7 +196,7 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
             return self.visit(ctx.expression())
         else:
             log.warning(f"Error unknown statement context: {type(ctx)}")
-            #return LogicHole("unhandled_stmt")
+            #return hole.LogicHole("unhandled_stmt")
             return None, None
 
     def visitBlocking_assignment(self, ctx):
@@ -214,27 +216,27 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
         else_stmt_ctx = ctx.statement(1) if ctx.ELSE() else None
     
         then_result = self.visit(then_stmt_ctx)
-        if not isinstance(then_result, LogicAssign):
+        if not isinstance(then_result, control.LogicAssign):
             raise TypeError(f"Expected LogicAssign from then-branch, got {type(then_result)}")
         lhs_then = then_result.lhs
         then_tree = then_result.rhs
     
         if else_stmt_ctx:
             else_result = self.visit(else_stmt_ctx)
-            if not isinstance(else_result, LogicAssign):
+            if not isinstance(else_result, control.LogicAssign):
                 raise TypeError(f"Expected LogicAssign from else-branch, got {type(else_result)}")
             lhs_else = else_result.lhs
             else_tree = else_result.rhs
         else:
             lhs_else = lhs_then
-            else_tree = LogicConst(0)
+            else_tree = ops.LogicConst(0)
     
         if lhs_then != lhs_else:
             raise NotImplementedError("Mismatched lhs in if/else assignment")
     
-        mux_tree = LogicOp("MUX", [cond_tree, then_tree, else_tree])
+        mux_tree = ops.LogicOp("MUX", [cond_tree, then_tree, else_tree])
         self.signal_map[lhs_then] = mux_tree
-        return LogicAssign(lhs_then, mux_tree)
+        return control.LogicAssign(lhs_then, mux_tree)
 
 #    def visitIf_statement(self, ctx):
 #        log.debug("DEBUG: visitIf_statement()")
@@ -262,7 +264,7 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
 #            log.warning(f"WARNING: could not extract identifier from context: {type(ctx)}")
 #            return None
 #    
-#        tree = LogicOp("IF", [cond_tree, then_tree, else_tree])
+#        tree = ops.LogicOp("IF", [cond_tree, then_tree, else_tree])
 #        self.signal_map[lhs] = tree
 #        log.debug(f"[if tree assign] {lhs} = {tree}")
 #        return lhs, tree
@@ -298,8 +300,8 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
         switch_expr_ctx = ctx.expression()
         switch_tree = self.visit(switch_expr_ctx)
     
-        # Create a CaseStatement LogicNode wrapper
-        case_node = CaseStatement(selector=switch_tree, items=[])
+        # Create a CaseStatement LogicTreeNode wrapper
+        case_node = control.CaseStatement(selector=switch_tree, items=[])
     
         for item_ctx in ctx.case_item():
             if item_ctx.DEFAULT():
@@ -310,7 +312,7 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
             stmt_ctx = item_ctx.statement()
             stmt_tree = self.visit(stmt_ctx)
     
-            case_item = CaseItem(labels=label_exprs, body=stmt_tree)
+            case_item = control.CaseItem(labels=label_exprs, body=stmt_tree)
             case_node.items.append(case_item)
     
         # Store CaseStatement in a temporary logic tree hole (for now)
@@ -321,7 +323,7 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
         if ctx.getChildCount() == 1:
             if ctx.identifier():
                 print(f"[DEBUG] visitExpression -> LogicVar: {ctx.getText()}")
-                return LogicVar(ctx.getText())
+                return ops.LogicVar(ctx.getText())
             if ctx.literal():
                 const = self.visitLiteral(ctx.literal())
                 print(f"[DEBUG] visitExpression -> Const: {const}")
@@ -333,7 +335,7 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
             print(f"[DEBUG] Unary op '{op}' on {rhs}")
             if op == '~':
                 print(f"DEBUG: visitExpression() self.name: {self.name}, rhs: {rhs}")
-                return LogicOp("NOT", [rhs])
+                return ops.LogicOp("NOT", [rhs])
 
         elif ctx.getChildCount() == 3:
             lhs = self.visit(ctx.getChild(0))
@@ -341,19 +343,19 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
             rhs = self.visit(ctx.getChild(2))
             print(f"[DEBUG] Binary '{op}': lhs={lhs}, rhs={rhs}")
 
-            if op == '&': return LogicOp("AND", [lhs, rhs])
-            if op == '|': return LogicOp("OR", [lhs, rhs])
-            if op == '^': return LogicOp("XOR", [lhs, rhs])
-            if op == '~^': return LogicOp("XNOR", [lhs, rhs])
+            if op == '&':  return ops.LogicOp("AND", [lhs, rhs])
+            if op == '|':  return ops.LogicOp("OR", [lhs, rhs])
+            if op == '^':  return ops.LogicOp("XOR", [lhs, rhs])
+            if op == '~^': return ops.LogicOp("XNOR", [lhs, rhs])
             if op == '==':
                 if isinstance(rhs, list):
                     print(f"[DEBUG] Expanding bitvector comparison: {lhs} == {rhs}")
-                    return LogicOp("AND", [
-                        LogicOp("XNOR", [LogicVar(f"{lhs.name}_{i}"), LogicConst(bit)])
+                    return ops.LogicOp("AND", [
+                        ops.LogicOp("XNOR", [ops.LogicVar(f"{lhs.name}_{i}"), ops.LogicConst(bit)])
                         for i, bit in enumerate(rhs)
                     ])
                 else:
-                    return LogicOp("XNOR", [lhs, rhs])
+                    return ops.LogicOp("XNOR", [lhs, rhs])
 
         elif ctx.getChildCount() == 3 and ctx.getChild(0).getText() == '(':
             print("[DEBUG] Parenthesized expression")
@@ -364,42 +366,42 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
     def visitLogicalNotExpr(self, ctx):
         print("visitLogicalNotExpr")
         expr = self.visit(ctx.expression())
-        return LogicOp("NOT", [expr])
+        return ops.LogicOp("NOT", [expr])
 
     def visitBitwiseNotExpr(self, ctx):
         print("visitBitwiseNotExpr")
         expr = self.visit(ctx.expression())
-        return LogicOp("NOT", [expr])  # or differentiate if needed
+        return ops.LogicOp("NOT", [expr])  # or differentiate if needed
 
     def visitNegateExpr(self, ctx):
         print("visitNegateExpr")
         expr = self.visit(ctx.expression())
         # Treat -a as NOT(a) for logic, or raise NotImplementedError if arithmetic
-        return LogicOp("NOT", [expr])
+        return ops.LogicOp("NOT", [expr])
 
     def visitAndExpr(self, ctx):
         print("visitAndExpr")
         lhs = self.visit(ctx.expression(0))
         rhs = self.visit(ctx.expression(1))
-        return LogicOp("AND", [lhs, rhs])
+        return ops.LogicOp("AND", [lhs, rhs])
 
     def visitOrExpr(self, ctx):
         print("visitOrExpr")
         lhs = self.visit(ctx.expression(0))
         rhs = self.visit(ctx.expression(1))
-        return LogicOp("OR", [lhs, rhs])
+        return ops.LogicOp("OR", [lhs, rhs])
 
     def visitXorExpr(self, ctx):
         print("visitXorExpr")
         lhs = self.visit(ctx.expression(0))
         rhs = self.visit(ctx.expression(1))
-        return LogicOp("XOR", [lhs, rhs])
+        return ops.LogicOp("XOR", [lhs, rhs])
 
     def visitXnorExpr(self, ctx):
         print("visitXnorExpr")
         lhs = self.visit(ctx.expression(0))
         rhs = self.visit(ctx.expression(1))
-        return LogicOp("XNOR", [lhs, rhs])
+        return ops.LogicOp("XNOR", [lhs, rhs])
 
     def visitEqExpr(self, ctx):
         lhs = self.visit(ctx.expression(0))
@@ -409,7 +411,7 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
 
 
         # Case 1: Bitvector comparison against a constant like 7'b0110011
-        #if isinstance(rhs, LogicConst) and isinstance(lhs, LogicHole):
+        #if isinstance(rhs, ops.LogicConst) and isinstance(lhs, LogicHole):
         if isinstance(rhs, list):
             log.debug("visitEqExpr Found a bitvector comparison agains constant")
             # Try to parse bitvector pattern from the original token
@@ -426,8 +428,8 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
                     xnor_terms = []
                     for i, bit_char in enumerate(bits[::-1]):  # LSB first
                         bit_val = 1 if bit_char in ('1', 'x') else 0  # 'x' gets mapped to 1 for analysis
-                        var = LogicVar(f"{lhs.name}_{i}")
-                        xnor = LogicOp("XNOR", [var, LogicConst(bit_val)])
+                        var = ops.LogicVar(f"{lhs.name}_{i}")
+                        xnor = ops.LogicOp("XNOR", [var, ops.LogicConst(bit_val)])
                         xnor_terms.append(xnor)
 
                     if len(xnor_terms) == 1:
@@ -442,7 +444,7 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
                     raise e
 
         # Case 2: Simple variable == variable or constant
-        return LogicOp("XNOR", [lhs, rhs])
+        return ops.LogicOp("XNOR", [lhs, rhs])
 
     def visitParenExpr(self, ctx):
         log.info("isitParenExpr with: %s", ctx.getText())
@@ -456,9 +458,9 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
             bits = text.split("'")[1][1:]
             #bits = [int(b) for b in raw.split("'")[1][1:]]
             return [int(b) for b in bits]
-            #return LogicConst(bits)  # for == bitvector case
+            #return ops.LogicConst(bits)  # for == bitvector case
         else:
-            return LogicConst(int(raw))
+            return ops.LogicConst(int(raw))
 
     def visitConstExpr(self, ctx):
         log.info("visitConstExpr with: %s", ctx.getText())
@@ -478,12 +480,12 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
                     raise NotImplementedError(f"Base '{base}' not supported")
             except Exception as e:
                 print(f"Failed to parse bitvector constant: {text} with error: {e}")
-                return LogicHole(text)
+                return hole.LogicHole(text)
         else:
             # Just a number like `1` or `0`
-            return LogicConst(int(text))
+            return ops.LogicConst(int(text))
 
     def visitIdExpr(self, ctx):
         log.info("visitIdExpr with: %s", ctx.getText())
-        return LogicVar(ctx.getText())
+        return ops.LogicVar(ctx.getText())
 
