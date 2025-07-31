@@ -8,6 +8,33 @@ class LogicConst(LogicTreeNode):
         self.value = value
 
     @property
+    def delay(self):
+        return 0
+
+    @property
+    def expr_source(self):
+        return None
+
+    @property
+    def label(self) -> str:
+        #return str(int(self.value))
+        # Recursively unwrap if self.value is another LogicConst
+        val = self.value
+        while isinstance(val, LogicConst):
+            val = val.value
+        return str(val)
+
+    def to_json_dict(self):
+        return {
+            "type": self.__class__.__name__,
+            "label": self.label,
+            "depth": self.depth,
+            "delay": self.delay,
+            "expr_source": self.expr_source,
+            "children": [child.to_json_dict() for child in self.children],
+        }
+
+    @property
     def children(self):
         return  []
     
@@ -23,6 +50,7 @@ class LogicConst(LogicTreeNode):
     def inputs(self) -> set[str]:
         return self.collect_input_names()
 
+    @property
     def depth(self):
         return 0
 
@@ -47,6 +75,28 @@ class LogicConst(LogicTreeNode):
 class LogicVar(LogicTreeNode):
     def __init__(self, name):
         self.name = name
+
+    @property
+    def expr_source(self):
+        return None
+
+    @property
+    def delay(self):
+        return 0
+
+    @property
+    def label(self) -> str:
+        return self.name
+
+    def to_json_dict(self):
+        return {
+            "type": self.__class__.__name__,
+            "label": self.label,
+            "depth": self.depth,
+            "delay": self.delay,
+            "expr_source": self.expr_source,
+            "children": [child.to_json_dict() for child in self.children],
+        }
         
     @property
     def children(self):
@@ -64,6 +114,7 @@ class LogicVar(LogicTreeNode):
     def inputs(self) -> set[str]:
         return self.collect_input_names()
 
+    @property
     def depth(self):
         return 0
 
@@ -87,7 +138,7 @@ class LogicVar(LogicTreeNode):
 
 class LogicOp(LogicTreeNode):
     def __init__(self, op, operands):
-        assert op in GATE_TYPES
+        assert op in GATE_TYPES, f"Unsupported LogicOp: {op}"
         assert isinstance(op, str)
         self.name = op
         self.op = op
@@ -96,6 +147,28 @@ class LogicOp(LogicTreeNode):
                 inp if isinstance(inp, LogicTreeNode) else LogicHole(f"input_{i}")
                 for i, inp in enumerate(operands)
         ]
+
+    @property
+    def expr_source(self):
+        return None
+
+    @property
+    def delay(self):
+        return 0
+
+    @property
+    def label(self) -> str:
+        return str(self.op)
+
+    def to_json_dict(self):
+        return {
+            "type": self.__class__.__name__,
+            "label": self.label,
+            "depth": self.depth,
+            "delay": self.delay,
+            "expr_source": self.expr_source,
+            "children": [child.to_json_dict() for child in self.children],
+        }
 
     def equals(self, other):
         if not isinstance(other, LogicOp):
@@ -149,8 +222,11 @@ class LogicOp(LogicTreeNode):
     def inputs(self) -> set[str]:
         return self.collect_input_names()
 
+    @property 
     def depth(self):
-        return 1 + max(inp.depth() for inp in self.children)
+        if not self.children:
+            return 0
+        return 1 + max(inp.depth for inp in self.children)
 
     def to_verilog(self):
         if self.name == "NOT":

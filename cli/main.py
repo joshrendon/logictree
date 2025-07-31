@@ -14,15 +14,6 @@ from logictree.utils.display import (
 )
 from logictree.utils.reduce import balanced_tree_reduce
 from logictree.utils.analysis import get_logic_hash, explain_logic_hash 
-#from logictree.utils import (
-#    balanced_tree_reduce,
-#    get_logic_hash,
-#    explain_logic_hash,
-#    explain_expr_tree,
-#    #to_sympy_expr,
-#    #pretty_print,
-#    #to_dot
-#)
 from logictree.utils.analysis import gate_summary, gate_count
 from logictree.utils.repair import repair_tree_inputs
 from logictree.nodes import ops, control, base
@@ -31,6 +22,7 @@ from utils.utils_cli import write_golden_file
 from utils.ascii_tree import logic_tree_to_ascii, to_ascii
 import json
 from pprint import pprint
+import copy
 
 log = logging.getLogger(__name__)
 
@@ -47,6 +39,7 @@ def lower_sv_ast_to_signal_map(tree):
 
 def handle_output(signal_map, args):
     for name, tree in signal_map.items():
+
         if args.debug_log:
             logging.basicConfig(level=logging.DEBUG,
                                 format="%(levelname)s:%(name)s: %(message)s")
@@ -110,6 +103,7 @@ def handle_output(signal_map, args):
             from utils_cli import check_against_golden
             check_against_golden(name, tree)
 
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("filename", help="SystemVerilog source file")
@@ -129,6 +123,7 @@ def main():
     parser.add_argument("-log", 
                         "--loglevel", default="warning", help="Provide loging level. Example --loglevel debug, default=warning")
     parser.add_argument("--show_sympy", action="store_true", help="Show Sympy expression logic")
+    parser.add_argument("--explore", action="store_true", help="Launch GUI to explore LogicTree")
     args = parser.parse_args()
 
     logging.basicConfig(level=args.loglevel.upper())
@@ -136,18 +131,39 @@ def main():
     ast = parse_sv_file(args.filename)
     signal_map = lower_sv_ast_to_signal_map(ast)
 
-    # Optional lowering transformations
-    if args.case_to_if:
-        from logictree.transforms import case_to_if_tree
-        #signal_map = {k: case_to_if_tree(v) for k, v in signal_map.items()}
-        case_to_if_tree(signal_map)
+    for name in signal_map:
+        tree = signal_map[name]
 
-    if args.if_to_mux:
-        from logictree.transforms import if_tree_to_mux_tree
-        #signal_map = {k: if_tree_to_mux_tree(v) for k, v in signal_map.items()}
-        if_tree_to_mux_tree(signal_map)
+        if args.explore:
+            from gui.explorer_server import launch_explorer
+            from logictree.transforms import case_to_if_tree
+            original_tree   = tree.clone()
+            simplified_tree = original_tree
+
+            if args.case_to_if:
+                simplified_tree = case_to_if_tree(simplified_tree)
+            #if args.if_to_mux:
+            #    from logictree.transforms import if_tree_to_mux_tree
+            #    simplified_tree = if_tree_to_mux_tree(simplified_tree)
+            simplified_tree = simplified_tree.simplify()
+            #assert type(logic_tree_simplified).__name__ != "CaseStatement", "Simplify failed!"
+            print("Launching Explorer:")
+            #print(f"About to launch explorer with {name} tree:\n{tree}")
+            #launch_explorer(
+            #        logic_tree_original = original_signal_map[name],
+            #        logic_tree_simplified = original_signal_map[name].simplify(),
+            #        tree_name_input=name)
+            launch_explorer(
+                    logic_tree_original = original_tree,
+                    logic_tree_simplified = simplified_tree,
+                    tree_name_input=name)
+            return
+
+            ## Optional lowering transformations
+
     
-    handle_output(signal_map, args)
+
+    #handle_output(signal_map, args)
 
 if __name__ == "__main__":
     main()

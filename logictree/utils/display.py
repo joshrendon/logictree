@@ -1,5 +1,5 @@
 from logictree.nodes import ops, control, base, hole
-#from logictree.nodes import LogicOp, LogicVar, LogicConst, LogicHole, LogicNode, CaseStatement, CaseItem, IfStatement, LogicAssign
+from logictree.utils.formating import indent
 import hashlib
 import itertools
 import re
@@ -207,8 +207,4 @@ def explain_expr_tree(tree):
         return "1" if tree.value else "0"
     else:
         return f"{tree}"
-
-def indent(text, spaces):
-    pad = " " * spaces
-    return "\n".join(pad + line for line in text.splitlines())
 
