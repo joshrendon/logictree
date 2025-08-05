@@ -21,25 +21,22 @@ class CaseItem(LogicTreeNode):
     default: bool = False
 
     def __repr__(self):
-        print("[DEBUG] CaseItem __repr__ called with labels:", self.labels)
+        log.debug("CaseItem __repr__ called with labels: %s", self.labels)
         return f"CaseItem(labels={len(self.labels)}, body={type(self.body).__name__})"
 
     def __str__(self):
         label_str = ", ".join(str(l) for l in self.labels)
         return f"CASE_ITEM:\n   labels: {label_str}\n   body:\n      {indent(str(self.body), 6)}"
 
-    @property
     def label(self) -> str:
-        if self.default:
-            return "default"
-        else:
-            label_strs = [str(lbl) for lbl in self.labels]
-            return f"case_item({', '.join(label_strs)})"
+        if self.labels:
+            return f"case {', '.join([l.label() for l in self.labels])}"
+        return "case default"
 
     def to_json_dict(self) -> dict:
         return {
-            "type": "CaseItem",
-            "label": f"case_item({','.join(l.label for l in self.labels)})",
+            "type": self.__class__.__name__,
+            "label": self.label(),
             "children": [self.body.to_json_dict()],
             "delay": getattr(self.body, "delay", 0),
             "depth": getattr(self.body, "depth", 0),
@@ -72,15 +69,14 @@ class CaseStatement(LogicTreeNode):
         super().__init__()
         self.selector = selector
         self.items = items  # List of CaseItem instances
-
-        # Populate children: selector and each item's body
-        #self.children = [selector] + [item.body for item in items]
-
     selector: LogicTreeNode
     items: List[CaseItem]
 
     def children(self):
         return [self.selector] + [item.body for item in self.items]
+
+    def flatten(self):
+        return case_to_if_tree(self).simplify()
 
     def inputs(self):
         inputs = set()
@@ -93,18 +89,13 @@ class CaseStatement(LogicTreeNode):
         case_items_str = "\n".join(indent(str(item), 2) for item in self.items)
         return f"CASE(\n  {str(self.selector)}\n{case_items_str}\n)"
 
-    @property
-    def label(self) -> str:
-        try:
-            return f"case({self.selector.label()})"
-        except Exception:
-            return "case(?)"
-    #    return f"case({self.selector})"
+    def default_label(self):
+        return f"case({self.selector})"
 
     def to_json_dict(self):
         return {
-            "type": "CaseStatement",
-            "label": f"case({self.selector.label})",
+            "type": self.__class__.__name__,
+            "label": self.label(),
             "selector": self.selector.to_json_dict(),
             "children": [item.to_json_dict() for item in self.items],
             "depth": self.depth,

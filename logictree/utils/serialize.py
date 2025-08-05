@@ -1,9 +1,13 @@
 from logictree.nodes.control.assign import LogicAssign
 from logictree.nodes.control.ifstatement import IfStatement
 import json
+import logging
+log = logging.getLogger(__name__)
 
 def logic_tree_to_json(tree):
     def safe_label(x):
+        if x is None:
+            return None
         label_attr = getattr(x, "label", None)
         if callable(label_attr):
             return label_attr()
@@ -15,10 +19,36 @@ def logic_tree_to_json(tree):
 
         # Handle CaseStatement specially
         if node_type == "IfStatement":
-            if getattr(node, "_is_else_if", False):
-                label = f"else if({safe_label(node.condition)})"
-            else:
-                label = f"if({safe_label(node.condition)})"
+            children = []
+        
+            if node.then_branch:
+                children.append({
+                    "type": "ThenBranch",
+                    "label": "then",
+                    "children": [serialize_node(node.then_branch)]
+                })
+        
+            if node.else_branch:
+                children.append({
+                    "type": "ElseBranch",
+                    "label": "else",
+                    "children": [serialize_node(node.else_branch)]
+                })
+        
+            return {
+                "type": "IfStatement",
+                "label": node.label(),
+                "depth": getattr(node, "depth", None),
+                "delay": getattr(node, "delay", None),
+                "expr_source": getattr(node, "expr_source", None),
+                "children": children
+            }
+            #if getattr(node, "_is_else_if", False):
+            #    #label = f"else if({safe_label(node.condition)})"
+            #    label = f"else if({safe_label(node.cond)})"
+            #else:
+            #    label = f"if({safe_label(node.cond)})"
+            label = node.label()
 
         elif node_type == "FlattenedIfStatement":
             children = []
@@ -48,7 +78,7 @@ def logic_tree_to_json(tree):
         
             return {
                 "type": node_type,
-                "label": label,
+                "label": label(),
                 "depth": getattr(node, "depth", None),
                 "delay": getattr(node, "delay", None),
                 "expr_source": getattr(node, "expr_source", None),
@@ -93,30 +123,33 @@ def logic_tree_to_json(tree):
                 "expr_source": getattr(node, "expr_source", None),
                 "children": [serialize_node(node.rhs)] if node.rhs else [],
             }
-        elif isinstance(node, IfStatement):
-            label = node.label()
+        else:
+            # Fallback for any node type not handled explicitly
+            label = safe_label(node)
+            #if child is None:
+            #    log.warning(f"serialize_node got None child for parent node_type={node_type} label={label}")
 
-        # Default fallback
-        return {
-            "type": node_type,
-            "label": label,
-            "depth": getattr(node, "depth", None),
-            "delay": getattr(node, "delay", None),
-            "expr_source": getattr(node, "expr_source", None),
-            "children": [
-                serialize_node(child)
-                for child in getattr(node, "children", [])
-                if child is not None
-            ]
-        }
+        
+            return {
+                "type": node_type,
+                "label": node.label(),
+                "depth": getattr(node, "depth", None),
+                "delay": getattr(node, "delay", None),
+                "expr_source": getattr(node, "expr_source", None),
+                "children": [
+                    serialize_node(child)
+                    for child in getattr(node, "children", [])
+                    if child is not None
+                ]
+            }
 
     json_data = serialize_node(tree)
 
     # Debug print for verification
     try:
-        print("Serialize JSON:", json.dumps(json_data, indent=2))
+        log.info("Serialize JSON: %s", json.dumps(json_data, indent=2))
     except TypeError as e:
-        print("JSON serialization failed:", e)
-        print("Offending object (raw):", json_data)
+        log.info("JSON serialization failed: %s", e)
+        log.info("Offending object (raw): %s", json_data)
 
     return json_data

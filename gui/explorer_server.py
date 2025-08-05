@@ -1,10 +1,12 @@
 from flask import Flask, render_template, jsonify, request, current_app
 import threading
 import webbrowser
+import logging
 
 app = Flask(__name__)
 logic_tree_data = None
 tree_name = "LogicTree"
+log = logging.getLogger(__name__)
 
 @app.route("/")
 def index():
@@ -16,50 +18,39 @@ def api_tree():
     current_tree = app.config.get(f"logic_tree_{view}")
     if current_tree is None:
         return jsonify({"error": f"No tree found for view: {view}"}), 404
-    print(f"DEBUG Tree for view '{view}: {current_tree}")
+    log.debug(f" Tree for view '{view}: {current_tree}")
     current_app.logger.info(f"Serving logic tree view: {view}")
     from logictree.utils.serialize import logic_tree_to_json
     #return jsonify(current_tree.to_json_dict())
+    log.debug(f"[Explorer] Serializing node id={id(current_tree)} label={current_tree.label()}")
     return jsonify(logic_tree_to_json(current_tree))
 
-#def launch_explorer(logic_tree_original, logic_tree_simplified, tree_name_input="LogicTree"):
-#    from logictree.utils.serialize import logic_tree_to_json
-#    global logic_tree_data, tree_name
-#    tree_name = tree_name_input
-#    print("[Explorer] Original tree root label:", logic_tree_original.label)
-#    print(f"[Explorer] Original id: {id(logic_tree_original)}")
-#    print(f"[Explorer] simplifed id: {id(logic_tree_simplified)}")
-#    print("[Explorer] Original tree:", logic_tree_original)
-#    print("[Explorer] Simplified tree:", logic_tree_simplified)
-#    app.config["logic_tree_original"]   = logic_tree_original
-#    app.config["logic_tree_simplified"] = logic_tree_simplified
-#    app.config["tree_name_input"] = tree_name_input
-#    logic_tree_data = logic_tree_to_json(logic_tree_original)
-#    threading.Timer(1.0, lambda: webbrowser.open("http://localhost:5000")).start()
-#    app.run(debug=False)
-def launch_explorer(logic_tree_original, logic_tree_simplified, tree_name_input="LogicTree"):
+import copy
+from logictree.transforms import case_to_if_tree  # or wherever it lives
+
+def launch_explorer(logic_tree_original, tree_name_input="LogicTree"):
     from logictree.utils.serialize import logic_tree_to_json
     global logic_tree_data_original, logic_tree_data_simplified, tree_name
 
     tree_name = tree_name_input
 
-    print("[Explorer] Original tree root label:", logic_tree_original.label)
-    print(f"[Explorer] Original id: {id(logic_tree_original)}")
-    print(f"[Explorer] Simplified id: {id(logic_tree_simplified)}")
-    print("[Explorer] Original tree:", logic_tree_original)
-    print("[Explorer] Simplified tree:", logic_tree_simplified)
-    print("[Explorer] Simplified tree type:", type(logic_tree_simplified).__name__)
+    log.debug("[Explorer] Original tree root label: %s", logic_tree_original.label())
+    log.debug(f"[Explorer] Original id: {id(logic_tree_original)}")
 
-    # Save raw trees for other endpoints
+    # Store original
     app.config["logic_tree_original"] = logic_tree_original
-    app.config["logic_tree_simplified"] = logic_tree_simplified
-    app.config["tree_name_input"] = tree_name_input
-
-    # Generate and store both trees as JSON
     logic_tree_data_original = logic_tree_to_json(logic_tree_original)
-    logic_tree_data_simplified = logic_tree_to_json(logic_tree_simplified)
-
     app.config["logic_tree_data_original"] = logic_tree_data_original
+
+    # Now deepcopy and transform after copy
+    logic_tree_copy = copy.deepcopy(logic_tree_original)
+    simplified_tree = logic_tree_copy.flatten()
+
+    log.debug(f"[Explorer] Simplified id: {id(simplified_tree)}")
+    log.debug(f"[Explorer] Simplified tree type: {type(simplified_tree).__name__}")
+
+    app.config["logic_tree_simplified"] = simplified_tree
+    logic_tree_data_simplified = logic_tree_to_json(simplified_tree)
     app.config["logic_tree_data_simplified"] = logic_tree_data_simplified
 
     threading.Timer(1.0, lambda: webbrowser.open("http://localhost:5000")).start()

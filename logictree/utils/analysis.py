@@ -1,13 +1,13 @@
 from logictree.nodes.base import LogicTreeNode
 from logictree.nodes.ops import LogicOp
 from logictree.nodes.types import GATE_TYPES
-import hashlib
 from dd.autoref import BDD
-#from rich.console import Console
-#from rich.text import Text
 from typing import Dict, Tuple, Union, Optional
 from logictree.utils.build import _build_bdd
 from logictree.utils.display import to_symbolic_expr_str, _pretty_print_expr
+import hashlib
+import logging
+log = logging.getLogger(__name__)
 
 def count_gate_type(tree, gate_name):
     if isinstance(tree, LogicOp):
@@ -29,7 +29,7 @@ def get_logic_hash(tree, ordering=None, return_expr=False):
     var_map = {}
     #print(f"TYPE: {type(tree)} MODULE: {type(tree).__module__}")
     inputs = sorted(tree.inputs()) if ordering is None else ordering
-    print("Collected inputs:", tree.inputs)
+    log.info("Collected inputs: %s", tree.inputs)
     for var in inputs:
         bdd.declare(var)
     node = _build_bdd(tree, bdd, var_map)
@@ -53,5 +53,5 @@ def explain_logic_hash(tree, ordering=None):
     expr_str = str(bdd.to_expr(node))
     hash_str = hashlib.sha256(expr_str.encode('utf-8')).hexdigest()
     _pretty_print_expr(expr_str)
-    print("\nSHA256 Logic Hash:\n", hash_str)
+    log.info("\nSHA256 Logic Hash:\n:%s", hash_str)
     return expr_str, hash_str

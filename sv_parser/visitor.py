@@ -1,9 +1,9 @@
-# Visitor for AST
 from logictree.nodes import ops, control, base, hole
-#from logictree.nodes.ops import LogicOp, LogicHole, LogicConst, LogicHole, NotOp, LogicVar
 from sv_parser.SystemVerilogSubsetVisitor import SystemVerilogSubsetVisitor
 from sv_parser.SystemVerilogSubsetParser import *
-AssignStmtCtxtClass = SystemVerilogSubsetParser.Continuous_assignContext
+import logging
+log = logging.getLogger(__name__)
+Continuous_assignCtxtClass = SystemVerilogSubsetParser.Continuous_assignContext
 IfStmtCtxtClass = SystemVerilogSubsetParser.If_statementContext
 IdExprCtxtClass = SystemVerilogSubsetParser.IdExprContext
 EqExprCtxtClass = SystemVerilogSubsetParser.EqExprContext
@@ -37,11 +37,11 @@ def lower_expr_to_logic_tree(expr):
     elif isinstance(expr, Number):
         return ops.LogicConst(str(expr.value))
     else:
-        print(f"[lower_expr_to_logic_tree] Unhandled: {expr}")
+        log.info(f"[lower_expr_to_logic_tree] Unhandled: {expr}")
         return hole.LogicHole("unhandled_expr")
 
 def lower_stmt_to_logic_tree(stmt):
-    if isinstance(stmt, AssignStmtCtxtClass):
+    if isinstance(stmt, Continuous_assignCtxtClass):
         return lower_expr_to_logic_tree(stmt.source)
     elif isinstance(stmt, IfStmtCtxtClass):
         cond = lower_expr_to_logic_tree(stmt.condition)
@@ -94,8 +94,8 @@ def lower_stmt_to_logic_tree(stmt):
         expr = lower_stmt_to_logic_tree(stmt.expression())
         return ops.LogicOp("NOT", [expr])
     else:
-        print("DEBUG lower_stmt_to_logic_tree() class of stmt:", type(stmt).__name__)
-        print(f"WARNING! [lower_stmt_to_logic_tree] Unhandled: {stmt.getText()}")
+        log.debug(" lower_stmt_to_logic_tree() class of stmt:", type(stmt).__name__)
+        log.warning(f" [lower_stmt_to_logic_tree] Unhandled: {stmt.getText()}")
         return hole.LogicHole("unhandled_stmt")
 
 def flatten_stmt(stmt):
@@ -107,8 +107,8 @@ def flatten_stmt(stmt):
 def simplify_xnor(lhs, rhs):
     """Simplify an XNOR expression if possible."""
 
-    print("DEBUG: simplify_xnor() lhs:", lhs)
-    print("DEBUG: simplify_xnor() rhs:", rhs)
+    log.debug(" simplify_xnor() lhs:", lhs)
+    log.debug("simplify_xnor() rhs:", rhs)
 
     # Case: XNOR(x, 1) => x
     # Case: XNOR(x, 0) => NOT(x)
@@ -136,7 +136,7 @@ class ASTBuilder(SystemVerilogSubsetVisitor):
         ports = []
         items = []
     
-        print("Visiting module:", module_name)
+        log.info("Visiting module:", module_name)
 
         for item in ctx.module_item():
             result = self.visit(item)
@@ -171,7 +171,7 @@ class ASTBuilder(SystemVerilogSubsetVisitor):
         result = None
     
         for item in reversed(ctx.case_item()):
-            print("DEBUG: visitCase_statement() dir(item)", dir(item))
+            log.debug(" visitCase_statement() dir(item)", dir(item))
             case_value_exprs = item.constant_expression()
             case_result_stmt = self.visit(item.statement())
             if case_value_exprs:
@@ -209,28 +209,28 @@ class ASTBuilder(SystemVerilogSubsetVisitor):
         return None
 
     def visitStatement(self, ctx):
-        print("DEBUG: visitStatement() - ctx:", ctx.getText())
-        #print("DEBUG: visitStatement() dir(ctx):", dir(ctx))
-        #print("DEBUG: TREE:\n", ctx.toStringTree(recog=ctx.parser))
+        log.debug(" visitStatement() - ctx:", ctx.getText())
+        #log.debug("DEBUG: visitStatement() dir(ctx):", dir(ctx))
+        #log.debug("DEBUG: TREE:\n", ctx.toStringTree(recog=ctx.parser))
         if ctx.begin_end_block():
-            print("DEBUG: visitStatement begin_end_block")
+            log.debug(" visitStatement begin_end_block")
             return [self.visit(s) for s in ctx.begin_end_block().statement()]
         elif ctx.ifStatement():
-            print("DEBUG: visitStatement ifStatement")
+            log.debug(" visitStatement ifStatement")
             return self.visit(ctx.ifStatement())
         elif ctx.case_statement():
-            print("DEBUG: visitStatement case_statement")
+            log.debug(" visitStatement case_statement")
             return self.visit(ctx.case_statement())
         elif ctx.getChildCount() >= 2 and ctx.getChild(0).getText() == "begin":
-            print("DEBUG: visitStatement begin end block")
+            log.debug(" visitStatement begin end block")
             # This is a begin-end block -> collect inner statements
             return [self.visit(stmt) for stmt in ctx.statement()]
         elif ctx.expression():
-            print("DEBUG: visitStatement expression:", ctx.expression().getText())
+            log.debug(" visitStatement expression:", ctx.expression().getText())
             # Might be an assignment statement
             return self.visit(ctx.expression())
         else:
-            print("Error Unhandled statement:\n", ctx.getText())
+            log.error("ERROR Unhandled statement:\n", ctx.getText())
             return None
 
     def visitContinuous_assign(self, ctx):
@@ -243,17 +243,17 @@ class ASTBuilder(SystemVerilogSubsetVisitor):
         }
     
     def visitIf_statement(self, ctx):
-        print("DEBUG: visitIf_statement()")
+        log.debug(" visitIf_statement()")
         cond_expr_ctx = ctx.expression()
         then_stmt_ctx = ctx.statement(0)
-        print("Condition:",   cond_expr_ctx.getText())
-        print("Then branch:", then_stmt_ctx.getText())
+        log.debug("Condition:",   cond_expr_ctx.getText())
+        log.debug("Then branch:", then_stmt_ctx.getText())
         else_stmt_ctx = ctx.statement(1) if ctx.ELSE() else None
-        print("Else exists:", else_stmt_ctx.getText())
-        print("else_stmt_ctx:", else_stmt_ctx.toStringTree(recog=ctx.parser))
+        log.debug("Else exists:", else_stmt_ctx.getText())
+        log.debug("else_stmt_ctx:", else_stmt_ctx.toStringTree(recog=ctx.parser))
 
         if ctx.ELSE():
-            print("Else exists:", else_stmt_ctx.getText())
+            log.debug("Else exists:", else_stmt_ctx.getText())
 
         cond_expr = self.visit(cond_expr_ctx)
         then_stmt = flatten_stmt(self.visit(then_stmt_ctx))
@@ -270,75 +270,70 @@ class ASTBuilder(SystemVerilogSubsetVisitor):
         left  = self.visit(ctx.expression(0))
         right = self.visit(ctx.expression(0))
         if left is None or right is None:
-            print("DEBUG: visitAndExpr with", ctx.getText())
+            log.debug(" visitAndExpr with", ctx.getText())
         #return BinaryOp('AND', left, right)
         return ops.LogicOp('AND', [left, right])
 
     def visitOrExpr(self, ctx):
-        print("DEBUG: visitOrExpr with", ctx.getText())
+        log.debug(" visitOrExpr with", ctx.getText())
         #return BinaryOp('OR', self.visit(ctx.expression(0)), self.visit(ctx.expression(1)))
         return ops.LogicOp('OR', [self.visit(ctx.expression(0)), self.visit(ctx.expression(1))])
 
     def visitXorExpr(self, ctx):
-        print("DEBUG: visitXOrExpr with", ctx.getText())
+        log.debug(" visitXOrExpr with", ctx.getText())
         #return BinaryOp('XOR', self.visit(ctx.expression(0)), self.visit(ctx.expression(1)))
         return ops.LogicOp('XOR', [self.visit(ctx.expression(0)), self.visit(ctx.expression(1))])
 
     def visitXnorExpr(self, ctx):
-        print("DEBUG: visitXnorExpr with", ctx.getText())
+        log.debug(" visitXnorExpr with", ctx.getText())
         #return BinaryOp('XNOR', self.visit(ctx.expression(0)), self.visit(ctx.expression(1)))
         return ops.LogicOp('XNOR', [self.visit(ctx.expression(0)), self.visit(ctx.expression(1))])
 
     def visitLogicalNotExpr(self, ctx):
-        print("DEBUG: visitLogicalNotExpr with", ctx.getText())
+        log.debug(" visitLogicalNotExpr with", ctx.getText())
         sub = self.visit(ctx.expression())
         if sub is None:
-            print("DEBUG: visitLogicalNotExpr() got None for sub-expression")
+            log.debug(" visitLogicalNotExpr() got None for sub-expression")
         return UnaryOp('NOT', sub)
 
     def visitBitwiseNotExpr(self, ctx):
-        print("DEBUG: visitBitwiseNotExpr with", ctx.getText())
+        log.debug(" visitBitwiseNotExpr with", ctx.getText())
         sub = self.visit(ctx.expression())
         if sub is None:
-            print("DEBUG: visitBitwiseNotExpr() got None for sub-expression")
+            log.debug(" visitBitwiseNotExpr() got None for sub-expression")
         return UnaryOp('NOT', sub)
 
     def visitNegateExpr(self, ctx):
-        print("DEBUG: visitNegateExpr with", ctx.getText())
+        log.debug(" visitNegateExpr with", ctx.getText())
         sub = self.visit(ctx.expression())
         if sub is None:
-            print("DEBUG: visitNegateExpr() got None for sub-expression")
+            log.debug(" visitNegateExpr() got None for sub-expression")
         return UnaryOp('NOT', sub) # or NEGATE if added to gate types
 
     def visitEqExpr(self, ctx):
-        print("DEBUG: visitEqExpr with", ctx.getText())
+        log.debug(" visitEqExpr with", ctx.getText())
         expr0 = self.visit(ctx.expression(0))
         expr1 = self.visit(ctx.expression(1))
-        print("DEBUG: visitEqExpr raw expr0", expr0)
-        print("DEBUG: visitEqExpr raw expr1", expr1)
+        log.debug(" visitEqExpr raw expr0", expr0)
+        log.debug(" visitEqExpr raw expr1", expr1)
 
         #simp_expr0 = simplify_xnor(expr0)
         #simp_expr1 = simplify_xnor(expr1)
-        #print("DEBUG: visitEqExpr simp_expr0", simp_expr0)
-        #print("DEBUG: visitEqExpr simp_expr1", simp_expr1)
         
         simplified = simplify_xnor(expr0, expr1)
 
-        print("DEBUG: simplified XNOR:", simplified)
+        log.debug(" simplified XNOR:", simplified)
         return simplified
-        #return BinaryOp('XNOR', simp_expr0, simp_expr1)
 
     def visitParenExpr(self, ctx):
-        print("DEBUG: visitParenExpr with", ctx.getText())
+        log.debug(" visitParenExpr with", ctx.getText())
         return self.visit(ctx.expression())
 
     def visitConstExpr(self, ctx):
-        print("DEBUG: visitConstExpr with", ctx.getText())
+        log.debug(" visitConstExpr with", ctx.getText())
         return hole.LogicHole(ctx.getText())
 
     def visitIdExpr(self, ctx):
-        print("DEBUG: visitIdExpr with", ctx.getText())
+        log.debug(" visitIdExpr with", ctx.getText())
         return hole.LogicHole(ctx.getText())
-
-
 

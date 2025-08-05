@@ -2,9 +2,12 @@ from logictree.nodes.base import LogicTreeNode
 from typing import List, Union
 from logictree.utils.display import indent
 from logictree.nodes.types import GATE_TYPES, COMMUTATIVE_OPS
+import logging
+log = logging.getLogger(__name__)
 
 class LogicConst(LogicTreeNode):
     def __init__(self, value):
+        super().__init__()
         self.value = value
 
     @property
@@ -15,19 +18,13 @@ class LogicConst(LogicTreeNode):
     def expr_source(self):
         return None
 
-    @property
-    def label(self) -> str:
-        #return str(int(self.value))
-        # Recursively unwrap if self.value is another LogicConst
-        val = self.value
-        while isinstance(val, LogicConst):
-            val = val.value
-        return str(val)
+    def default_label(self):
+        return str(self.value)
 
     def to_json_dict(self):
         return {
             "type": self.__class__.__name__,
-            "label": self.label,
+            "label": self.label(),
             "depth": self.depth,
             "delay": self.delay,
             "expr_source": self.expr_source,
@@ -74,6 +71,7 @@ class LogicConst(LogicTreeNode):
 
 class LogicVar(LogicTreeNode):
     def __init__(self, name):
+        super().__init__()
         self.name = name
 
     @property
@@ -84,14 +82,16 @@ class LogicVar(LogicTreeNode):
     def delay(self):
         return 0
 
-    @property
-    def label(self) -> str:
+    #def label(self):
+    #    return self.name
+
+    def default_label(self):
         return self.name
 
     def to_json_dict(self):
         return {
             "type": self.__class__.__name__,
-            "label": self.label,
+            "label": self.label(),
             "depth": self.depth,
             "delay": self.delay,
             "expr_source": self.expr_source,
@@ -138,6 +138,7 @@ class LogicVar(LogicTreeNode):
 
 class LogicOp(LogicTreeNode):
     def __init__(self, op, operands):
+        super().__init__()
         assert op in GATE_TYPES, f"Unsupported LogicOp: {op}"
         assert isinstance(op, str)
         self.name = op
@@ -148,6 +149,9 @@ class LogicOp(LogicTreeNode):
                 for i, inp in enumerate(operands)
         ]
 
+    def __del__(self):
+        log.info(f"[GC] LogicOp deleted: {self}")
+    
     @property
     def expr_source(self):
         return None
@@ -156,14 +160,16 @@ class LogicOp(LogicTreeNode):
     def delay(self):
         return 0
 
-    @property
-    def label(self) -> str:
+    #def label(self):
+    #    return str(self.op)
+
+    def default_label(self):
         return str(self.op)
 
     def to_json_dict(self):
         return {
             "type": self.__class__.__name__,
-            "label": self.label,
+            "label": self.label(),
             "depth": self.depth,
             "delay": self.delay,
             "expr_source": self.expr_source,
@@ -230,7 +236,7 @@ class LogicOp(LogicTreeNode):
 
     def to_verilog(self):
         if self.name == "NOT":
-            print(f"DEBUG: LogicOp::to_verilog() self.children[0]:{self.children[0]}, name: {self.name}")
+            log.debug(f" LogicOp::to_verilog() self.children[0]:{self.children[0]}, name: {self.name}")
             return f"~({self.children[0].to_verilog()})"
         return f"({self.children[0].to_verilog()} {self.name} {self.children[1].to_verilog()})"
 

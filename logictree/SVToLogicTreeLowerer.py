@@ -3,10 +3,7 @@ from sv_parser.SystemVerilogSubsetLexer import SystemVerilogSubsetLexer
 from sv_parser.SystemVerilogSubsetParser import SystemVerilogSubsetParser
 from sv_parser.SystemVerilogSubsetVisitor import SystemVerilogSubsetVisitor
 from sv_parser.visitor import lower_stmt_to_logic_tree
-
 from logictree.nodes import ops, control, base, hole
-#from logictree.nodes import LogicNode, LogicVar, LogicConst, LogicOp, LogicHole, NotOp, CaseStatement, CaseItem, LogicAssign
-
 from logictree.utils.display import pretty_print
 import logging
 log = logging.getLogger(__name__)
@@ -18,6 +15,8 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
     def __init__(self):
         super().__init__()
         self.signal_map = {}
+        self.output_signals = set()
+        self.module_name = None
 
     def collect_signals(self, tree):
         """Traverse the AST and collect logic trees for each assign or procedural signal."""
@@ -56,23 +55,6 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
     
             raise ValueError(f"Unsupported statement type: {stmt}")
         
-    def lower_file(self, filepath):
-        # 1. REad and lex/parse the SystemVerilog source
-        with open(filepath, 'r') as f:
-            code = f.read()
-
-        input_stream = FileStream(filepath)
-        lexer = SystemVerilogSubsetLexer(input_stream)
-        tokens = CommonTokenStream(lexer)
-        parser = SystemVerilogSubsetParser(tokens)
-        tree = parser.compilation_unit()
-
-        # 2. Optionally return to ast
-        # ast = ASTBuilder().visit(tree)
-
-        # 3. Convert to LogicTree IR
-        return self.visit(tree)
-
     def extract_lhs_signal(self, ctx):
         """
         Extracts the left-hand side signal name from an assign_stmt.
@@ -81,6 +63,10 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
         if ctx is None:
             return None
         try:
+            if hasattr(ctx, "variable_lvalue"):
+                lhs = ctx.variable_lvalue()
+                if lhs is not None:
+                    return lhs.getText()
             if hasattr(ctx, "Identifier"):
                 return ctx.Identifier().getText()
             elif hasattr(ctx, "identifier"):
@@ -93,10 +79,12 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
             if hasattr(child, "Identifier"):
                 return child.Identifier().getText()
 
-            print(f"WARNING: could not extract identifier from context: {type(ctx)}")
+            log.warning(f"Could not extract identifier from context: {type(ctx)}")
             return None
+        except Exception as e:
+            log.warning(f"Failed to extract LHS from ctx: {type(ctx)} - {e}")
         except AttributeError:
-            print(f"WARNING: Could not extract identifier from context: {type(ctx)}")
+            log.warning(f"Could not extract identifier from context: {type(ctx)}")
             return None
 
     def visitCompilation_unit(self, ctx):
@@ -104,34 +92,70 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
         return self.visit(ctx.module_declaration(0))
 
     def visitModule_declaration(self, ctx):
-        print("visiting module_declaration")
+        from logictree.utils.display import pretty_inline
+        log.debug("visiting module_declaration")
 
-        # Clear the signal map at the start of each module
+        # Clear maps at start of module
         self.signal_map = {}
+        self.output_signals = set()
 
-        # Visit all children -- This will trigger calls to vsiitContinuous_assign_statement,
-        # etc
+        identifier_ctx = ctx.module_identifier()
+        if identifier_ctx:
+            self.module_name  = identifier_ctx.getText()
+        else:
+            self.module_name = "unknown module"
+        # Visit children (this will trigger port and assign visits)
         result = self.visitChildren(ctx)
 
-        # Output summary after visiting module
-        print("Signal map contents after visiting module:")
+        # Output debug summaries
+        log.debug("Signal map contents after visiting module:")
         for name, tree in self.signal_map.items():
-            print(f" {name}: {tree}")
+            log.debug(f" {name}: {tree}")
 
-        # Return one logic tree arbitraily (for backwards compatability)
+        log.debug("Output signals detected:")
+        for out in self.output_signals:
+            log.debug(f"  {out}")
+        
+        # Select output signal’s tree for return, if available
+        for out in self.output_signals:
+            if out in self.signal_map:
+                log.debug(f"Returning tree for output signal: {out}")
+                return self.signal_map[out]
+
+        log.debug(f"Returning tree object id={id(self.signal_map['delivery_confirmed'])}")
+        log.debug(f"Expected structure: {pretty_inline(self.signal_map['delivery_confirmed'])}")
+        
+        # Fallback: return first tree
+        log.debug("No matching output found, returning first signal in map.")
         return next(iter(self.signal_map.values())) if self.signal_map else None
 
     def visitModule_item(self, ctx):
-        print("visitModule_item")
+        log.debug("visitModule_item")
         return self.visitChildren(ctx)
+
+    def visitPort_list(self, ctx):
+        log.debug("visitPort_list")
+        for port_ctx in ctx.port():
+            self.visitPort(port_ctx)
+
+    def visitPort(self, ctx):
+        log.debug("visitPort")
+        children = list(ctx.getChildren())
+        if not children:
+            return
+        direction = children[0].getText()
+        if direction == "output":
+            # Identifier is always the last child
+            identifier = children[-1].getText()
+            self.output_signals.add(identifier)
+            log.debug(f"Detected output signal: {identifier}")
 
     def visitAlways_comb_block(self, ctx):
         log.debug("vistAlways_comb_block")
         block = ctx.statement()
         if block is not None:
-            print("block:", block.getText())
+            log.debug("block: %s", block.getText())
             return self.visit(block)
-
 
     def visitStatement_item(self, ctx):
         if ctx.case_statement():
@@ -150,7 +174,6 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
 
     def visitStatement(self, ctx):
         log.debug(f"visitStatement() - ctx: {ctx.getText()}")
-        #print("DEBUG: TREE:\n", ctx.toStringTree(recog=ctx.parser))
         if ctx.begin_end_block():
             log.debug("visitStatement begin_end_block")
             block = ctx.begin_end_block()
@@ -173,7 +196,7 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
                 lhs = case_node.items[0].body.lhs
                 self.signal_map[lhs] = case_node
                 log.debug(f"Registered logic for {lhs}:\n{pretty_print(self.signal_map[lhs])}")
-                #print(pretty_print(case_node))
+                #log.debug(pretty_print(case_node))
             return case_node
 
         elif ctx.blocking_assignment():
@@ -185,14 +208,12 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
             rhs_tree   = self.visit(rhs_expr)
             assign_node  = control.LogicAssign(lhs=lhs, rhs=rhs_tree)
             self.signal_map[lhs] = rhs_tree
-            ##self.signal_map[lhs] = assign_node
-            #log.info(f"[statement assign] {lhs} = {rhs_tree}")
             log.info(f"[statement assign] {assign_node}")
             return assign_node
             #return lhs, stmt_tree 
 
         elif ctx.expression():
-            log.debug("visitStatement expression:", ctx.expression().getText())
+            log.debug("visitStatement expression: %s", ctx.expression().getText())
             return self.visit(ctx.expression())
         else:
             log.warning(f"Error unknown statement context: {type(ctx)}")
@@ -205,7 +226,7 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
         rhs = ctx.expression()
         logic_tree = lower_stmt_to_logic_tree(rhs)
         self.signal_map[lhs] = logic_tree
-        print(f"[assign] {lhs} = {logic_tree}")
+        log.debug(f"[assign] {lhs} = {logic_tree}")
         return logic_tree
 
     def visitIf_statement(self, ctx):
@@ -238,39 +259,8 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
         self.signal_map[lhs_then] = mux_tree
         return control.LogicAssign(lhs_then, mux_tree)
 
-#    def visitIf_statement(self, ctx):
-#        log.debug("DEBUG: visitIf_statement()")
-#        cond_ctx = ctx.expression()
-#        cond_tree = self.visit(cond_ctx)
-#        log.debug(f"Condition: {cond_ctx.getText()}")
-#    
-#        then_stmt_ctx = ctx.statement(0)
-#        else_stmt_ctx = ctx.statement(1) if ctx.ELSE() else None
-#    
-#        # Lower both branches
-#        lhs_then, then_tree = self.visit(then_stmt_ctx)
-#        lhs_else, else_tree = (None, LogicHole("input_2"))
-#    
-#        if else_stmt_ctx:
-#            log.debug(f"Else exists: {else_stmt_ctx.getText()}")
-#            lhs_else, else_tree = self.visit(else_stmt_ctx)
-#    
-#        if lhs_then != lhs_else:
-#            log.error(f"ERROR: lhs_then != lhs_else: {lhs_then}:{lhs_else}")
-#            return None  # Could raise exception or fallback to LogicHole?
-#    
-#        lhs = lhs_then or lhs_else
-#        if lhs is None:
-#            log.warning(f"WARNING: could not extract identifier from context: {type(ctx)}")
-#            return None
-#    
-#        tree = ops.LogicOp("IF", [cond_tree, then_tree, else_tree])
-#        self.signal_map[lhs] = tree
-#        log.debug(f"[if tree assign] {lhs} = {tree}")
-#        return lhs, tree
-
     def visitContinuous_assign_statement(self, ctx):
-        print("visitContinuousAssign_statement")
+        log.debug("visitContinuousAssign_statement")
         expr_ctx   = ctx.expr()
         logic_tree = lower_stmt_to_logic_tree(expr_ctx)
         lhs_signal = self.extract_lhs_signal(ctx)
@@ -278,17 +268,17 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
         return logic_tree
             
     def visitContinuous_assign(self, ctx):
-        print("visitContinuous_assign")
+        log.debug("visitContinuous_assign")
         expr_ctx   = ctx.expression()
-        #logic_tree = lower_stmt_to_logic_tree(expr_ctx)
         logic_tree = self.visit(expr_ctx)
         lhs_signal = self.extract_lhs_signal(ctx)
+        from logictree.utils.display import pretty_inline
+        logic_tree.set_viz_label(f"{lhs_signal} = {pretty_inline(logic_tree)}")
         self.signal_map[lhs_signal] = logic_tree
         return logic_tree
 
     def visitAssign_statement(self, ctx):
-        print("visitAssign_statement")
-        #logic_tree = self.visit(ctx.expr())
+        log.debug("visitAssign_statement")
         expr_ctx   = ctx.expr()
         logic_tree = lower_stmt_to_logic_tree(expr_ctx)
         lhs_signal = self.extract_lhs_signal(ctx)
@@ -319,29 +309,29 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
         return case_node
 
     def visitExpression(self, ctx):
-        print("visitExpression")
+        log.debug("visitExpression")
         if ctx.getChildCount() == 1:
             if ctx.identifier():
-                print(f"[DEBUG] visitExpression -> LogicVar: {ctx.getText()}")
+                log.debug(f"visitExpression -> LogicVar: {ctx.getText()}")
                 return ops.LogicVar(ctx.getText())
             if ctx.literal():
                 const = self.visitLiteral(ctx.literal())
-                print(f"[DEBUG] visitExpression -> Const: {const}")
+                log.debug(f"visitExpression -> Const: {const}")
                 return const
 
         elif ctx.getChildCount() == 2:  # Unary (e.g. ~a)
             op = ctx.getChild(0).getText()
             rhs = self.visit(ctx.getChild(1))
-            print(f"[DEBUG] Unary op '{op}' on {rhs}")
+            log.debug(f"Unary op '{op}' on {rhs}")
             if op == '~':
-                print(f"DEBUG: visitExpression() self.name: {self.name}, rhs: {rhs}")
+                log.debug(f"visitExpression() self.name: {self.name}, rhs: {rhs}")
                 return ops.LogicOp("NOT", [rhs])
 
         elif ctx.getChildCount() == 3:
             lhs = self.visit(ctx.getChild(0))
             op = ctx.getChild(1).getText()
             rhs = self.visit(ctx.getChild(2))
-            print(f"[DEBUG] Binary '{op}': lhs={lhs}, rhs={rhs}")
+            log.debug(f" Binary '{op}': lhs={lhs}, rhs={rhs}")
 
             if op == '&':  return ops.LogicOp("AND", [lhs, rhs])
             if op == '|':  return ops.LogicOp("OR", [lhs, rhs])
@@ -349,7 +339,7 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
             if op == '~^': return ops.LogicOp("XNOR", [lhs, rhs])
             if op == '==':
                 if isinstance(rhs, list):
-                    print(f"[DEBUG] Expanding bitvector comparison: {lhs} == {rhs}")
+                    log.debug(f"Expanding bitvector comparison: {lhs} == {rhs}")
                     return ops.LogicOp("AND", [
                         ops.LogicOp("XNOR", [ops.LogicVar(f"{lhs.name}_{i}"), ops.LogicConst(bit)])
                         for i, bit in enumerate(rhs)
@@ -358,47 +348,47 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
                     return ops.LogicOp("XNOR", [lhs, rhs])
 
         elif ctx.getChildCount() == 3 and ctx.getChild(0).getText() == '(':
-            print("[DEBUG] Parenthesized expression")
+            log.debug("Parenthesized expression")
             return self.visit(ctx.getChild(1))  # Parenthesized
 
         raise NotImplementedError("Unhandled expression structure: " + ctx.getText())
 
     def visitLogicalNotExpr(self, ctx):
-        print("visitLogicalNotExpr")
+        log.debug("visitLogicalNotExpr")
         expr = self.visit(ctx.expression())
         return ops.LogicOp("NOT", [expr])
 
     def visitBitwiseNotExpr(self, ctx):
-        print("visitBitwiseNotExpr")
+        log.debug("visitBitwiseNotExpr")
         expr = self.visit(ctx.expression())
         return ops.LogicOp("NOT", [expr])  # or differentiate if needed
 
     def visitNegateExpr(self, ctx):
-        print("visitNegateExpr")
+        log.debug("visitNegateExpr")
         expr = self.visit(ctx.expression())
         # Treat -a as NOT(a) for logic, or raise NotImplementedError if arithmetic
         return ops.LogicOp("NOT", [expr])
 
     def visitAndExpr(self, ctx):
-        print("visitAndExpr")
+        log.debug("visitAndExpr")
         lhs = self.visit(ctx.expression(0))
         rhs = self.visit(ctx.expression(1))
         return ops.LogicOp("AND", [lhs, rhs])
 
     def visitOrExpr(self, ctx):
-        print("visitOrExpr")
+        log.debug("visitOrExpr")
         lhs = self.visit(ctx.expression(0))
         rhs = self.visit(ctx.expression(1))
         return ops.LogicOp("OR", [lhs, rhs])
 
     def visitXorExpr(self, ctx):
-        print("visitXorExpr")
+        log.debug("visitXorExpr")
         lhs = self.visit(ctx.expression(0))
         rhs = self.visit(ctx.expression(1))
         return ops.LogicOp("XOR", [lhs, rhs])
 
     def visitXnorExpr(self, ctx):
-        print("visitXnorExpr")
+        log.debug("visitXnorExpr")
         lhs = self.visit(ctx.expression(0))
         rhs = self.visit(ctx.expression(1))
         return ops.LogicOp("XNOR", [lhs, rhs])
@@ -408,7 +398,6 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
         rhs = self.visit(ctx.expression(1))
         log.debug("visitEqExpr with: lhs: {%s}, rhs: {%s}", lhs, rhs)
         log.debug("rhs type: %s",  type(rhs))
-
 
         # Case 1: Bitvector comparison against a constant like 7'b0110011
         #if isinstance(rhs, ops.LogicConst) and isinstance(lhs, LogicHole):
@@ -440,18 +429,18 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
                         return balanced_tree_reduce("AND", xnor_terms)
 
                 except Exception as e:
-                    print(f"[ERROR] Failed to parse bitvector comparison: {rhs_text}")
+                    log.error(f"Failed to parse bitvector comparison: {rhs_text}")
                     raise e
 
         # Case 2: Simple variable == variable or constant
         return ops.LogicOp("XNOR", [lhs, rhs])
 
     def visitParenExpr(self, ctx):
-        log.info("isitParenExpr with: %s", ctx.getText())
+        log.info("visitParenExpr with: %s", ctx.getText())
         return self.visit(ctx.expression())
 
     def visitLiteral(self, ctx):
-        print("visitLiteral")
+        log.debug("visitLiteral")
         raw = ctx.getText()
         if "'" in raw:
             # binary constatn like 7'b0110011
@@ -479,7 +468,7 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
                 else:
                     raise NotImplementedError(f"Base '{base}' not supported")
             except Exception as e:
-                print(f"Failed to parse bitvector constant: {text} with error: {e}")
+                log.warning(f"Failed to parse bitvector constant: {text} with error: {e}")
                 return hole.LogicHole(text)
         else:
             # Just a number like `1` or `0`

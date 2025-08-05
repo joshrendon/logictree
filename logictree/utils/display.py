@@ -3,7 +3,6 @@ from logictree.utils.formating import indent
 import hashlib
 import itertools
 import re
-#from dd import autoref as _bdd
 from dd.autoref import BDD
 from sympy import symbols
 from sympy import sympify
@@ -79,6 +78,22 @@ def _pretty_print_expr(expr_str):
             styled.append(token, style="white")
         styled.append(' ')
     console.print(styled)
+
+def pretty_inline(tree):
+    """
+    Compact single-line representation: OP{child1, child2, ...}
+    """
+    if isinstance(tree, ops.LogicOp):
+        child_strs = [pretty_inline(child) for child in tree.children]
+        #return f"{tree.op} {{', '.join(child_strs)}}"
+        return f"{tree.op}{{{', '.join(child_strs)}}}"
+    elif isinstance(tree, ops.LogicVar):
+        return tree.name
+    elif isinstance(tree, ops.LogicConst):
+        return str(tree.value)
+    else:
+        return tree.default_label()
+
 
 def to_dot(tree, g=None, parent=None, node_id_gen=[0]):
     if g is None:

@@ -1,10 +1,13 @@
 from dataclasses import dataclass
 from ..base.base import LogicTreeNode
 from typing import Dict, Tuple, Union, Optional, List, Set
+import logging
+log = logging.getLogger(__name__)
 
 @dataclass
 class LogicAssign(LogicTreeNode):
     def __init__(self, lhs: LogicTreeNode, rhs: LogicTreeNode):
+        super().__init__()
         self.lhs = lhs
         self.rhs = rhs
     lhs: LogicTreeNode
@@ -12,15 +15,14 @@ class LogicAssign(LogicTreeNode):
     annotated_delay: Optional[int] = None
 
     def inputs(self) -> Set[str]:
-        print(f"[DEBUG] Calling inputs() on LogicAssign with lhs={self.lhs}")
+        log.debug(f"Calling inputs() on LogicAssign with lhs={self.lhs}")
         return self.rhs.inputs()
 
     def __str__(self):
         return f"{self.lhs} = {self.rhs}"
 
-    @property
-    def label(self):
-        return f"{self.lhs} ="
+    def default_label(self):
+        return f"{self.lhs} = {self.rhs}"
 
     @property
     def depth(self) -> int:
@@ -37,8 +39,8 @@ class LogicAssign(LogicTreeNode):
 
     def to_json_dict(self):
         return {
-            "type": "LogicAssign",
-            "label": self.label,
+            "type": self.__class__.__name__,
+            "label": self.label(),
             "expr_source": str(self.lhs),
             "children": [self.rhs.to_json_dict()],
             "depth": self.depth,

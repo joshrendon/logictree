@@ -25,6 +25,8 @@ from pprint import pprint
 import copy
 
 log = logging.getLogger(__name__)
+MODULE_NAME = ""
+lowerer = SVToLogicTreeLowerer()
 
 def parse_sv_file(path):
     input_stream = FileStream(path)
@@ -32,6 +34,20 @@ def parse_sv_file(path):
     tokens = CommonTokenStream(lexer)
     parser = SystemVerilogSubsetParser(tokens)
     return parser.compilation_unit()
+
+def lower_module_declaration(tree):
+    module_ctx = None
+    for child in tree.getChildren():
+        if isinstance(child, SystemVerilogSubsetParser.Module_declarationContext):
+            module_ctx = child
+            break
+    if module_ctx is None:
+        raise RuntimeError("No module_declaration found in parsed file.")
+
+    selected_tree = lowerer.visitModule_declaration(module_ctx)
+    print(f"Module: {lowerer.module_name}")
+    MODULE_NAME = lowerer.module_name
+    return selected_tree
 
 def lower_sv_ast_to_signal_map(tree):
     lowerer = SVToLogicTreeLowerer()
@@ -129,41 +145,78 @@ def main():
     logging.basicConfig(level=args.loglevel.upper())
 
     ast = parse_sv_file(args.filename)
-    signal_map = lower_sv_ast_to_signal_map(ast)
+    selected_tree = lower_module_declaration(ast)
+    log.debug(f" selected_tree.module_name(): {lowerer.module_name}") 
+    from logictree.transforms import resolve_signal_vars
 
-    for name in signal_map:
-        tree = signal_map[name]
+    # Inline signal references
+    resolved_tree = resolve_signal_vars(selected_tree, lowerer.signal_map)
 
-        if args.explore:
-            from gui.explorer_server import launch_explorer
-            from logictree.transforms import case_to_if_tree
-            original_tree   = tree.clone()
-            simplified_tree = original_tree
 
-            if args.case_to_if:
-                simplified_tree = case_to_if_tree(simplified_tree)
-            #if args.if_to_mux:
-            #    from logictree.transforms import if_tree_to_mux_tree
-            #    simplified_tree = if_tree_to_mux_tree(simplified_tree)
-            simplified_tree = simplified_tree.simplify()
-            #assert type(logic_tree_simplified).__name__ != "CaseStatement", "Simplify failed!"
-            print("Launching Explorer:")
-            #print(f"About to launch explorer with {name} tree:\n{tree}")
-            #launch_explorer(
-            #        logic_tree_original = original_signal_map[name],
-            #        logic_tree_simplified = original_signal_map[name].simplify(),
-            #        tree_name_input=name)
-            launch_explorer(
-                    logic_tree_original = original_tree,
-                    logic_tree_simplified = simplified_tree,
-                    tree_name_input=name)
-            return
+    if args.explore:
+        from gui.explorer_server import launch_explorer
+        from logictree.utils.display import pretty_inline
+        resolved_tree.set_viz_label(f"{lowerer.module_name} = {pretty_inline(resolved_tree)}")
 
-            ## Optional lowering transformations
+        #from logictree.transforms import case_to_if_tree
+        #original_tree   = tree.clone()
+        #simplified_tree = original_tree
 
-    
+    #        if args.case_to_if:
+    #            simplified_tree = case_to_if_tree(simplified_tree)
+    #        #if args.if_to_mux:
+    #        #    from logictree.transforms import if_tree_to_mux_tree
+    #        #    simplified_tree = if_tree_to_mux_tree(simplified_tree)
+        launch_explorer(
+                logic_tree_original = resolved_tree,
+                tree_name_input=MODULE_NAME)
+        return
 
-    #handle_output(signal_map, args)
+    handle_output(lowerer.signal_map, args)
+
+
+    #for name in signal_map:
+    #    print(f"[DEBUG] signal_map[{name}]")
+    #    tree = signal_map[name]
+    #    from logictree.utils.display import pretty_inline
+    #    print(f"Explorer will launch with tree id={id(tree)} for signal 'delivery_confirmed'")
+    #    print(f"Selected tree structure: {pretty_inline(tree)}")
+    #    print(f"[CLI] selected_tree id={id(tree)} structure: {pretty_inline(tree)}")
+    #    
+    #    if args.explore:
+    #        from gui.explorer_server import launch_explorer
+    #        from logictree.transforms import case_to_if_tree
+    #        original_tree   = tree.clone()
+    #        simplified_tree = original_tree
+
+    #        if args.case_to_if:
+    #            simplified_tree = case_to_if_tree(simplified_tree)
+    #        #if args.if_to_mux:
+    #        #    from logictree.transforms import if_tree_to_mux_tree
+    #        #    simplified_tree = if_tree_to_mux_tree(simplified_tree)
+    #        if simplified_tree is None:
+    #            print("ERROR: Lowered tree is None. build_if_tree failed!")
+    #            return
+    #        else:
+    #            simplified_tree = simplified_tree.simplify()
+    #            print("DEBUG: hit simplified branch!")
+    #        #assert type(logic_tree_simplified).__name__ != "CaseStatement", "Simplify failed!"
+    #        print("Launching Explorer:")
+    #        #print(f"About to launch explorer with {name} tree:\n{tree}")
+    #        #launch_explorer(
+    #        #        logic_tree_original = original_signal_map[name],
+    #        #        logic_tree_simplified = original_signal_map[name].simplify(),
+    #        #        tree_name_input=name)
+    #        launch_explorer(
+    #                logic_tree_original = original_tree,
+    #                logic_tree_simplified = simplified_tree,
+    #                tree_name_input=name)
+    #        return
+
+    #        ## Optional lowering transformations
+
+    #
+
 
 if __name__ == "__main__":
     main()

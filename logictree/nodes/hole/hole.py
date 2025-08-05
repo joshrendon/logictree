@@ -2,6 +2,7 @@ from ..base.base import LogicTreeNode
 
 class LogicHole(LogicTreeNode):
     def __init__(self, name="UNSPECIFIED"):
+        super().__init__()
         self.name = name
 
     @property
