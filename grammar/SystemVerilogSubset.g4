@@ -27,8 +27,7 @@ module_identifier
 
 port_list: port (',' port)* ;
 port:
-      'input' data_type range? Identifier
-    | 'output' data_type range? Identifier
+      ('input' | 'output') data_type range? Identifier (',' Identifier)*
     ;
 range: '[' DecimalNumber ':' DecimalNumber ']';
 
@@ -40,8 +39,9 @@ module_item:
     | always_comb_block
     ;
 
-net_declaration:
-    ('logic' | 'wire') Identifier SEMICOLON ;
+net_declaration
+    : ('logic' | 'wire') range? Identifier (',' Identifier)* SEMICOLON
+    ;
 
 continuous_assign:
     'assign' variable_lvalue ASSIGN expression SEMICOLON
@@ -63,7 +63,7 @@ blocking_assignment
     ;
 
 variable_lvalue
-    : Identifier ( '[' expression ']' | COLON Identifier )*
+    : Identifier ( '[' expression ']' | '[' expression ':' expression ']' )*
     ;
 
 begin_end_block
@@ -87,17 +87,20 @@ expression_list
     ;
 
 expression
-    : '!' expression                   #LogicalNotExpr
-    | '~' expression                   #BitwiseNotExpr
-    | '-' expression                   #NegateExpr
-    | expression '&' expression        #AndExpr
-    | expression '|' expression        #OrExpr
-    | expression '^' expression        #XorExpr
-    | expression '~^' expression       #XnorExpr
-    | expression '==' expression       #EqExpr
-    | '(' expression ')'               #ParenExpr
-    | literal                          #ConstExpr
-    | Identifier                       #IdExpr
+    : '!' expression                               #LogicalNotExpr
+    | '~' expression                               #BitwiseNotExpr
+    | '-' expression                               #NegateExpr
+    | expression '&' expression                    #AndExpr
+    | expression '|' expression                    #OrExpr
+    | expression '^' expression                    #XorExpr
+    | expression '~^' expression                   #XnorExpr
+    | expression '==' expression                   #EqExpr
+    | expression '[' expression ']'                #BitSelectExpr
+    | expression '[' expression ':' expression ']' #PartSelectExpr
+    | '{' expression (',' expression)* '}'         #ConcatExpr
+    | '(' expression ')'                           #ParenExpr
+    | literal                                      #ConstExpr
+    | Identifier                                   #IdExpr
     ;
 
 literal:

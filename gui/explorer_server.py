@@ -44,7 +44,8 @@ def launch_explorer(logic_tree_original, tree_name_input="LogicTree"):
 
     # Now deepcopy and transform after copy
     logic_tree_copy = copy.deepcopy(logic_tree_original)
-    simplified_tree = logic_tree_copy.flatten()
+    from logictree.transforms.simplify import simplify_logic_tree
+    simplified_tree = simplify_logic_tree(logic_tree_copy)
 
     log.debug(f"[Explorer] Simplified id: {id(simplified_tree)}")
     log.debug(f"[Explorer] Simplified tree type: {type(simplified_tree).__name__}")

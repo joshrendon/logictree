@@ -1,6 +1,10 @@
+#GATE_TYPES = {
+#    'AND', 'OR', 'NOT', 'NAND', 'NOR', 'XOR', 'XNOR',
+#    'MUX', 'EQ', 'IF', 'NEQ'
+#}
 GATE_TYPES = {
     'AND', 'OR', 'NOT', 'NAND', 'NOR', 'XOR', 'XNOR',
-    'MUX', 'EQ', 'IF', 'NEQ'
+    'IF' 
 }
 
 CONTROL_NODE_TYPES = {

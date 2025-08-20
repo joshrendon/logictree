@@ -1,4 +1,5 @@
 from logictree.nodes.ops import AndOp, LogicVar
+from logictree.transforms.simplify import simplify_logic_tree
 
 # Define variables
 C = LogicVar("customs_cleared")
@@ -10,8 +11,9 @@ S = AndOp(C, T)        # shipment_released
 D = AndOp(S, A)        # delivery_confirmed
 
 cloned = D.clone()
-simplified = cloned.simplify()
+
+simplified = simplify_logic_tree(D)
 print("Original Tree:")
 print(D)
 print("Simplified Tree:")
-print(simplfied)
+print(simplified)

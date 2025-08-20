@@ -1,5 +1,6 @@
 from logictree.nodes import ops, control, base, hole
 from logictree.nodes.base import LogicTreeNode
+from .transforms.case_to_if import case_to_if_tree
 import logging
 log = logging.getLogger(__name__)
 
@@ -51,7 +52,7 @@ def lower_case_statements_in_signal_map(signal_map: dict[str, LogicTreeNode]) ->
 
             signal_map[name] = mux_tree
 
-def case_to_if_tree(case_stmt) -> LogicTreeNode:
+def case_to_if_tree(case_stmt: LogicTreeNode) -> LogicTreeNode:
     from logictree.nodes.control.case import CaseStatement
     from logictree.nodes.control.ifstatement import IfStatement
     from logictree.nodes.ops.ops import LogicConst, LogicOp
@@ -129,3 +130,5 @@ def case_to_if_tree(case_stmt) -> LogicTreeNode:
 
     return build_if_tree(0)
 
+#__all__ = ["case_to_if_tree", "resolve_signal_vars", "lower_case_statements_in_signal_map"]
+__all__ = ["case_to_if_tree"]

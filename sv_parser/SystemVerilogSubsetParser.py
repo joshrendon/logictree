@@ -1,4 +1,4 @@
-# Generated from SystemVerilogSubset.g4 by ANTLR 4.13.2
+# Generated from SystemVerilogSubset.g4 by ANTLR 4.13.1
 # encoding: utf-8
 from antlr4 import *
 from io import StringIO
@@ -10,31 +10,34 @@ else:
 
 def serializedATN():
     return [
-        4,1,39,230,2,0,7,0,2,1,7,1,2,2,7,2,2,3,7,3,2,4,7,4,2,5,7,5,2,6,7,
+        4,1,39,264,2,0,7,0,2,1,7,1,2,2,7,2,2,3,7,3,2,4,7,4,2,5,7,5,2,6,7,
         6,2,7,7,7,2,8,7,8,2,9,7,9,2,10,7,10,2,11,7,11,2,12,7,12,2,13,7,13,
         2,14,7,14,2,15,7,15,2,16,7,16,2,17,7,17,2,18,7,18,2,19,7,19,2,20,
         7,20,1,0,4,0,44,8,0,11,0,12,0,45,1,1,1,1,1,1,1,1,3,1,52,8,1,1,1,
         1,1,1,1,5,1,57,8,1,10,1,12,1,60,9,1,1,1,1,1,1,2,1,2,1,3,1,3,1,3,
-        5,3,69,8,3,10,3,12,3,72,9,3,1,4,1,4,1,4,3,4,77,8,4,1,4,1,4,1,4,1,
-        4,1,4,3,4,84,8,4,1,4,1,4,3,4,88,8,4,1,5,1,5,1,5,1,5,1,5,1,5,1,6,
-        1,6,1,7,1,7,1,7,3,7,101,8,7,1,8,1,8,1,8,1,8,1,9,1,9,1,9,1,9,1,9,
-        1,9,1,10,1,10,1,10,1,11,1,11,5,11,118,8,11,10,11,12,11,121,9,11,
-        1,11,1,11,1,11,1,11,1,11,3,11,128,8,11,1,12,1,12,1,12,1,12,1,12,
-        1,13,1,13,1,13,1,13,1,13,1,13,1,13,5,13,142,8,13,10,13,12,13,145,
-        9,13,1,14,1,14,5,14,149,8,14,10,14,12,14,152,9,14,1,14,1,14,1,15,
-        1,15,1,15,1,15,1,15,1,15,1,15,3,15,163,8,15,1,16,1,16,1,16,1,16,
-        1,16,4,16,170,8,16,11,16,12,16,171,1,16,1,16,1,17,1,17,1,17,1,17,
-        1,17,1,17,1,17,3,17,183,8,17,1,18,1,18,1,18,5,18,188,8,18,10,18,
-        12,18,191,9,18,1,19,1,19,1,19,1,19,1,19,1,19,1,19,1,19,1,19,1,19,
-        1,19,1,19,1,19,3,19,206,8,19,1,19,1,19,1,19,1,19,1,19,1,19,1,19,
-        1,19,1,19,1,19,1,19,1,19,1,19,1,19,1,19,5,19,223,8,19,10,19,12,19,
-        226,9,19,1,20,1,20,1,20,0,1,38,21,0,2,4,6,8,10,12,14,16,18,20,22,
-        24,26,28,30,32,34,36,38,40,0,2,1,0,9,10,2,0,34,34,36,36,239,0,43,
-        1,0,0,0,2,47,1,0,0,0,4,63,1,0,0,0,6,65,1,0,0,0,8,87,1,0,0,0,10,89,
-        1,0,0,0,12,95,1,0,0,0,14,100,1,0,0,0,16,102,1,0,0,0,18,106,1,0,0,
-        0,20,112,1,0,0,0,22,127,1,0,0,0,24,129,1,0,0,0,26,134,1,0,0,0,28,
-        146,1,0,0,0,30,155,1,0,0,0,32,164,1,0,0,0,34,182,1,0,0,0,36,184,
-        1,0,0,0,38,205,1,0,0,0,40,227,1,0,0,0,42,44,3,2,1,0,43,42,1,0,0,
+        5,3,69,8,3,10,3,12,3,72,9,3,1,4,1,4,1,4,3,4,77,8,4,1,4,1,4,1,4,5,
+        4,82,8,4,10,4,12,4,85,9,4,1,5,1,5,1,5,1,5,1,5,1,5,1,6,1,6,1,7,1,
+        7,1,7,3,7,98,8,7,1,8,1,8,3,8,102,8,8,1,8,1,8,1,8,5,8,107,8,8,10,
+        8,12,8,110,9,8,1,8,1,8,1,9,1,9,1,9,1,9,1,9,1,9,1,10,1,10,1,10,1,
+        11,1,11,5,11,125,8,11,10,11,12,11,128,9,11,1,11,1,11,1,11,1,11,1,
+        11,3,11,135,8,11,1,12,1,12,1,12,1,12,1,12,1,13,1,13,1,13,1,13,1,
+        13,1,13,1,13,1,13,1,13,1,13,1,13,5,13,153,8,13,10,13,12,13,156,9,
+        13,1,14,1,14,5,14,160,8,14,10,14,12,14,163,9,14,1,14,1,14,1,15,1,
+        15,1,15,1,15,1,15,1,15,1,15,3,15,174,8,15,1,16,1,16,1,16,1,16,1,
+        16,4,16,181,8,16,11,16,12,16,182,1,16,1,16,1,17,1,17,1,17,1,17,1,
+        17,1,17,1,17,3,17,194,8,17,1,18,1,18,1,18,5,18,199,8,18,10,18,12,
+        18,202,9,18,1,19,1,19,1,19,1,19,1,19,1,19,1,19,1,19,1,19,1,19,1,
+        19,5,19,215,8,19,10,19,12,19,218,9,19,1,19,1,19,1,19,1,19,1,19,1,
+        19,1,19,1,19,3,19,228,8,19,1,19,1,19,1,19,1,19,1,19,1,19,1,19,1,
+        19,1,19,1,19,1,19,1,19,1,19,1,19,1,19,1,19,1,19,1,19,1,19,1,19,1,
+        19,1,19,1,19,1,19,1,19,1,19,1,19,5,19,257,8,19,10,19,12,19,260,9,
+        19,1,20,1,20,1,20,0,1,38,21,0,2,4,6,8,10,12,14,16,18,20,22,24,26,
+        28,30,32,34,36,38,40,0,3,1,0,5,6,1,0,9,10,2,0,34,34,36,36,278,0,
+        43,1,0,0,0,2,47,1,0,0,0,4,63,1,0,0,0,6,65,1,0,0,0,8,73,1,0,0,0,10,
+        86,1,0,0,0,12,92,1,0,0,0,14,97,1,0,0,0,16,99,1,0,0,0,18,113,1,0,
+        0,0,20,119,1,0,0,0,22,134,1,0,0,0,24,136,1,0,0,0,26,141,1,0,0,0,
+        28,157,1,0,0,0,30,166,1,0,0,0,32,175,1,0,0,0,34,193,1,0,0,0,36,195,
+        1,0,0,0,38,227,1,0,0,0,40,261,1,0,0,0,42,44,3,2,1,0,43,42,1,0,0,
         0,44,45,1,0,0,0,45,43,1,0,0,0,45,46,1,0,0,0,46,1,1,0,0,0,47,48,5,
         1,0,0,48,49,3,4,2,0,49,51,5,2,0,0,50,52,3,6,3,0,51,50,1,0,0,0,51,
         52,1,0,0,0,52,53,1,0,0,0,53,54,5,3,0,0,54,58,5,25,0,0,55,57,3,14,
@@ -42,54 +45,64 @@ def serializedATN():
         1,0,0,0,60,58,1,0,0,0,61,62,5,4,0,0,62,3,1,0,0,0,63,64,5,35,0,0,
         64,5,1,0,0,0,65,70,3,8,4,0,66,67,5,24,0,0,67,69,3,8,4,0,68,66,1,
         0,0,0,69,72,1,0,0,0,70,68,1,0,0,0,70,71,1,0,0,0,71,7,1,0,0,0,72,
-        70,1,0,0,0,73,74,5,5,0,0,74,76,3,12,6,0,75,77,3,10,5,0,76,75,1,0,
-        0,0,76,77,1,0,0,0,77,78,1,0,0,0,78,79,5,35,0,0,79,88,1,0,0,0,80,
-        81,5,6,0,0,81,83,3,12,6,0,82,84,3,10,5,0,83,82,1,0,0,0,83,84,1,0,
-        0,0,84,85,1,0,0,0,85,86,5,35,0,0,86,88,1,0,0,0,87,73,1,0,0,0,87,
-        80,1,0,0,0,88,9,1,0,0,0,89,90,5,7,0,0,90,91,5,36,0,0,91,92,5,23,
-        0,0,92,93,5,36,0,0,93,94,5,8,0,0,94,11,1,0,0,0,95,96,5,9,0,0,96,
-        13,1,0,0,0,97,101,3,16,8,0,98,101,3,18,9,0,99,101,3,20,10,0,100,
-        97,1,0,0,0,100,98,1,0,0,0,100,99,1,0,0,0,101,15,1,0,0,0,102,103,
-        7,0,0,0,103,104,5,35,0,0,104,105,5,25,0,0,105,17,1,0,0,0,106,107,
-        5,11,0,0,107,108,3,26,13,0,108,109,5,26,0,0,109,110,3,38,19,0,110,
-        111,5,25,0,0,111,19,1,0,0,0,112,113,5,12,0,0,113,114,3,22,11,0,114,
-        21,1,0,0,0,115,119,5,13,0,0,116,118,3,22,11,0,117,116,1,0,0,0,118,
-        121,1,0,0,0,119,117,1,0,0,0,119,120,1,0,0,0,120,122,1,0,0,0,121,
-        119,1,0,0,0,122,128,5,14,0,0,123,128,3,28,14,0,124,128,3,24,12,0,
-        125,128,3,30,15,0,126,128,3,32,16,0,127,115,1,0,0,0,127,123,1,0,
-        0,0,127,124,1,0,0,0,127,125,1,0,0,0,127,126,1,0,0,0,128,23,1,0,0,
-        0,129,130,3,26,13,0,130,131,5,26,0,0,131,132,3,38,19,0,132,133,5,
-        25,0,0,133,25,1,0,0,0,134,143,5,35,0,0,135,136,5,7,0,0,136,137,3,
-        38,19,0,137,138,5,8,0,0,138,142,1,0,0,0,139,140,5,23,0,0,140,142,
-        5,35,0,0,141,135,1,0,0,0,141,139,1,0,0,0,142,145,1,0,0,0,143,141,
-        1,0,0,0,143,144,1,0,0,0,144,27,1,0,0,0,145,143,1,0,0,0,146,150,5,
-        30,0,0,147,149,3,22,11,0,148,147,1,0,0,0,149,152,1,0,0,0,150,148,
-        1,0,0,0,150,151,1,0,0,0,151,153,1,0,0,0,152,150,1,0,0,0,153,154,
-        5,31,0,0,154,29,1,0,0,0,155,156,5,32,0,0,156,157,5,2,0,0,157,158,
-        3,38,19,0,158,159,5,3,0,0,159,162,3,22,11,0,160,161,5,33,0,0,161,
-        163,3,22,11,0,162,160,1,0,0,0,162,163,1,0,0,0,163,31,1,0,0,0,164,
-        165,5,28,0,0,165,166,5,2,0,0,166,167,3,38,19,0,167,169,5,3,0,0,168,
-        170,3,34,17,0,169,168,1,0,0,0,170,171,1,0,0,0,171,169,1,0,0,0,171,
-        172,1,0,0,0,172,173,1,0,0,0,173,174,5,29,0,0,174,33,1,0,0,0,175,
-        176,3,36,18,0,176,177,5,23,0,0,177,178,3,22,11,0,178,183,1,0,0,0,
-        179,180,5,27,0,0,180,181,5,23,0,0,181,183,3,22,11,0,182,175,1,0,
-        0,0,182,179,1,0,0,0,183,35,1,0,0,0,184,189,3,38,19,0,185,186,5,24,
-        0,0,186,188,3,38,19,0,187,185,1,0,0,0,188,191,1,0,0,0,189,187,1,
-        0,0,0,189,190,1,0,0,0,190,37,1,0,0,0,191,189,1,0,0,0,192,193,6,19,
-        -1,0,193,194,5,15,0,0,194,206,3,38,19,11,195,196,5,16,0,0,196,206,
-        3,38,19,10,197,198,5,17,0,0,198,206,3,38,19,9,199,200,5,2,0,0,200,
-        201,3,38,19,0,201,202,5,3,0,0,202,206,1,0,0,0,203,206,3,40,20,0,
-        204,206,5,35,0,0,205,192,1,0,0,0,205,195,1,0,0,0,205,197,1,0,0,0,
-        205,199,1,0,0,0,205,203,1,0,0,0,205,204,1,0,0,0,206,224,1,0,0,0,
-        207,208,10,8,0,0,208,209,5,18,0,0,209,223,3,38,19,9,210,211,10,7,
-        0,0,211,212,5,19,0,0,212,223,3,38,19,8,213,214,10,6,0,0,214,215,
-        5,20,0,0,215,223,3,38,19,7,216,217,10,5,0,0,217,218,5,21,0,0,218,
-        223,3,38,19,6,219,220,10,4,0,0,220,221,5,22,0,0,221,223,3,38,19,
-        5,222,207,1,0,0,0,222,210,1,0,0,0,222,213,1,0,0,0,222,216,1,0,0,
-        0,222,219,1,0,0,0,223,226,1,0,0,0,224,222,1,0,0,0,224,225,1,0,0,
-        0,225,39,1,0,0,0,226,224,1,0,0,0,227,228,7,1,0,0,228,41,1,0,0,0,
-        20,45,51,58,70,76,83,87,100,119,127,141,143,150,162,171,182,189,
-        205,222,224
+        70,1,0,0,0,73,74,7,0,0,0,74,76,3,12,6,0,75,77,3,10,5,0,76,75,1,0,
+        0,0,76,77,1,0,0,0,77,78,1,0,0,0,78,83,5,35,0,0,79,80,5,24,0,0,80,
+        82,5,35,0,0,81,79,1,0,0,0,82,85,1,0,0,0,83,81,1,0,0,0,83,84,1,0,
+        0,0,84,9,1,0,0,0,85,83,1,0,0,0,86,87,5,7,0,0,87,88,5,36,0,0,88,89,
+        5,23,0,0,89,90,5,36,0,0,90,91,5,8,0,0,91,11,1,0,0,0,92,93,5,9,0,
+        0,93,13,1,0,0,0,94,98,3,16,8,0,95,98,3,18,9,0,96,98,3,20,10,0,97,
+        94,1,0,0,0,97,95,1,0,0,0,97,96,1,0,0,0,98,15,1,0,0,0,99,101,7,1,
+        0,0,100,102,3,10,5,0,101,100,1,0,0,0,101,102,1,0,0,0,102,103,1,0,
+        0,0,103,108,5,35,0,0,104,105,5,24,0,0,105,107,5,35,0,0,106,104,1,
+        0,0,0,107,110,1,0,0,0,108,106,1,0,0,0,108,109,1,0,0,0,109,111,1,
+        0,0,0,110,108,1,0,0,0,111,112,5,25,0,0,112,17,1,0,0,0,113,114,5,
+        11,0,0,114,115,3,26,13,0,115,116,5,26,0,0,116,117,3,38,19,0,117,
+        118,5,25,0,0,118,19,1,0,0,0,119,120,5,12,0,0,120,121,3,22,11,0,121,
+        21,1,0,0,0,122,126,5,13,0,0,123,125,3,22,11,0,124,123,1,0,0,0,125,
+        128,1,0,0,0,126,124,1,0,0,0,126,127,1,0,0,0,127,129,1,0,0,0,128,
+        126,1,0,0,0,129,135,5,14,0,0,130,135,3,28,14,0,131,135,3,24,12,0,
+        132,135,3,30,15,0,133,135,3,32,16,0,134,122,1,0,0,0,134,130,1,0,
+        0,0,134,131,1,0,0,0,134,132,1,0,0,0,134,133,1,0,0,0,135,23,1,0,0,
+        0,136,137,3,26,13,0,137,138,5,26,0,0,138,139,3,38,19,0,139,140,5,
+        25,0,0,140,25,1,0,0,0,141,154,5,35,0,0,142,143,5,7,0,0,143,144,3,
+        38,19,0,144,145,5,8,0,0,145,153,1,0,0,0,146,147,5,7,0,0,147,148,
+        3,38,19,0,148,149,5,23,0,0,149,150,3,38,19,0,150,151,5,8,0,0,151,
+        153,1,0,0,0,152,142,1,0,0,0,152,146,1,0,0,0,153,156,1,0,0,0,154,
+        152,1,0,0,0,154,155,1,0,0,0,155,27,1,0,0,0,156,154,1,0,0,0,157,161,
+        5,30,0,0,158,160,3,22,11,0,159,158,1,0,0,0,160,163,1,0,0,0,161,159,
+        1,0,0,0,161,162,1,0,0,0,162,164,1,0,0,0,163,161,1,0,0,0,164,165,
+        5,31,0,0,165,29,1,0,0,0,166,167,5,32,0,0,167,168,5,2,0,0,168,169,
+        3,38,19,0,169,170,5,3,0,0,170,173,3,22,11,0,171,172,5,33,0,0,172,
+        174,3,22,11,0,173,171,1,0,0,0,173,174,1,0,0,0,174,31,1,0,0,0,175,
+        176,5,28,0,0,176,177,5,2,0,0,177,178,3,38,19,0,178,180,5,3,0,0,179,
+        181,3,34,17,0,180,179,1,0,0,0,181,182,1,0,0,0,182,180,1,0,0,0,182,
+        183,1,0,0,0,183,184,1,0,0,0,184,185,5,29,0,0,185,33,1,0,0,0,186,
+        187,3,36,18,0,187,188,5,23,0,0,188,189,3,22,11,0,189,194,1,0,0,0,
+        190,191,5,27,0,0,191,192,5,23,0,0,192,194,3,22,11,0,193,186,1,0,
+        0,0,193,190,1,0,0,0,194,35,1,0,0,0,195,200,3,38,19,0,196,197,5,24,
+        0,0,197,199,3,38,19,0,198,196,1,0,0,0,199,202,1,0,0,0,200,198,1,
+        0,0,0,200,201,1,0,0,0,201,37,1,0,0,0,202,200,1,0,0,0,203,204,6,19,
+        -1,0,204,205,5,15,0,0,205,228,3,38,19,14,206,207,5,16,0,0,207,228,
+        3,38,19,13,208,209,5,17,0,0,209,228,3,38,19,12,210,211,5,13,0,0,
+        211,216,3,38,19,0,212,213,5,24,0,0,213,215,3,38,19,0,214,212,1,0,
+        0,0,215,218,1,0,0,0,216,214,1,0,0,0,216,217,1,0,0,0,217,219,1,0,
+        0,0,218,216,1,0,0,0,219,220,5,14,0,0,220,228,1,0,0,0,221,222,5,2,
+        0,0,222,223,3,38,19,0,223,224,5,3,0,0,224,228,1,0,0,0,225,228,3,
+        40,20,0,226,228,5,35,0,0,227,203,1,0,0,0,227,206,1,0,0,0,227,208,
+        1,0,0,0,227,210,1,0,0,0,227,221,1,0,0,0,227,225,1,0,0,0,227,226,
+        1,0,0,0,228,258,1,0,0,0,229,230,10,11,0,0,230,231,5,18,0,0,231,257,
+        3,38,19,12,232,233,10,10,0,0,233,234,5,19,0,0,234,257,3,38,19,11,
+        235,236,10,9,0,0,236,237,5,20,0,0,237,257,3,38,19,10,238,239,10,
+        8,0,0,239,240,5,21,0,0,240,257,3,38,19,9,241,242,10,7,0,0,242,243,
+        5,22,0,0,243,257,3,38,19,8,244,245,10,6,0,0,245,246,5,7,0,0,246,
+        247,3,38,19,0,247,248,5,8,0,0,248,257,1,0,0,0,249,250,10,5,0,0,250,
+        251,5,7,0,0,251,252,3,38,19,0,252,253,5,23,0,0,253,254,3,38,19,0,
+        254,255,5,8,0,0,255,257,1,0,0,0,256,229,1,0,0,0,256,232,1,0,0,0,
+        256,235,1,0,0,0,256,238,1,0,0,0,256,241,1,0,0,0,256,244,1,0,0,0,
+        256,249,1,0,0,0,257,260,1,0,0,0,258,256,1,0,0,0,258,259,1,0,0,0,
+        259,39,1,0,0,0,260,258,1,0,0,0,261,262,7,2,0,0,262,41,1,0,0,0,22,
+        45,51,58,70,76,83,97,101,108,126,134,152,154,161,173,182,193,200,
+        216,227,256,258
     ]
 
 class SystemVerilogSubsetParser ( Parser ):
@@ -191,7 +204,7 @@ class SystemVerilogSubsetParser ( Parser ):
 
     def __init__(self, input:TokenStream, output:TextIO = sys.stdout):
         super().__init__(input, output)
-        self.checkVersion("4.13.2")
+        self.checkVersion("4.13.1")
         self._interp = ParserATNSimulator(self, self.atn, self.decisionsToDFA, self.sharedContextCache)
         self._predicates = None
 
@@ -214,14 +227,6 @@ class SystemVerilogSubsetParser ( Parser ):
 
         def getRuleIndex(self):
             return SystemVerilogSubsetParser.RULE_compilation_unit
-
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterCompilation_unit" ):
-                listener.enterCompilation_unit(self)
-
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitCompilation_unit" ):
-                listener.exitCompilation_unit(self)
 
         def accept(self, visitor:ParseTreeVisitor):
             if hasattr( visitor, "visitCompilation_unit" ):
@@ -287,14 +292,6 @@ class SystemVerilogSubsetParser ( Parser ):
 
         def getRuleIndex(self):
             return SystemVerilogSubsetParser.RULE_module_declaration
-
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterModule_declaration" ):
-                listener.enterModule_declaration(self)
-
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitModule_declaration" ):
-                listener.exitModule_declaration(self)
 
         def accept(self, visitor:ParseTreeVisitor):
             if hasattr( visitor, "visitModule_declaration" ):
@@ -364,14 +361,6 @@ class SystemVerilogSubsetParser ( Parser ):
         def getRuleIndex(self):
             return SystemVerilogSubsetParser.RULE_module_identifier
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterModule_identifier" ):
-                listener.enterModule_identifier(self)
-
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitModule_identifier" ):
-                listener.exitModule_identifier(self)
-
         def accept(self, visitor:ParseTreeVisitor):
             if hasattr( visitor, "visitModule_identifier" ):
                 return visitor.visitModule_identifier(self)
@@ -420,14 +409,6 @@ class SystemVerilogSubsetParser ( Parser ):
 
         def getRuleIndex(self):
             return SystemVerilogSubsetParser.RULE_port_list
-
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterPort_list" ):
-                listener.enterPort_list(self)
-
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitPort_list" ):
-                listener.exitPort_list(self)
 
         def accept(self, visitor:ParseTreeVisitor):
             if hasattr( visitor, "visitPort_list" ):
@@ -479,23 +460,24 @@ class SystemVerilogSubsetParser ( Parser ):
             return self.getTypedRuleContext(SystemVerilogSubsetParser.Data_typeContext,0)
 
 
-        def Identifier(self):
-            return self.getToken(SystemVerilogSubsetParser.Identifier, 0)
+        def Identifier(self, i:int=None):
+            if i is None:
+                return self.getTokens(SystemVerilogSubsetParser.Identifier)
+            else:
+                return self.getToken(SystemVerilogSubsetParser.Identifier, i)
 
         def range_(self):
             return self.getTypedRuleContext(SystemVerilogSubsetParser.RangeContext,0)
 
 
+        def COMMA(self, i:int=None):
+            if i is None:
+                return self.getTokens(SystemVerilogSubsetParser.COMMA)
+            else:
+                return self.getToken(SystemVerilogSubsetParser.COMMA, i)
+
         def getRuleIndex(self):
             return SystemVerilogSubsetParser.RULE_port
-
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterPort" ):
-                listener.enterPort(self)
-
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitPort" ):
-                listener.exitPort(self)
 
         def accept(self, visitor:ParseTreeVisitor):
             if hasattr( visitor, "visitPort" ):
@@ -512,45 +494,38 @@ class SystemVerilogSubsetParser ( Parser ):
         self.enterRule(localctx, 8, self.RULE_port)
         self._la = 0 # Token type
         try:
-            self.state = 87
-            self._errHandler.sync(self)
-            token = self._input.LA(1)
-            if token in [5]:
-                self.enterOuterAlt(localctx, 1)
-                self.state = 73
-                self.match(SystemVerilogSubsetParser.T__4)
-                self.state = 74
-                self.data_type()
-                self.state = 76
-                self._errHandler.sync(self)
-                _la = self._input.LA(1)
-                if _la==7:
-                    self.state = 75
-                    self.range_()
-
-
-                self.state = 78
-                self.match(SystemVerilogSubsetParser.Identifier)
-                pass
-            elif token in [6]:
-                self.enterOuterAlt(localctx, 2)
-                self.state = 80
-                self.match(SystemVerilogSubsetParser.T__5)
-                self.state = 81
-                self.data_type()
-                self.state = 83
-                self._errHandler.sync(self)
-                _la = self._input.LA(1)
-                if _la==7:
-                    self.state = 82
-                    self.range_()
-
-
-                self.state = 85
-                self.match(SystemVerilogSubsetParser.Identifier)
-                pass
+            self.enterOuterAlt(localctx, 1)
+            self.state = 73
+            _la = self._input.LA(1)
+            if not(_la==5 or _la==6):
+                self._errHandler.recoverInline(self)
             else:
-                raise NoViableAltException(self)
+                self._errHandler.reportMatch(self)
+                self.consume()
+            self.state = 74
+            self.data_type()
+            self.state = 76
+            self._errHandler.sync(self)
+            _la = self._input.LA(1)
+            if _la==7:
+                self.state = 75
+                self.range_()
+
+
+            self.state = 78
+            self.match(SystemVerilogSubsetParser.Identifier)
+            self.state = 83
+            self._errHandler.sync(self)
+            _alt = self._interp.adaptivePredict(self._input,5,self._ctx)
+            while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
+                if _alt==1:
+                    self.state = 79
+                    self.match(SystemVerilogSubsetParser.COMMA)
+                    self.state = 80
+                    self.match(SystemVerilogSubsetParser.Identifier) 
+                self.state = 85
+                self._errHandler.sync(self)
+                _alt = self._interp.adaptivePredict(self._input,5,self._ctx)
 
         except RecognitionException as re:
             localctx.exception = re
@@ -580,14 +555,6 @@ class SystemVerilogSubsetParser ( Parser ):
         def getRuleIndex(self):
             return SystemVerilogSubsetParser.RULE_range
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterRange" ):
-                listener.enterRange(self)
-
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitRange" ):
-                listener.exitRange(self)
-
         def accept(self, visitor:ParseTreeVisitor):
             if hasattr( visitor, "visitRange" ):
                 return visitor.visitRange(self)
@@ -603,15 +570,15 @@ class SystemVerilogSubsetParser ( Parser ):
         self.enterRule(localctx, 10, self.RULE_range)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 89
+            self.state = 86
             self.match(SystemVerilogSubsetParser.T__6)
-            self.state = 90
+            self.state = 87
             self.match(SystemVerilogSubsetParser.DecimalNumber)
-            self.state = 91
+            self.state = 88
             self.match(SystemVerilogSubsetParser.COLON)
-            self.state = 92
+            self.state = 89
             self.match(SystemVerilogSubsetParser.DecimalNumber)
-            self.state = 93
+            self.state = 90
             self.match(SystemVerilogSubsetParser.T__7)
         except RecognitionException as re:
             localctx.exception = re
@@ -633,14 +600,6 @@ class SystemVerilogSubsetParser ( Parser ):
         def getRuleIndex(self):
             return SystemVerilogSubsetParser.RULE_data_type
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterData_type" ):
-                listener.enterData_type(self)
-
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitData_type" ):
-                listener.exitData_type(self)
-
         def accept(self, visitor:ParseTreeVisitor):
             if hasattr( visitor, "visitData_type" ):
                 return visitor.visitData_type(self)
@@ -656,7 +615,7 @@ class SystemVerilogSubsetParser ( Parser ):
         self.enterRule(localctx, 12, self.RULE_data_type)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 95
+            self.state = 92
             self.match(SystemVerilogSubsetParser.T__8)
         except RecognitionException as re:
             localctx.exception = re
@@ -689,14 +648,6 @@ class SystemVerilogSubsetParser ( Parser ):
         def getRuleIndex(self):
             return SystemVerilogSubsetParser.RULE_module_item
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterModule_item" ):
-                listener.enterModule_item(self)
-
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitModule_item" ):
-                listener.exitModule_item(self)
-
         def accept(self, visitor:ParseTreeVisitor):
             if hasattr( visitor, "visitModule_item" ):
                 return visitor.visitModule_item(self)
@@ -711,22 +662,22 @@ class SystemVerilogSubsetParser ( Parser ):
         localctx = SystemVerilogSubsetParser.Module_itemContext(self, self._ctx, self.state)
         self.enterRule(localctx, 14, self.RULE_module_item)
         try:
-            self.state = 100
+            self.state = 97
             self._errHandler.sync(self)
             token = self._input.LA(1)
             if token in [9, 10]:
                 self.enterOuterAlt(localctx, 1)
-                self.state = 97
+                self.state = 94
                 self.net_declaration()
                 pass
             elif token in [11]:
                 self.enterOuterAlt(localctx, 2)
-                self.state = 98
+                self.state = 95
                 self.continuous_assign()
                 pass
             elif token in [12]:
                 self.enterOuterAlt(localctx, 3)
-                self.state = 99
+                self.state = 96
                 self.always_comb_block()
                 pass
             else:
@@ -748,22 +699,27 @@ class SystemVerilogSubsetParser ( Parser ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
-        def Identifier(self):
-            return self.getToken(SystemVerilogSubsetParser.Identifier, 0)
+        def Identifier(self, i:int=None):
+            if i is None:
+                return self.getTokens(SystemVerilogSubsetParser.Identifier)
+            else:
+                return self.getToken(SystemVerilogSubsetParser.Identifier, i)
 
         def SEMICOLON(self):
             return self.getToken(SystemVerilogSubsetParser.SEMICOLON, 0)
 
+        def range_(self):
+            return self.getTypedRuleContext(SystemVerilogSubsetParser.RangeContext,0)
+
+
+        def COMMA(self, i:int=None):
+            if i is None:
+                return self.getTokens(SystemVerilogSubsetParser.COMMA)
+            else:
+                return self.getToken(SystemVerilogSubsetParser.COMMA, i)
+
         def getRuleIndex(self):
             return SystemVerilogSubsetParser.RULE_net_declaration
-
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterNet_declaration" ):
-                listener.enterNet_declaration(self)
-
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitNet_declaration" ):
-                listener.exitNet_declaration(self)
 
         def accept(self, visitor:ParseTreeVisitor):
             if hasattr( visitor, "visitNet_declaration" ):
@@ -781,16 +737,36 @@ class SystemVerilogSubsetParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 102
+            self.state = 99
             _la = self._input.LA(1)
             if not(_la==9 or _la==10):
                 self._errHandler.recoverInline(self)
             else:
                 self._errHandler.reportMatch(self)
                 self.consume()
+            self.state = 101
+            self._errHandler.sync(self)
+            _la = self._input.LA(1)
+            if _la==7:
+                self.state = 100
+                self.range_()
+
+
             self.state = 103
             self.match(SystemVerilogSubsetParser.Identifier)
-            self.state = 104
+            self.state = 108
+            self._errHandler.sync(self)
+            _la = self._input.LA(1)
+            while _la==24:
+                self.state = 104
+                self.match(SystemVerilogSubsetParser.COMMA)
+                self.state = 105
+                self.match(SystemVerilogSubsetParser.Identifier)
+                self.state = 110
+                self._errHandler.sync(self)
+                _la = self._input.LA(1)
+
+            self.state = 111
             self.match(SystemVerilogSubsetParser.SEMICOLON)
         except RecognitionException as re:
             localctx.exception = re
@@ -825,14 +801,6 @@ class SystemVerilogSubsetParser ( Parser ):
         def getRuleIndex(self):
             return SystemVerilogSubsetParser.RULE_continuous_assign
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterContinuous_assign" ):
-                listener.enterContinuous_assign(self)
-
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitContinuous_assign" ):
-                listener.exitContinuous_assign(self)
-
         def accept(self, visitor:ParseTreeVisitor):
             if hasattr( visitor, "visitContinuous_assign" ):
                 return visitor.visitContinuous_assign(self)
@@ -848,15 +816,15 @@ class SystemVerilogSubsetParser ( Parser ):
         self.enterRule(localctx, 18, self.RULE_continuous_assign)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 106
+            self.state = 113
             self.match(SystemVerilogSubsetParser.T__10)
-            self.state = 107
+            self.state = 114
             self.variable_lvalue()
-            self.state = 108
+            self.state = 115
             self.match(SystemVerilogSubsetParser.ASSIGN)
-            self.state = 109
+            self.state = 116
             self.expression(0)
-            self.state = 110
+            self.state = 117
             self.match(SystemVerilogSubsetParser.SEMICOLON)
         except RecognitionException as re:
             localctx.exception = re
@@ -881,14 +849,6 @@ class SystemVerilogSubsetParser ( Parser ):
         def getRuleIndex(self):
             return SystemVerilogSubsetParser.RULE_always_comb_block
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterAlways_comb_block" ):
-                listener.enterAlways_comb_block(self)
-
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitAlways_comb_block" ):
-                listener.exitAlways_comb_block(self)
-
         def accept(self, visitor:ParseTreeVisitor):
             if hasattr( visitor, "visitAlways_comb_block" ):
                 return visitor.visitAlways_comb_block(self)
@@ -904,9 +864,9 @@ class SystemVerilogSubsetParser ( Parser ):
         self.enterRule(localctx, 20, self.RULE_always_comb_block)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 112
+            self.state = 119
             self.match(SystemVerilogSubsetParser.T__11)
-            self.state = 113
+            self.state = 120
             self.statement()
         except RecognitionException as re:
             localctx.exception = re
@@ -950,14 +910,6 @@ class SystemVerilogSubsetParser ( Parser ):
         def getRuleIndex(self):
             return SystemVerilogSubsetParser.RULE_statement
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterStatement" ):
-                listener.enterStatement(self)
-
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitStatement" ):
-                listener.exitStatement(self)
-
         def accept(self, visitor:ParseTreeVisitor):
             if hasattr( visitor, "visitStatement" ):
                 return visitor.visitStatement(self)
@@ -973,44 +925,44 @@ class SystemVerilogSubsetParser ( Parser ):
         self.enterRule(localctx, 22, self.RULE_statement)
         self._la = 0 # Token type
         try:
-            self.state = 127
+            self.state = 134
             self._errHandler.sync(self)
             token = self._input.LA(1)
             if token in [13]:
                 self.enterOuterAlt(localctx, 1)
-                self.state = 115
+                self.state = 122
                 self.match(SystemVerilogSubsetParser.T__12)
-                self.state = 119
+                self.state = 126
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
                 while (((_la) & ~0x3f) == 0 and ((1 << _la) & 39996891136) != 0):
-                    self.state = 116
+                    self.state = 123
                     self.statement()
-                    self.state = 121
+                    self.state = 128
                     self._errHandler.sync(self)
                     _la = self._input.LA(1)
 
-                self.state = 122
+                self.state = 129
                 self.match(SystemVerilogSubsetParser.T__13)
                 pass
             elif token in [30]:
                 self.enterOuterAlt(localctx, 2)
-                self.state = 123
+                self.state = 130
                 self.begin_end_block()
                 pass
             elif token in [35]:
                 self.enterOuterAlt(localctx, 3)
-                self.state = 124
+                self.state = 131
                 self.blocking_assignment()
                 pass
             elif token in [32]:
                 self.enterOuterAlt(localctx, 4)
-                self.state = 125
+                self.state = 132
                 self.if_statement()
                 pass
             elif token in [28]:
                 self.enterOuterAlt(localctx, 5)
-                self.state = 126
+                self.state = 133
                 self.case_statement()
                 pass
             else:
@@ -1049,14 +1001,6 @@ class SystemVerilogSubsetParser ( Parser ):
         def getRuleIndex(self):
             return SystemVerilogSubsetParser.RULE_blocking_assignment
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterBlocking_assignment" ):
-                listener.enterBlocking_assignment(self)
-
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitBlocking_assignment" ):
-                listener.exitBlocking_assignment(self)
-
         def accept(self, visitor:ParseTreeVisitor):
             if hasattr( visitor, "visitBlocking_assignment" ):
                 return visitor.visitBlocking_assignment(self)
@@ -1072,13 +1016,13 @@ class SystemVerilogSubsetParser ( Parser ):
         self.enterRule(localctx, 24, self.RULE_blocking_assignment)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 129
+            self.state = 136
             self.variable_lvalue()
-            self.state = 130
+            self.state = 137
             self.match(SystemVerilogSubsetParser.ASSIGN)
-            self.state = 131
+            self.state = 138
             self.expression(0)
-            self.state = 132
+            self.state = 139
             self.match(SystemVerilogSubsetParser.SEMICOLON)
         except RecognitionException as re:
             localctx.exception = re
@@ -1096,11 +1040,8 @@ class SystemVerilogSubsetParser ( Parser ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
-        def Identifier(self, i:int=None):
-            if i is None:
-                return self.getTokens(SystemVerilogSubsetParser.Identifier)
-            else:
-                return self.getToken(SystemVerilogSubsetParser.Identifier, i)
+        def Identifier(self):
+            return self.getToken(SystemVerilogSubsetParser.Identifier, 0)
 
         def expression(self, i:int=None):
             if i is None:
@@ -1118,14 +1059,6 @@ class SystemVerilogSubsetParser ( Parser ):
         def getRuleIndex(self):
             return SystemVerilogSubsetParser.RULE_variable_lvalue
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterVariable_lvalue" ):
-                listener.enterVariable_lvalue(self)
-
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitVariable_lvalue" ):
-                listener.exitVariable_lvalue(self)
-
         def accept(self, visitor:ParseTreeVisitor):
             if hasattr( visitor, "visitVariable_lvalue" ):
                 return visitor.visitVariable_lvalue(self)
@@ -1142,33 +1075,39 @@ class SystemVerilogSubsetParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 134
+            self.state = 141
             self.match(SystemVerilogSubsetParser.Identifier)
-            self.state = 143
+            self.state = 154
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            while _la==7 or _la==23:
-                self.state = 141
+            while _la==7:
+                self.state = 152
                 self._errHandler.sync(self)
-                token = self._input.LA(1)
-                if token in [7]:
-                    self.state = 135
+                la_ = self._interp.adaptivePredict(self._input,11,self._ctx)
+                if la_ == 1:
+                    self.state = 142
                     self.match(SystemVerilogSubsetParser.T__6)
-                    self.state = 136
+                    self.state = 143
                     self.expression(0)
-                    self.state = 137
+                    self.state = 144
                     self.match(SystemVerilogSubsetParser.T__7)
                     pass
-                elif token in [23]:
-                    self.state = 139
-                    self.match(SystemVerilogSubsetParser.COLON)
-                    self.state = 140
-                    self.match(SystemVerilogSubsetParser.Identifier)
-                    pass
-                else:
-                    raise NoViableAltException(self)
 
-                self.state = 145
+                elif la_ == 2:
+                    self.state = 146
+                    self.match(SystemVerilogSubsetParser.T__6)
+                    self.state = 147
+                    self.expression(0)
+                    self.state = 148
+                    self.match(SystemVerilogSubsetParser.COLON)
+                    self.state = 149
+                    self.expression(0)
+                    self.state = 150
+                    self.match(SystemVerilogSubsetParser.T__7)
+                    pass
+
+
+                self.state = 156
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
 
@@ -1204,14 +1143,6 @@ class SystemVerilogSubsetParser ( Parser ):
         def getRuleIndex(self):
             return SystemVerilogSubsetParser.RULE_begin_end_block
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterBegin_end_block" ):
-                listener.enterBegin_end_block(self)
-
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitBegin_end_block" ):
-                listener.exitBegin_end_block(self)
-
         def accept(self, visitor:ParseTreeVisitor):
             if hasattr( visitor, "visitBegin_end_block" ):
                 return visitor.visitBegin_end_block(self)
@@ -1228,19 +1159,19 @@ class SystemVerilogSubsetParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 146
+            self.state = 157
             self.match(SystemVerilogSubsetParser.BEGIN)
-            self.state = 150
+            self.state = 161
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             while (((_la) & ~0x3f) == 0 and ((1 << _la) & 39996891136) != 0):
-                self.state = 147
+                self.state = 158
                 self.statement()
-                self.state = 152
+                self.state = 163
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
 
-            self.state = 153
+            self.state = 164
             self.match(SystemVerilogSubsetParser.END)
         except RecognitionException as re:
             localctx.exception = re
@@ -1278,14 +1209,6 @@ class SystemVerilogSubsetParser ( Parser ):
         def getRuleIndex(self):
             return SystemVerilogSubsetParser.RULE_if_statement
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterIf_statement" ):
-                listener.enterIf_statement(self)
-
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitIf_statement" ):
-                listener.exitIf_statement(self)
-
         def accept(self, visitor:ParseTreeVisitor):
             if hasattr( visitor, "visitIf_statement" ):
                 return visitor.visitIf_statement(self)
@@ -1301,23 +1224,23 @@ class SystemVerilogSubsetParser ( Parser ):
         self.enterRule(localctx, 30, self.RULE_if_statement)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 155
+            self.state = 166
             self.match(SystemVerilogSubsetParser.IF)
-            self.state = 156
+            self.state = 167
             self.match(SystemVerilogSubsetParser.T__1)
-            self.state = 157
+            self.state = 168
             self.expression(0)
-            self.state = 158
+            self.state = 169
             self.match(SystemVerilogSubsetParser.T__2)
-            self.state = 159
+            self.state = 170
             self.statement()
-            self.state = 162
+            self.state = 173
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,13,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input,14,self._ctx)
             if la_ == 1:
-                self.state = 160
+                self.state = 171
                 self.match(SystemVerilogSubsetParser.ELSE)
-                self.state = 161
+                self.state = 172
                 self.statement()
 
 
@@ -1357,14 +1280,6 @@ class SystemVerilogSubsetParser ( Parser ):
         def getRuleIndex(self):
             return SystemVerilogSubsetParser.RULE_case_statement
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterCase_statement" ):
-                listener.enterCase_statement(self)
-
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitCase_statement" ):
-                listener.exitCase_statement(self)
-
         def accept(self, visitor:ParseTreeVisitor):
             if hasattr( visitor, "visitCase_statement" ):
                 return visitor.visitCase_statement(self)
@@ -1381,27 +1296,27 @@ class SystemVerilogSubsetParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 164
+            self.state = 175
             self.match(SystemVerilogSubsetParser.CASE)
-            self.state = 165
+            self.state = 176
             self.match(SystemVerilogSubsetParser.T__1)
-            self.state = 166
+            self.state = 177
             self.expression(0)
-            self.state = 167
+            self.state = 178
             self.match(SystemVerilogSubsetParser.T__2)
-            self.state = 169 
+            self.state = 180 
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             while True:
-                self.state = 168
+                self.state = 179
                 self.case_item()
-                self.state = 171 
+                self.state = 182 
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                if not ((((_la) & ~0x3f) == 0 and ((1 << _la) & 120393531396) != 0)):
+                if not ((((_la) & ~0x3f) == 0 and ((1 << _la) & 120393539588) != 0)):
                     break
 
-            self.state = 173
+            self.state = 184
             self.match(SystemVerilogSubsetParser.ENDCASE)
         except RecognitionException as re:
             localctx.exception = re
@@ -1436,14 +1351,6 @@ class SystemVerilogSubsetParser ( Parser ):
         def getRuleIndex(self):
             return SystemVerilogSubsetParser.RULE_case_item
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterCase_item" ):
-                listener.enterCase_item(self)
-
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitCase_item" ):
-                listener.exitCase_item(self)
-
         def accept(self, visitor:ParseTreeVisitor):
             if hasattr( visitor, "visitCase_item" ):
                 return visitor.visitCase_item(self)
@@ -1458,25 +1365,25 @@ class SystemVerilogSubsetParser ( Parser ):
         localctx = SystemVerilogSubsetParser.Case_itemContext(self, self._ctx, self.state)
         self.enterRule(localctx, 34, self.RULE_case_item)
         try:
-            self.state = 182
+            self.state = 193
             self._errHandler.sync(self)
             token = self._input.LA(1)
-            if token in [2, 15, 16, 17, 34, 35, 36]:
+            if token in [2, 13, 15, 16, 17, 34, 35, 36]:
                 self.enterOuterAlt(localctx, 1)
-                self.state = 175
+                self.state = 186
                 self.expression_list()
-                self.state = 176
+                self.state = 187
                 self.match(SystemVerilogSubsetParser.COLON)
-                self.state = 177
+                self.state = 188
                 self.statement()
                 pass
             elif token in [27]:
                 self.enterOuterAlt(localctx, 2)
-                self.state = 179
+                self.state = 190
                 self.match(SystemVerilogSubsetParser.DEFAULT)
-                self.state = 180
+                self.state = 191
                 self.match(SystemVerilogSubsetParser.COLON)
-                self.state = 181
+                self.state = 192
                 self.statement()
                 pass
             else:
@@ -1514,14 +1421,6 @@ class SystemVerilogSubsetParser ( Parser ):
         def getRuleIndex(self):
             return SystemVerilogSubsetParser.RULE_expression_list
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterExpression_list" ):
-                listener.enterExpression_list(self)
-
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitExpression_list" ):
-                listener.exitExpression_list(self)
-
         def accept(self, visitor:ParseTreeVisitor):
             if hasattr( visitor, "visitExpression_list" ):
                 return visitor.visitExpression_list(self)
@@ -1538,17 +1437,17 @@ class SystemVerilogSubsetParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 184
+            self.state = 195
             self.expression(0)
-            self.state = 189
+            self.state = 200
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             while _la==24:
-                self.state = 185
+                self.state = 196
                 self.match(SystemVerilogSubsetParser.COMMA)
-                self.state = 186
+                self.state = 197
                 self.expression(0)
-                self.state = 191
+                self.state = 202
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
 
@@ -1590,14 +1489,6 @@ class SystemVerilogSubsetParser ( Parser ):
                 return self.getTypedRuleContext(SystemVerilogSubsetParser.ExpressionContext,i)
 
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterAndExpr" ):
-                listener.enterAndExpr(self)
-
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitAndExpr" ):
-                listener.exitAndExpr(self)
-
         def accept(self, visitor:ParseTreeVisitor):
             if hasattr( visitor, "visitAndExpr" ):
                 return visitor.visitAndExpr(self)
@@ -1615,17 +1506,29 @@ class SystemVerilogSubsetParser ( Parser ):
             return self.getTypedRuleContext(SystemVerilogSubsetParser.LiteralContext,0)
 
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterConstExpr" ):
-                listener.enterConstExpr(self)
-
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitConstExpr" ):
-                listener.exitConstExpr(self)
-
         def accept(self, visitor:ParseTreeVisitor):
             if hasattr( visitor, "visitConstExpr" ):
                 return visitor.visitConstExpr(self)
+            else:
+                return visitor.visitChildren(self)
+
+
+    class BitSelectExprContext(ExpressionContext):
+
+        def __init__(self, parser, ctx:ParserRuleContext): # actually a SystemVerilogSubsetParser.ExpressionContext
+            super().__init__(parser)
+            self.copyFrom(ctx)
+
+        def expression(self, i:int=None):
+            if i is None:
+                return self.getTypedRuleContexts(SystemVerilogSubsetParser.ExpressionContext)
+            else:
+                return self.getTypedRuleContext(SystemVerilogSubsetParser.ExpressionContext,i)
+
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitBitSelectExpr" ):
+                return visitor.visitBitSelectExpr(self)
             else:
                 return visitor.visitChildren(self)
 
@@ -1638,14 +1541,6 @@ class SystemVerilogSubsetParser ( Parser ):
 
         def Identifier(self):
             return self.getToken(SystemVerilogSubsetParser.Identifier, 0)
-
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterIdExpr" ):
-                listener.enterIdExpr(self)
-
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitIdExpr" ):
-                listener.exitIdExpr(self)
 
         def accept(self, visitor:ParseTreeVisitor):
             if hasattr( visitor, "visitIdExpr" ):
@@ -1667,17 +1562,130 @@ class SystemVerilogSubsetParser ( Parser ):
                 return self.getTypedRuleContext(SystemVerilogSubsetParser.ExpressionContext,i)
 
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterXorExpr" ):
-                listener.enterXorExpr(self)
-
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitXorExpr" ):
-                listener.exitXorExpr(self)
-
         def accept(self, visitor:ParseTreeVisitor):
             if hasattr( visitor, "visitXorExpr" ):
                 return visitor.visitXorExpr(self)
+            else:
+                return visitor.visitChildren(self)
+
+
+    class XnorExprContext(ExpressionContext):
+
+        def __init__(self, parser, ctx:ParserRuleContext): # actually a SystemVerilogSubsetParser.ExpressionContext
+            super().__init__(parser)
+            self.copyFrom(ctx)
+
+        def expression(self, i:int=None):
+            if i is None:
+                return self.getTypedRuleContexts(SystemVerilogSubsetParser.ExpressionContext)
+            else:
+                return self.getTypedRuleContext(SystemVerilogSubsetParser.ExpressionContext,i)
+
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitXnorExpr" ):
+                return visitor.visitXnorExpr(self)
+            else:
+                return visitor.visitChildren(self)
+
+
+    class LogicalNotExprContext(ExpressionContext):
+
+        def __init__(self, parser, ctx:ParserRuleContext): # actually a SystemVerilogSubsetParser.ExpressionContext
+            super().__init__(parser)
+            self.copyFrom(ctx)
+
+        def expression(self):
+            return self.getTypedRuleContext(SystemVerilogSubsetParser.ExpressionContext,0)
+
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitLogicalNotExpr" ):
+                return visitor.visitLogicalNotExpr(self)
+            else:
+                return visitor.visitChildren(self)
+
+
+    class PartSelectExprContext(ExpressionContext):
+
+        def __init__(self, parser, ctx:ParserRuleContext): # actually a SystemVerilogSubsetParser.ExpressionContext
+            super().__init__(parser)
+            self.copyFrom(ctx)
+
+        def expression(self, i:int=None):
+            if i is None:
+                return self.getTypedRuleContexts(SystemVerilogSubsetParser.ExpressionContext)
+            else:
+                return self.getTypedRuleContext(SystemVerilogSubsetParser.ExpressionContext,i)
+
+        def COLON(self):
+            return self.getToken(SystemVerilogSubsetParser.COLON, 0)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitPartSelectExpr" ):
+                return visitor.visitPartSelectExpr(self)
+            else:
+                return visitor.visitChildren(self)
+
+
+    class OrExprContext(ExpressionContext):
+
+        def __init__(self, parser, ctx:ParserRuleContext): # actually a SystemVerilogSubsetParser.ExpressionContext
+            super().__init__(parser)
+            self.copyFrom(ctx)
+
+        def expression(self, i:int=None):
+            if i is None:
+                return self.getTypedRuleContexts(SystemVerilogSubsetParser.ExpressionContext)
+            else:
+                return self.getTypedRuleContext(SystemVerilogSubsetParser.ExpressionContext,i)
+
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitOrExpr" ):
+                return visitor.visitOrExpr(self)
+            else:
+                return visitor.visitChildren(self)
+
+
+    class NegateExprContext(ExpressionContext):
+
+        def __init__(self, parser, ctx:ParserRuleContext): # actually a SystemVerilogSubsetParser.ExpressionContext
+            super().__init__(parser)
+            self.copyFrom(ctx)
+
+        def expression(self):
+            return self.getTypedRuleContext(SystemVerilogSubsetParser.ExpressionContext,0)
+
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitNegateExpr" ):
+                return visitor.visitNegateExpr(self)
+            else:
+                return visitor.visitChildren(self)
+
+
+    class ConcatExprContext(ExpressionContext):
+
+        def __init__(self, parser, ctx:ParserRuleContext): # actually a SystemVerilogSubsetParser.ExpressionContext
+            super().__init__(parser)
+            self.copyFrom(ctx)
+
+        def expression(self, i:int=None):
+            if i is None:
+                return self.getTypedRuleContexts(SystemVerilogSubsetParser.ExpressionContext)
+            else:
+                return self.getTypedRuleContext(SystemVerilogSubsetParser.ExpressionContext,i)
+
+        def COMMA(self, i:int=None):
+            if i is None:
+                return self.getTokens(SystemVerilogSubsetParser.COMMA)
+            else:
+                return self.getToken(SystemVerilogSubsetParser.COMMA, i)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitConcatExpr" ):
+                return visitor.visitConcatExpr(self)
             else:
                 return visitor.visitChildren(self)
 
@@ -1691,14 +1699,6 @@ class SystemVerilogSubsetParser ( Parser ):
         def expression(self):
             return self.getTypedRuleContext(SystemVerilogSubsetParser.ExpressionContext,0)
 
-
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterBitwiseNotExpr" ):
-                listener.enterBitwiseNotExpr(self)
-
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitBitwiseNotExpr" ):
-                listener.exitBitwiseNotExpr(self)
 
         def accept(self, visitor:ParseTreeVisitor):
             if hasattr( visitor, "visitBitwiseNotExpr" ):
@@ -1720,70 +1720,9 @@ class SystemVerilogSubsetParser ( Parser ):
                 return self.getTypedRuleContext(SystemVerilogSubsetParser.ExpressionContext,i)
 
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterEqExpr" ):
-                listener.enterEqExpr(self)
-
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitEqExpr" ):
-                listener.exitEqExpr(self)
-
         def accept(self, visitor:ParseTreeVisitor):
             if hasattr( visitor, "visitEqExpr" ):
                 return visitor.visitEqExpr(self)
-            else:
-                return visitor.visitChildren(self)
-
-
-    class XnorExprContext(ExpressionContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a SystemVerilogSubsetParser.ExpressionContext
-            super().__init__(parser)
-            self.copyFrom(ctx)
-
-        def expression(self, i:int=None):
-            if i is None:
-                return self.getTypedRuleContexts(SystemVerilogSubsetParser.ExpressionContext)
-            else:
-                return self.getTypedRuleContext(SystemVerilogSubsetParser.ExpressionContext,i)
-
-
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterXnorExpr" ):
-                listener.enterXnorExpr(self)
-
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitXnorExpr" ):
-                listener.exitXnorExpr(self)
-
-        def accept(self, visitor:ParseTreeVisitor):
-            if hasattr( visitor, "visitXnorExpr" ):
-                return visitor.visitXnorExpr(self)
-            else:
-                return visitor.visitChildren(self)
-
-
-    class LogicalNotExprContext(ExpressionContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a SystemVerilogSubsetParser.ExpressionContext
-            super().__init__(parser)
-            self.copyFrom(ctx)
-
-        def expression(self):
-            return self.getTypedRuleContext(SystemVerilogSubsetParser.ExpressionContext,0)
-
-
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterLogicalNotExpr" ):
-                listener.enterLogicalNotExpr(self)
-
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitLogicalNotExpr" ):
-                listener.exitLogicalNotExpr(self)
-
-        def accept(self, visitor:ParseTreeVisitor):
-            if hasattr( visitor, "visitLogicalNotExpr" ):
-                return visitor.visitLogicalNotExpr(self)
             else:
                 return visitor.visitChildren(self)
 
@@ -1798,70 +1737,9 @@ class SystemVerilogSubsetParser ( Parser ):
             return self.getTypedRuleContext(SystemVerilogSubsetParser.ExpressionContext,0)
 
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterParenExpr" ):
-                listener.enterParenExpr(self)
-
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitParenExpr" ):
-                listener.exitParenExpr(self)
-
         def accept(self, visitor:ParseTreeVisitor):
             if hasattr( visitor, "visitParenExpr" ):
                 return visitor.visitParenExpr(self)
-            else:
-                return visitor.visitChildren(self)
-
-
-    class OrExprContext(ExpressionContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a SystemVerilogSubsetParser.ExpressionContext
-            super().__init__(parser)
-            self.copyFrom(ctx)
-
-        def expression(self, i:int=None):
-            if i is None:
-                return self.getTypedRuleContexts(SystemVerilogSubsetParser.ExpressionContext)
-            else:
-                return self.getTypedRuleContext(SystemVerilogSubsetParser.ExpressionContext,i)
-
-
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterOrExpr" ):
-                listener.enterOrExpr(self)
-
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitOrExpr" ):
-                listener.exitOrExpr(self)
-
-        def accept(self, visitor:ParseTreeVisitor):
-            if hasattr( visitor, "visitOrExpr" ):
-                return visitor.visitOrExpr(self)
-            else:
-                return visitor.visitChildren(self)
-
-
-    class NegateExprContext(ExpressionContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a SystemVerilogSubsetParser.ExpressionContext
-            super().__init__(parser)
-            self.copyFrom(ctx)
-
-        def expression(self):
-            return self.getTypedRuleContext(SystemVerilogSubsetParser.ExpressionContext,0)
-
-
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterNegateExpr" ):
-                listener.enterNegateExpr(self)
-
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitNegateExpr" ):
-                listener.exitNegateExpr(self)
-
-        def accept(self, visitor:ParseTreeVisitor):
-            if hasattr( visitor, "visitNegateExpr" ):
-                return visitor.visitNegateExpr(self)
             else:
                 return visitor.visitChildren(self)
 
@@ -1874,9 +1752,10 @@ class SystemVerilogSubsetParser ( Parser ):
         _prevctx = localctx
         _startState = 38
         self.enterRecursionRule(localctx, 38, self.RULE_expression, _p)
+        self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 205
+            self.state = 227
             self._errHandler.sync(self)
             token = self._input.LA(1)
             if token in [15]:
@@ -1884,138 +1763,195 @@ class SystemVerilogSubsetParser ( Parser ):
                 self._ctx = localctx
                 _prevctx = localctx
 
-                self.state = 193
+                self.state = 204
                 self.match(SystemVerilogSubsetParser.T__14)
-                self.state = 194
-                self.expression(11)
+                self.state = 205
+                self.expression(14)
                 pass
             elif token in [16]:
                 localctx = SystemVerilogSubsetParser.BitwiseNotExprContext(self, localctx)
                 self._ctx = localctx
                 _prevctx = localctx
-                self.state = 195
+                self.state = 206
                 self.match(SystemVerilogSubsetParser.T__15)
-                self.state = 196
-                self.expression(10)
+                self.state = 207
+                self.expression(13)
                 pass
             elif token in [17]:
                 localctx = SystemVerilogSubsetParser.NegateExprContext(self, localctx)
                 self._ctx = localctx
                 _prevctx = localctx
-                self.state = 197
+                self.state = 208
                 self.match(SystemVerilogSubsetParser.T__16)
-                self.state = 198
-                self.expression(9)
+                self.state = 209
+                self.expression(12)
+                pass
+            elif token in [13]:
+                localctx = SystemVerilogSubsetParser.ConcatExprContext(self, localctx)
+                self._ctx = localctx
+                _prevctx = localctx
+                self.state = 210
+                self.match(SystemVerilogSubsetParser.T__12)
+                self.state = 211
+                self.expression(0)
+                self.state = 216
+                self._errHandler.sync(self)
+                _la = self._input.LA(1)
+                while _la==24:
+                    self.state = 212
+                    self.match(SystemVerilogSubsetParser.COMMA)
+                    self.state = 213
+                    self.expression(0)
+                    self.state = 218
+                    self._errHandler.sync(self)
+                    _la = self._input.LA(1)
+
+                self.state = 219
+                self.match(SystemVerilogSubsetParser.T__13)
                 pass
             elif token in [2]:
                 localctx = SystemVerilogSubsetParser.ParenExprContext(self, localctx)
                 self._ctx = localctx
                 _prevctx = localctx
-                self.state = 199
+                self.state = 221
                 self.match(SystemVerilogSubsetParser.T__1)
-                self.state = 200
+                self.state = 222
                 self.expression(0)
-                self.state = 201
+                self.state = 223
                 self.match(SystemVerilogSubsetParser.T__2)
                 pass
             elif token in [34, 36]:
                 localctx = SystemVerilogSubsetParser.ConstExprContext(self, localctx)
                 self._ctx = localctx
                 _prevctx = localctx
-                self.state = 203
+                self.state = 225
                 self.literal()
                 pass
             elif token in [35]:
                 localctx = SystemVerilogSubsetParser.IdExprContext(self, localctx)
                 self._ctx = localctx
                 _prevctx = localctx
-                self.state = 204
+                self.state = 226
                 self.match(SystemVerilogSubsetParser.Identifier)
                 pass
             else:
                 raise NoViableAltException(self)
 
             self._ctx.stop = self._input.LT(-1)
-            self.state = 224
+            self.state = 258
             self._errHandler.sync(self)
-            _alt = self._interp.adaptivePredict(self._input,19,self._ctx)
+            _alt = self._interp.adaptivePredict(self._input,21,self._ctx)
             while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
                 if _alt==1:
                     if self._parseListeners is not None:
                         self.triggerExitRuleEvent()
                     _prevctx = localctx
-                    self.state = 222
+                    self.state = 256
                     self._errHandler.sync(self)
-                    la_ = self._interp.adaptivePredict(self._input,18,self._ctx)
+                    la_ = self._interp.adaptivePredict(self._input,20,self._ctx)
                     if la_ == 1:
                         localctx = SystemVerilogSubsetParser.AndExprContext(self, SystemVerilogSubsetParser.ExpressionContext(self, _parentctx, _parentState))
                         self.pushNewRecursionContext(localctx, _startState, self.RULE_expression)
-                        self.state = 207
-                        if not self.precpred(self._ctx, 8):
+                        self.state = 229
+                        if not self.precpred(self._ctx, 11):
                             from antlr4.error.Errors import FailedPredicateException
-                            raise FailedPredicateException(self, "self.precpred(self._ctx, 8)")
-                        self.state = 208
+                            raise FailedPredicateException(self, "self.precpred(self._ctx, 11)")
+                        self.state = 230
                         self.match(SystemVerilogSubsetParser.T__17)
-                        self.state = 209
-                        self.expression(9)
+                        self.state = 231
+                        self.expression(12)
                         pass
 
                     elif la_ == 2:
                         localctx = SystemVerilogSubsetParser.OrExprContext(self, SystemVerilogSubsetParser.ExpressionContext(self, _parentctx, _parentState))
                         self.pushNewRecursionContext(localctx, _startState, self.RULE_expression)
-                        self.state = 210
-                        if not self.precpred(self._ctx, 7):
+                        self.state = 232
+                        if not self.precpred(self._ctx, 10):
                             from antlr4.error.Errors import FailedPredicateException
-                            raise FailedPredicateException(self, "self.precpred(self._ctx, 7)")
-                        self.state = 211
+                            raise FailedPredicateException(self, "self.precpred(self._ctx, 10)")
+                        self.state = 233
                         self.match(SystemVerilogSubsetParser.T__18)
-                        self.state = 212
-                        self.expression(8)
+                        self.state = 234
+                        self.expression(11)
                         pass
 
                     elif la_ == 3:
                         localctx = SystemVerilogSubsetParser.XorExprContext(self, SystemVerilogSubsetParser.ExpressionContext(self, _parentctx, _parentState))
                         self.pushNewRecursionContext(localctx, _startState, self.RULE_expression)
-                        self.state = 213
-                        if not self.precpred(self._ctx, 6):
+                        self.state = 235
+                        if not self.precpred(self._ctx, 9):
                             from antlr4.error.Errors import FailedPredicateException
-                            raise FailedPredicateException(self, "self.precpred(self._ctx, 6)")
-                        self.state = 214
+                            raise FailedPredicateException(self, "self.precpred(self._ctx, 9)")
+                        self.state = 236
                         self.match(SystemVerilogSubsetParser.T__19)
-                        self.state = 215
-                        self.expression(7)
+                        self.state = 237
+                        self.expression(10)
                         pass
 
                     elif la_ == 4:
                         localctx = SystemVerilogSubsetParser.XnorExprContext(self, SystemVerilogSubsetParser.ExpressionContext(self, _parentctx, _parentState))
                         self.pushNewRecursionContext(localctx, _startState, self.RULE_expression)
-                        self.state = 216
-                        if not self.precpred(self._ctx, 5):
+                        self.state = 238
+                        if not self.precpred(self._ctx, 8):
                             from antlr4.error.Errors import FailedPredicateException
-                            raise FailedPredicateException(self, "self.precpred(self._ctx, 5)")
-                        self.state = 217
+                            raise FailedPredicateException(self, "self.precpred(self._ctx, 8)")
+                        self.state = 239
                         self.match(SystemVerilogSubsetParser.T__20)
-                        self.state = 218
-                        self.expression(6)
+                        self.state = 240
+                        self.expression(9)
                         pass
 
                     elif la_ == 5:
                         localctx = SystemVerilogSubsetParser.EqExprContext(self, SystemVerilogSubsetParser.ExpressionContext(self, _parentctx, _parentState))
                         self.pushNewRecursionContext(localctx, _startState, self.RULE_expression)
-                        self.state = 219
-                        if not self.precpred(self._ctx, 4):
+                        self.state = 241
+                        if not self.precpred(self._ctx, 7):
                             from antlr4.error.Errors import FailedPredicateException
-                            raise FailedPredicateException(self, "self.precpred(self._ctx, 4)")
-                        self.state = 220
+                            raise FailedPredicateException(self, "self.precpred(self._ctx, 7)")
+                        self.state = 242
                         self.match(SystemVerilogSubsetParser.T__21)
-                        self.state = 221
-                        self.expression(5)
+                        self.state = 243
+                        self.expression(8)
+                        pass
+
+                    elif la_ == 6:
+                        localctx = SystemVerilogSubsetParser.BitSelectExprContext(self, SystemVerilogSubsetParser.ExpressionContext(self, _parentctx, _parentState))
+                        self.pushNewRecursionContext(localctx, _startState, self.RULE_expression)
+                        self.state = 244
+                        if not self.precpred(self._ctx, 6):
+                            from antlr4.error.Errors import FailedPredicateException
+                            raise FailedPredicateException(self, "self.precpred(self._ctx, 6)")
+                        self.state = 245
+                        self.match(SystemVerilogSubsetParser.T__6)
+                        self.state = 246
+                        self.expression(0)
+                        self.state = 247
+                        self.match(SystemVerilogSubsetParser.T__7)
+                        pass
+
+                    elif la_ == 7:
+                        localctx = SystemVerilogSubsetParser.PartSelectExprContext(self, SystemVerilogSubsetParser.ExpressionContext(self, _parentctx, _parentState))
+                        self.pushNewRecursionContext(localctx, _startState, self.RULE_expression)
+                        self.state = 249
+                        if not self.precpred(self._ctx, 5):
+                            from antlr4.error.Errors import FailedPredicateException
+                            raise FailedPredicateException(self, "self.precpred(self._ctx, 5)")
+                        self.state = 250
+                        self.match(SystemVerilogSubsetParser.T__6)
+                        self.state = 251
+                        self.expression(0)
+                        self.state = 252
+                        self.match(SystemVerilogSubsetParser.COLON)
+                        self.state = 253
+                        self.expression(0)
+                        self.state = 254
+                        self.match(SystemVerilogSubsetParser.T__7)
                         pass
 
              
-                self.state = 226
+                self.state = 260
                 self._errHandler.sync(self)
-                _alt = self._interp.adaptivePredict(self._input,19,self._ctx)
+                _alt = self._interp.adaptivePredict(self._input,21,self._ctx)
 
         except RecognitionException as re:
             localctx.exception = re
@@ -2042,14 +1978,6 @@ class SystemVerilogSubsetParser ( Parser ):
         def getRuleIndex(self):
             return SystemVerilogSubsetParser.RULE_literal
 
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterLiteral" ):
-                listener.enterLiteral(self)
-
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitLiteral" ):
-                listener.exitLiteral(self)
-
         def accept(self, visitor:ParseTreeVisitor):
             if hasattr( visitor, "visitLiteral" ):
                 return visitor.visitLiteral(self)
@@ -2066,7 +1994,7 @@ class SystemVerilogSubsetParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 227
+            self.state = 261
             _la = self._input.LA(1)
             if not(_la==34 or _la==36):
                 self._errHandler.recoverInline(self)
@@ -2095,23 +2023,31 @@ class SystemVerilogSubsetParser ( Parser ):
 
     def expression_sempred(self, localctx:ExpressionContext, predIndex:int):
             if predIndex == 0:
-                return self.precpred(self._ctx, 8)
+                return self.precpred(self._ctx, 11)
          
 
             if predIndex == 1:
-                return self.precpred(self._ctx, 7)
+                return self.precpred(self._ctx, 10)
          
 
             if predIndex == 2:
-                return self.precpred(self._ctx, 6)
+                return self.precpred(self._ctx, 9)
          
 
             if predIndex == 3:
-                return self.precpred(self._ctx, 5)
+                return self.precpred(self._ctx, 8)
          
 
             if predIndex == 4:
-                return self.precpred(self._ctx, 4)
+                return self.precpred(self._ctx, 7)
+         
+
+            if predIndex == 5:
+                return self.precpred(self._ctx, 6)
+         
+
+            if predIndex == 6:
+                return self.precpred(self._ctx, 5)
          
 
 

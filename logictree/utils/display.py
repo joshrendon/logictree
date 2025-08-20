@@ -56,7 +56,11 @@ def pretty_print(tree, indent=0):
         #return f"{spacer}VAR({tree.name})"
         return f"{spacer}{tree.name}"
     elif isinstance(tree, ops.LogicConst):
-        logic_val = "TRUE" if tree.value == 1 else "FALSE"
+        #logic_val = "TRUE" if tree.value == 1 else "FALSE"
+        logic_val = "FALSE"
+        val = getattr(tree, "value", None)
+        if val is not None:
+            logic_val = val
         return f"{spacer}{logic_val}"
     elif isinstance(tree, hole.LogicHole):
         return f"{spacer}HOLE({tree.name})"

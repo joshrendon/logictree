@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from ..base.base import LogicTreeNode
 from typing import Dict, Tuple, Union, Optional, List, Set
 import logging
@@ -10,9 +10,22 @@ class LogicAssign(LogicTreeNode):
         super().__init__()
         self.lhs = lhs
         self.rhs = rhs
-    lhs: LogicTreeNode
+    lhs: str | LogicTreeNode
     rhs: LogicTreeNode
     annotated_delay: Optional[int] = None
+    metadata: dict = field(default_factory=dict, compare=False, repr=False)
+
+    # LHS is the sink, not an input var; only RHS contributes
+    def free_vars(self) -> set[str]:
+        if hasattr(self, "_free_vars"):
+            return set(self._free_vars)
+        s = self.rhs.free_vars()
+        try:
+            #self._free_vars = set(s)
+            object.__setattr__(self, "_free_vars", set(s))  # ok with frozen dataclasses
+        except Exception:
+            pass  # caching is optional; correctness doesn’t depend on it
+        return set(s)
 
     def inputs(self) -> Set[str]:
         log.debug(f"Calling inputs() on LogicAssign with lhs={self.lhs}")

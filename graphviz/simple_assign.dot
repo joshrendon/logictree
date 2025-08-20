@@ -1,0 +1,8 @@
+digraph SimpleAssignVisitorFlow {
+  CompilationUnit -> ModuleDeclaration;
+  ModuleDeclaration -> ModuleItem;
+  ModuleItem -> ContinuousAssign;
+  ContinuousAssign -> VariableLValue [label="lhs: y"];
+  ContinuousAssign -> IdExpr [label="rhs: a"];
+  ContinuousAssign -> SignalMapUpdate [label="y = a"];
+}

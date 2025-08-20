@@ -1,0 +1,7 @@
+digraph "logic_tree" {
+rankdir="BT";
+  node [style=filled, shape=box, fontname="Courier"];
+  n0 [label="b", fillcolor="gray"];
+  n1 [label="b", fillcolor="lightgray"];
+  n1 -> n0;
+}

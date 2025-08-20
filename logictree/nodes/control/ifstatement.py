@@ -1,5 +1,6 @@
 from ..base.base import LogicTreeNode
 from typing import Dict, Tuple, Union, Optional, List
+from dataclasses import dataclass, field
 import logging
 log = logging.getLogger(__name__)
 
@@ -13,6 +14,7 @@ def pretty_print_eq_label(op_node):
     return f"{lhs.label()} == {rhs.label()}"
 
 class FlattenedIfStatement(LogicTreeNode):
+    metadata: dict = field(default_factory=dict, compare=False, repr=False)
     def __init__(self, cond, then_branch, else_if_branches=None, else_branch=None):
         super().__init__()
         self.cond= cond
@@ -61,6 +63,10 @@ class FlattenedIfStatement(LogicTreeNode):
         }
 
 class IfStatement(LogicTreeNode):
+    metadata: dict = field(default_factory=dict, compare=False, repr=False)
+    cond: LogicTreeNode
+    then_branch: LogicTreeNode
+    else_branch: LogicTreeNode | None = None
     def __init__(self, cond, then_branch, else_branch=None):
         super().__init__()
         self.cond = cond
@@ -69,6 +75,19 @@ class IfStatement(LogicTreeNode):
         self.children = []
         self._viz_label = None
         self._is_else_if = False  # for UI hinting, optional
+
+    def free_vars(self) -> set[str]:
+        if hasattr(self, "_free_vars"):
+            return set(self._free_vars)
+        s = set(self.cond.free_vars()) | set(self.then_branch.free_vars())
+        if self.else_branch is not None:
+            s |= self.else_branch.free_vars()
+        try:
+            #self._free_vars = set(s)
+            object.__setattr__(self, "_free_vars", set(s))  # ok with frozen dataclasses
+        except Exception:
+            pass  # caching is optional; correctness doesn’t depend on it
+        return set(s)
 
     def is_else_if(self) -> bool:
         return self._is_else_if
@@ -83,9 +102,6 @@ class IfStatement(LogicTreeNode):
         if cond_label == "EQ":
             log.warning(f" cond.label() = EQ; node = {repr(self.cond)}")
         return f"if({cond_label})"
-
-    def flatten(self):
-        return self.simplify()
 
     def get_children(self) -> List["LogicTreeNode"]:
         children = []
@@ -135,11 +151,3 @@ class IfStatement(LogicTreeNode):
             "children": [child.to_json_dict() for child in children],
         }
     
-    def simplify(self):
-        cond = self.cond.simplify()
-        then_branch = self.then_branch.simplify()
-        else_branch = self.else_branch.simplify() if self.else_branch else None
-        simplified = IfStatement(cond, then_branch, else_branch)
-        simplified._viz_label = self._viz_label  # Preserve label
-        return simplified
-

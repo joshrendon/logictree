@@ -1,4 +1,4 @@
-# Generated from SystemVerilogSubset.g4 by ANTLR 4.13.2
+# Generated from SystemVerilogSubset.g4 by ANTLR 4.13.1
 from antlr4 import *
 if "." in __name__:
     from .SystemVerilogSubsetParser import SystemVerilogSubsetParser
@@ -114,6 +114,11 @@ class SystemVerilogSubsetVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by SystemVerilogSubsetParser#BitSelectExpr.
+    def visitBitSelectExpr(self, ctx:SystemVerilogSubsetParser.BitSelectExprContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by SystemVerilogSubsetParser#IdExpr.
     def visitIdExpr(self, ctx:SystemVerilogSubsetParser.IdExprContext):
         return self.visitChildren(ctx)
@@ -121,16 +126,6 @@ class SystemVerilogSubsetVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by SystemVerilogSubsetParser#XorExpr.
     def visitXorExpr(self, ctx:SystemVerilogSubsetParser.XorExprContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by SystemVerilogSubsetParser#BitwiseNotExpr.
-    def visitBitwiseNotExpr(self, ctx:SystemVerilogSubsetParser.BitwiseNotExprContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by SystemVerilogSubsetParser#EqExpr.
-    def visitEqExpr(self, ctx:SystemVerilogSubsetParser.EqExprContext):
         return self.visitChildren(ctx)
 
 
@@ -144,8 +139,8 @@ class SystemVerilogSubsetVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by SystemVerilogSubsetParser#ParenExpr.
-    def visitParenExpr(self, ctx:SystemVerilogSubsetParser.ParenExprContext):
+    # Visit a parse tree produced by SystemVerilogSubsetParser#PartSelectExpr.
+    def visitPartSelectExpr(self, ctx:SystemVerilogSubsetParser.PartSelectExprContext):
         return self.visitChildren(ctx)
 
 
@@ -156,6 +151,26 @@ class SystemVerilogSubsetVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by SystemVerilogSubsetParser#NegateExpr.
     def visitNegateExpr(self, ctx:SystemVerilogSubsetParser.NegateExprContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by SystemVerilogSubsetParser#ConcatExpr.
+    def visitConcatExpr(self, ctx:SystemVerilogSubsetParser.ConcatExprContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by SystemVerilogSubsetParser#BitwiseNotExpr.
+    def visitBitwiseNotExpr(self, ctx:SystemVerilogSubsetParser.BitwiseNotExprContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by SystemVerilogSubsetParser#EqExpr.
+    def visitEqExpr(self, ctx:SystemVerilogSubsetParser.EqExprContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by SystemVerilogSubsetParser#ParenExpr.
+    def visitParenExpr(self, ctx:SystemVerilogSubsetParser.ParenExprContext):
         return self.visitChildren(ctx)
 
 

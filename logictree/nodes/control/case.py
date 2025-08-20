@@ -1,24 +1,42 @@
-from ..base.base import LogicTreeNode
-from typing import Dict, Tuple, Union, Optional, List
-from dataclasses import dataclass
+#from ..base.base import LogicTreeNode
+from logictree.nodes.base.base import LogicTreeNode
+from logictree.nodes.control.assign import LogicAssign
+from typing import Dict, Tuple, Union, Optional, List, TYPE_CHECKING
+from dataclasses import dataclass, field
 from logictree.utils.formating import indent
-from logictree.transforms import case_to_if_tree
+
 import logging
 import copy
 log = logging.getLogger(__name__)
 
-@dataclass
-class CaseItem(LogicTreeNode):
-    def __init__(self, labels, body):
-        super().__init__()
-        self.labels = labels
-        self.body = body
-        self.children = labels + ([body] if body else [])
+if TYPE_CHECKING:
+    from logictree.nodes.ops import LogicConst, LogicVar, LogicOp
 
-    labels: list[LogicTreeNode]
+@dataclass(frozen=True)
+class CaseItem(LogicTreeNode):
+    #labels: list[int] | list[LogicTreeNode]
+    labels: Union[str, List[int]]
     body: LogicTreeNode
     match: Optional[LogicTreeNode] = None  # Some IRs may use this
     default: bool = False
+    metadata: dict = field(default_factory=dict, compare=False, repr=False)
+
+    def __post_init__(self):
+        if self.labels != "default":
+            if not isinstance(self.labels, list) or not all(isinstance(x, int) for x in self.labels):
+                raise TypeError(f"CaseItem.labels must be 'default' or List[int], got {self.labels!r}")
+
+    def free_vars(self) -> set[str]:
+        # labels are constants in your current tests, so ignore
+        if hasattr(self, "_free_vars"):
+            return set(self._free_vars)
+        s = self.body.free_vars()
+        try:
+            #self._free_vars = set(s)
+            object.__setattr__(self, "_free_vars", set(s))  # ok with frozen dataclasses
+        except Exception:
+            pass  # caching is optional; correctness doesn’t depend on it
+        return set(s)
 
     def __repr__(self):
         log.debug("CaseItem __repr__ called with labels: %s", self.labels)
@@ -50,10 +68,19 @@ class CaseItem(LogicTreeNode):
         inputs.update(self.body.inputs())
         return list(inputs)
 
-    def simplify(self):
+    def simplify(self):    
+        import warnings
+        from logictree.transforms.simplify import simplify_logic_tree
+        warnings.warn(
+            ".simplify() is deprecated; use simplify_logic_tree(node) instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        body = simplify_logic_tree(self.body)
+        #return simplify_logic_tree(self)
         return CaseItem(
             labels=self.labels,
-            body=self.body.simplify() if hasattr(self.body, "simplify") else self.body
+            body=body
         )
 
     def clone(self):
@@ -63,20 +90,52 @@ class CaseItem(LogicTreeNode):
         )
 
 
-@dataclass
+@dataclass(frozen=True)
 class CaseStatement(LogicTreeNode):
-    def __init__(self, selector, items: List[CaseItem]):
-        super().__init__()
-        self.selector = selector
-        self.items = items  # List of CaseItem instances
+    #def __init__(self, selector, items: List[CaseItem]):
+    #    super().__init__()
+    #    self.selector = selector
+    #    self.items = items  # List of CaseItem instances
     selector: LogicTreeNode
-    items: List[CaseItem]
+    items: List[CaseItem] = field(default_factory=list)
+    metadata: dict = field(default_factory=dict, compare=False, repr=False)
+
+    def __post_init__(self):
+        for it in self.items:
+            if it.labels != "default":
+                if not isinstance(it.labels, list) or not all(isinstance(x, int) for x in it.labels):
+                    raise TypeError(f"Bad labels on CaseItem: {it.labels!r}")
+
+    def free_vars(self) -> set[str]:
+        if hasattr(self, "_free_vars"):
+            return set(self._free_vars)
+        s = set(self.selector.free_vars())
+        for it in self.items:
+            s |= it.free_vars()
+        try:
+            #self._free_vars = set(s)
+            object.__setattr__(self, "_free_vars", set(s))  # ok with frozen dataclasses
+        except Exception:
+            pass  # caching is optional; correctness doesn’t depend on it
+        return set(s)
 
     def children(self):
         return [self.selector] + [item.body for item in self.items]
 
+    def simplify(self):
+        """Node-local simplification only. Use transforms.case_to_if.case_to_if_tree for structural rewrites."""
+        import warnings
+        #from logictree.transforms.simplify import simplify_logic_tree
+        warnings.warn(
+            ".simplify() is deprecated; use simplify_logic_tree(node) instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self  # keep local invariants only; no cross-module transforms here
+
     def flatten(self):
-        return case_to_if_tree(self).simplify()
+        """Use transforms functions instead (this is now a no-op)."""
+        return self
 
     def inputs(self):
         inputs = set()
@@ -111,15 +170,6 @@ class CaseStatement(LogicTreeNode):
     def delay(self) -> int:
         item_delays = [item.body.delay or 0 for item in self.items if item.body]
         return 1 + max([self.selector.delay or 0] + item_delays)
-
-    def simplify(self):
-        try:
-            from logictree.transforms import case_to_if_tree
-            lowered = case_to_if_tree(self)
-            return lowered
-        except Exception as e:
-            log.warning(f"[simplify:CaseStatement] Lowering failed: {e}")
-            return self
 
     def clone(self):
         return CaseStatement(

@@ -42,7 +42,10 @@ def lower_expr_to_logic_tree(expr):
 
 def lower_stmt_to_logic_tree(stmt):
     if isinstance(stmt, Continuous_assignCtxtClass):
-        return lower_expr_to_logic_tree(stmt.source)
+        lhs = stmt.Identifier().getText()
+        rhs = lower_stmt_to_logic_tree(stmt.expression())
+        #return lower_expr_to_logic_tree(stmt.source)
+        return control.LogicAssign(lhs=lhs, rhs=rhs)
     elif isinstance(stmt, IfStmtCtxtClass):
         cond = lower_expr_to_logic_tree(stmt.condition)
         then = lower_stmt_to_logic_tree(stmt.then_body)
@@ -128,10 +131,15 @@ def simplify_xnor(lhs, rhs):
 
 
 class ASTBuilder(SystemVerilogSubsetVisitor):
+    def genericVisit(self, ctx):
+        rule_name = type(ctx).__name__
+        text = ctx.getText()
+        log.debug(f"[GENERIC VISIT] {rule_name}: {text}")
+        return self.visitChildren(ctx)
     def visitCompilation_unit(self, ctx):
         return {'modules': [self.visit(mod) for mod in ctx.module_declaration()]}
 
-    def visitModule_declaration(self, ctx):
+    def visitModule_declaration(sef, ctx):
         module_name = ctx.module_identifier().getText()
         ports = []
         items = []
@@ -149,6 +157,11 @@ class ASTBuilder(SystemVerilogSubsetVisitor):
             "ports": ports,  # You can fill this in later
             "items": items
         }
+
+    def visitChildren(self, ctx):
+        log.debug(f"[children] visiting children of {type(ctx).__name__}")
+        return self.genericVisit(ctx)
+        #return super().visitChildren(ctx)
 
     def visitModule_item(self, ctx):
         if ctx.always_comb_block():

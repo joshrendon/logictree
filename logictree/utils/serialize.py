@@ -132,7 +132,8 @@ def logic_tree_to_json(tree):
         
             return {
                 "type": node_type,
-                "label": node.label(),
+                #"label": node.label(),
+                "label": label,
                 "depth": getattr(node, "depth", None),
                 "delay": getattr(node, "delay", None),
                 "expr_source": getattr(node, "expr_source", None),
