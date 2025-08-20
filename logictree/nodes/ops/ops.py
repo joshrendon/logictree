@@ -1,5 +1,6 @@
+from __future__ import annotations
 from logictree.nodes.base import LogicTreeNode
-from typing import List, Union, Optional, Tuple
+from typing import List, Union, Optional, Tuple, FrozenSet, Set
 from logictree.utils.display import indent
 from logictree.utils import overlay
 from logictree.nodes.types import GATE_TYPES, COMMUTATIVE_OPS
@@ -7,6 +8,88 @@ from dataclasses import dataclass, replace, field
 from abc import abstractmethod
 import logging
 log = logging.getLogger(__name__)
+
+@dataclass(frozen=True)
+class LogicVar(LogicTreeNode):
+    """Signal/variable reference in the IR."""
+    name: str
+    width: Optional[int] = None
+    is_signed: bool = False
+    metadata: dict = field(default_factory=dict, compare=False, repr=False)
+
+    def __post_init__(self):
+        LogicTreeNode.__init__(self)
+
+    def to_ir_dict(self):
+        return {"type": "LogicVar", "name": self.name}
+
+    def with_width(self, width: int, *, is_signed: Optional[bool] = None):
+        return replace(self, width=width, is_signed=self.is_signed if is_signed is None else is_signed)
+
+    def with_name(self, name: str):
+        return replace(self, name=name)
+
+    def free_vars(self) -> FrozenSet[LogicVar]:
+        return frozenset({self})
+
+    def label(self) -> str:
+        viz = overlay.get_viz_label(self)
+        return viz if viz is not None else self.name
+
+    @property
+    def delay(self):
+        return 0
+
+    @property
+    def op(self) -> str:
+        return "VAR"
+
+    @property
+    def children(self):
+        return []
+
+    def to_json_dict(self):
+        return {
+            "type": self.__class__.__name__,
+            "name": self.name,
+            "label": self.label(),
+            "depth": self.depth,
+            "delay": self.delay,
+            "children": [child.to_json_dict() for child in self.children],
+        }
+        
+    @property
+    def children(self):
+        return  []
+
+    def equals(self, other):
+        return isinstance(other, LogicVar) and self.name == other.name
+
+    def __str__(self) -> str:
+        return self.name
+
+    # TODO: remove mokeypatched __repr__
+    def __repr__(self):
+        return f"LogicVar(name={self.name})"
+
+    @property
+    def depth(self):
+        return 0
+
+    def to_verilog(self):
+        return self.name
+
+    def to_dot(self, graph, parent_id=None, next_id=[0]):
+        my_id = next_id[0]
+        next_id[0] += 1
+        graph.append(f'  node{my_id} [label="{self.name}", shape=ellipse];')
+        if parent_id is not None:
+            graph.append(f'  node{parent_id} -> node{my_id};')
+        return my_id
+
+    def __repr__(self):
+        return f"LogicVar({self.name})"
+
 
 @dataclass(frozen=True)
 class LogicConst(LogicTreeNode):
@@ -33,12 +116,15 @@ class LogicConst(LogicTreeNode):
     def __str__(self) -> str:
         return self.to_verilog()
 
+    def to_ir_dict(self):
+        return {"type": "LogicConst", "value": self.value}
+
     def label(self) -> str:
         viz = overlay.get_viz_label(self)
         return viz if viz is not None else str(self.value)
 
-    def free_vars(self) -> set[str]:
-        return set()
+    def free_vars(self) -> FrozenSet[LogicVar]:
+        return frozenset()
 
     @property
     def delay(self):
@@ -59,14 +145,10 @@ class LogicConst(LogicTreeNode):
     def equals(self, other):
         return isinstance(other, LogicConst) and self.value == other.value
 
-    #def inputs(self) -> set[str]:
-    #    return self.collect_input_names()
-
     @property
     def depth(self):
         return 0
 
-    # ---- Construction helpers ---------------------------------------------
     @staticmethod
     def from_sv_literal(text: str) -> "LogicConst":
         """
@@ -108,7 +190,6 @@ class LogicConst(LogicTreeNode):
             # Fallback: store raw string literal as-is (e.g., parameters/macros you treat as consts)
             return LogicConst(value=s, width=None, is_signed=False, base=None, raw=s)
 
-    # ---- Int/bit operations -----------------------------------------------
     @property
     def is_bool(self) -> bool:
         return isinstance(self.value, bool)
@@ -158,10 +239,8 @@ class LogicConst(LogicTreeNode):
             "label": self.label(),
             "depth": self.depth,
             "delay": self.delay,
-            #"expr_source": self.expr_source,
             "children": [child.to_json_dict() for child in self.children],
         }
-
 
     def to_dot(self, graph, parent_id=None, next_id=[0]):
         my_id = next_id[0]
@@ -173,106 +252,6 @@ class LogicConst(LogicTreeNode):
 
     def __repr__(self):
         return f"LogicConst({self.value})"
-
-    #def collect_input_names(self) -> set[str]:
-    #    return set()
-
-
-@dataclass(frozen=True)
-class LogicVar(LogicTreeNode):
-    """Signal/variable reference in the IR."""
-    name: str
-    width: Optional[int] = None
-    is_signed: bool = False
-    metadata: dict = field(default_factory=dict, compare=False, repr=False)
-
-    def __post_init__(self):
-        LogicTreeNode.__init__(self)
-
-    def with_width(self, width: int, *, is_signed: Optional[bool] = None) -> "LogicVar":
-        return replace(self, width=width, is_signed=self.is_signed if is_signed is None else is_signed)
-
-    def with_name(self, name: str) -> "LogicVar":
-        return replace(self, name=name)
-
-    def free_vars(self) -> set[str]:
-        # cache optional
-        if hasattr(self, "_free_vars"):
-            return set(self._free_vars)
-        s = {self.name}
-
-        try:
-            #self._free_vars = set(s)
-            object.__setattr__(self, "_free_vars", set(s))  # ok with frozen dataclasses
-        except Exception:
-            pass  # caching is optional; correctness doesn’t depend on it
-        return s
-
-    def label(self) -> str:
-        viz = overlay.get_viz_label(self)
-        return viz if viz is not None else self.name
-
-    @property
-    def delay(self):
-        return 0
-
-    @property
-    def op(self) -> str:
-        return "VAR"
-
-    @property
-    def children(self): #leaf
-        return []
-
-    def to_json_dict(self):
-        return {
-            "type": self.__class__.__name__,
-            "name": self.name,
-            "label": self.label(),
-            "depth": self.depth,
-            "delay": self.delay,
-            #"expr_source": self.expr_source,
-            "children": [child.to_json_dict() for child in self.children],
-        }
-        
-    @property
-    def children(self):
-        return  []
-
-    def equals(self, other):
-        return isinstance(other, LogicVar) and self.name == other.name
-
-    def __str__(self) -> str:
-        return self.name
-
-    # TODO: remove mokeypatched __repr__
-    def __repr__(self):
-        return f"LogicVar(name={self.name})"
-
-    #def inputs(self) -> set[str]:
-    #    return self.collect_input_names()
-
-    @property
-    def depth(self):
-        return 0
-
-    def to_verilog(self):
-        return self.name
-
-    def to_dot(self, graph, parent_id=None, next_id=[0]):
-        my_id = next_id[0]
-        next_id[0] += 1
-        graph.append(f'  node{my_id} [label="{self.name}", shape=ellipse];')
-        if parent_id is not None:
-            graph.append(f'  node{parent_id} -> node{my_id};')
-        return my_id
-
-    def __repr__(self):
-        return f"LogicVar({self.name})"
-
-    #def collect_input_names(self) -> set[str]:
-    #    return {self.name}
-
 
 class LogicOp(LogicTreeNode):
     """Base for operator nodes (AND/OR/NOT/etc.)."""
@@ -336,7 +315,6 @@ class LogicOp(LogicTreeNode):
         }
 
     @property
-    #def children(self) -> list["LogicTreeNode"]:
     def children(self):
         return tuple(self.operands)
 
@@ -362,15 +340,6 @@ class LogicOp(LogicTreeNode):
 
     def label(self):
         raise NotImplementedError("Subclasses must implement label()")
-
-    #def to_json_dict(self):
-    #    return {
-    #        "type": self.__class__.__name__,
-    #        "depth": self.depth,
-    #        "delay": self.delay,
-    #        "expr_source": self.expr_source,
-    #        "children": [child.to_json_dict() for child in self.children],
-    #    }
 
     def equals(self, other):
         if not isinstance(other, LogicOp):

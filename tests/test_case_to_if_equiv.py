@@ -64,7 +64,9 @@ def test_case_to_if_define_equivalence_mux2_with_default():
         else:
             print(f"[free_vars] {name}: ATTRIBUTE {type(fv).__name__} -> {sorted(fv)}")
 
-    vars_ = sorted({n for node in orig_map.values() for n in _free_vars_of(node)})
+    #vars_ = sorted({n for node in orig_map.values() for n in _free_vars_of(node)})
+    #vars_ = sorted(orig_map["out"].free_vars(), key=lambda v: v.name)
+    vars_ = sorted({n.name for t in orig_map.values() for n in t.free_vars()})
     assert len(vars_) <= 8
 
     # Compare only nets present in both maps (should include 'out')

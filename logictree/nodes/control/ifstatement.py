@@ -1,5 +1,7 @@
 from ..base.base import LogicTreeNode
-from typing import Dict, Tuple, Union, Optional, List
+from logictree.nodes.ops.ops import LogicVar
+from logictree.nodes.struct.statement import Statement
+from typing import Dict, Tuple, Union, Optional, List, FrozenSet
 from dataclasses import dataclass, field
 import logging
 log = logging.getLogger(__name__)
@@ -13,60 +15,11 @@ def pretty_print_eq_label(op_node):
     lhs, rhs = op_node.children
     return f"{lhs.label()} == {rhs.label()}"
 
-class FlattenedIfStatement(LogicTreeNode):
-    metadata: dict = field(default_factory=dict, compare=False, repr=False)
-    def __init__(self, cond, then_branch, else_if_branches=None, else_branch=None):
-        super().__init__()
-        self.cond= cond
-        self.then_branch = then_branch
-        self.else_if_branches  = []
-        self.else_branch = else_branch
-
-        self.children = []
-        if self.cond:
-            self.children.append(self.cond)
-        if self.then_branch:
-            self.children.append(self.then_branch)
-        if self.else_branch:
-            self.children.append(self.else_branch)
-
-        current = self
-        while isinstance(current.else_branch, IfStatement):
-            self.else_if_branches.append((current.else_branch.cond, current.else_branch.then_branch))
-            current = current.else_branch
-        self.else_branch = current.else_branch
-
-    def default_label(self):
-        return f"FlattenedIfStatement"
-
-    @property
-    def depth(self):
-        # Conservative depth: max depth across all branches
-        all_branches = [self.then_branch] + [b for _, b in self.else_if_branches]
-        if self.else_branch:
-            all_branches.append(self.else_branch)
-        return 1 + max((b.depth for b in all_branches), default=0)
-
-    @property
-    def delay(self):
-        return 0 #TODO: Return a real value not just 0
-
-    def is_else_if(self):
-        return getattr(self, "_is_else_if", False)
-
-    def to_json_dict(self):
-        return {
-            "type": self.__class__.__name__,
-            "label": self.label(),
-            "depth": self.depth,
-            "delay": self.delay
-        }
-
-class IfStatement(LogicTreeNode):
+class IfStatement(Statement):
     metadata: dict = field(default_factory=dict, compare=False, repr=False)
     cond: LogicTreeNode
-    then_branch: LogicTreeNode
-    else_branch: LogicTreeNode | None = None
+    then_branch: Statement
+    else_branch: Optional[Statement] = None
     def __init__(self, cond, then_branch, else_branch=None):
         super().__init__()
         self.cond = cond
@@ -76,18 +29,29 @@ class IfStatement(LogicTreeNode):
         self._viz_label = None
         self._is_else_if = False  # for UI hinting, optional
 
-    def free_vars(self) -> set[str]:
-        if hasattr(self, "_free_vars"):
-            return set(self._free_vars)
-        s = set(self.cond.free_vars()) | set(self.then_branch.free_vars())
-        if self.else_branch is not None:
-            s |= self.else_branch.free_vars()
-        try:
-            #self._free_vars = set(s)
-            object.__setattr__(self, "_free_vars", set(s))  # ok with frozen dataclasses
-        except Exception:
-            pass  # caching is optional; correctness doesn’t depend on it
-        return set(s)
+    def free_vars(self) -> FrozenSet[LogicVar]:
+        if self._free_cache is None:
+            acc = set(self.cond.free_vars())
+            acc |= set(self.then_block.free_vars())
+            if self.else_block:
+                acc |= set(self.else_block.free_vars())
+            self._free_cache = frozenset(acc)
+        return self._free_cache
+
+    def writes(self) -> FrozenSet[LogicVar]:
+        if self._w_cache is None:
+            acc = set(self.then_block.writes())
+            if self.else_block:
+                acc |= set(self.else_block.writes())
+            self._w_cache = frozenset(acc)
+        return self._w_cache
+
+    def writes_must(self) -> FrozenSet[LogicVar]:
+        if self._wm_cache is None:
+            mt = self.then_block.writes_must()
+            me = self.else_block.writes_must() if self.else_block else frozenset()
+            self._wm_cache = frozenset(mt & me) if self.else_block else frozenset()
+        return self._wm_cache
 
     def is_else_if(self) -> bool:
         return self._is_else_if
@@ -149,5 +113,54 @@ class IfStatement(LogicTreeNode):
             "delay": self.delay,
             "expr_source": None,
             "children": [child.to_json_dict() for child in children],
+        }
+
+class FlattenedIfStatement(LogicTreeNode):
+    metadata: dict = field(default_factory=dict, compare=False, repr=False)
+    def __init__(self, cond, then_branch, else_if_branches=None, else_branch=None):
+        super().__init__()
+        self.cond= cond
+        self.then_branch = then_branch
+        self.else_if_branches  = []
+        self.else_branch = else_branch
+
+        self.children = []
+        if self.cond:
+            self.children.append(self.cond)
+        if self.then_branch:
+            self.children.append(self.then_branch)
+        if self.else_branch:
+            self.children.append(self.else_branch)
+
+        current = self
+        while isinstance(current.else_branch, IfStatement):
+            self.else_if_branches.append((current.else_branch.cond, current.else_branch.then_branch))
+            current = current.else_branch
+        self.else_branch = current.else_branch
+
+    def default_label(self):
+        return f"FlattenedIfStatement"
+
+    @property
+    def depth(self):
+        # Conservative depth: max depth across all branches
+        all_branches = [self.then_branch] + [b for _, b in self.else_if_branches]
+        if self.else_branch:
+            all_branches.append(self.else_branch)
+        return 1 + max((b.depth for b in all_branches), default=0)
+
+    @property
+    def delay(self):
+        return 0 #TODO: Return a real value not just 0
+
+    def is_else_if(self):
+        return getattr(self, "_is_else_if", False)
+
+    def to_json_dict(self):
+        return {
+            "type": self.__class__.__name__,
+            "label": self.label(),
+            "depth": self.depth,
+            "delay": self.delay
         }
     

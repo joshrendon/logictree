@@ -1,4 +1,3 @@
-from logictree.nodes import ops, control, base, hole
 from logictree.utils.formating import indent
 import hashlib
 import itertools
@@ -18,30 +17,33 @@ def pretty_print(tree, indent=0):
     label = tree.__class__.__name__
 
     from logictree.nodes.ops.gates import NotOp
+    from logictree.nodes.hole.hole import LogicHole
+    from logictree.nodes.ops.ops import LogicConst, LogicVar, LogicOp
+    from logictree.nodes.control import CaseStatement, CaseItem, IfStatement, LogicAssign
 
     if isinstance(tree, NotOp):
         op_str = f"{spacer}NOT"
         children_str = pretty_print(tree.operand, indent + 1)
         return f"{op_str}\n{children_str}"
-    elif isinstance(tree, ops.LogicOp):
+    elif isinstance(tree, LogicOp):
         op_str = f"{spacer}{tree.op}"
         children_str = "\n".join(pretty_print(child, indent + 1) for child in tree.children)
         return f"{op_str}\n{children_str}"
-    elif isinstance(tree, control.CaseStatement):
+    elif isinstance(tree, CaseStatement):
         lines = [f"{spacer}CASE("]
         lines.append(pretty_print(tree.selector, indent + 1))
         for item in tree.items:
             lines.append(pretty_print(item, indent + 1))
         lines.append(f"{spacer}")
         return "\n".join(lines)
-    elif isinstance(tree, control.CaseItem):
+    elif isinstance(tree, CaseItem):
         lines = [f"{spacer}CASE_ITEM:"]
         for label in tree.labels:
             lines.append(f"{spacer} label: {pretty_print(label, indent+2)}")
         lines.append(f"{spacer} body:")
         lines.append(pretty_print(tree.body, indent + 2))
         return "\n".join(lines)
-    elif isinstance(tree, control.IfStatement):
+    elif isinstance(tree, IfStatement):
         lines = [f"{spacer}IF:"]
         lines.append(f"{spacer} condition:")
         lines.append(pretty_print(tree.condition, indent + 1))
@@ -50,19 +52,19 @@ def pretty_print(tree, indent=0):
         lines.append(f"{spacer} else_body:")
         lines.append(pretty_print(tree.else_body, indent + 2))
         return "\n".join(lines)
-    elif isinstance(tree, control.LogicAssign):
+    elif isinstance(tree, LogicAssign):
          return f"{spacer}ASSIGN:\n{spacer}  {tree.lhs} = {pretty_print(tree.rhs, indent + 2)}"
-    elif isinstance(tree, ops.LogicVar):
+    elif isinstance(tree, LogicVar):
         #return f"{spacer}VAR({tree.name})"
         return f"{spacer}{tree.name}"
-    elif isinstance(tree, ops.LogicConst):
+    elif isinstance(tree, LogicConst):
         #logic_val = "TRUE" if tree.value == 1 else "FALSE"
         logic_val = "FALSE"
         val = getattr(tree, "value", None)
         if val is not None:
             logic_val = val
         return f"{spacer}{logic_val}"
-    elif isinstance(tree, hole.LogicHole):
+    elif isinstance(tree, LogicHole):
         return f"{spacer}HOLE({tree.name})"
     else:
         return f"{spacer}UNKNOWN<{type(tree).__name__}>: {str(tree)}"
@@ -84,22 +86,25 @@ def _pretty_print_expr(expr_str):
     console.print(styled)
 
 def pretty_inline(tree):
+    from logictree.nodes.ops.ops import LogicConst, LogicVar, LogicOp
     """
     Compact single-line representation: OP{child1, child2, ...}
     """
-    if isinstance(tree, ops.LogicOp):
+    if isinstance(tree, LogicOp):
         child_strs = [pretty_inline(child) for child in tree.children]
         #return f"{tree.op} {{', '.join(child_strs)}}"
         return f"{tree.op}{{{', '.join(child_strs)}}}"
-    elif isinstance(tree, ops.LogicVar):
+    elif isinstance(tree, LogicVar):
         return tree.name
-    elif isinstance(tree, ops.LogicConst):
+    elif isinstance(tree, LogicConst):
         return str(tree.value)
     else:
         return tree.default_label()
 
-
 def to_dot(tree, g=None, parent=None, node_id_gen=[0]):
+    from logictree.nodes.control import CaseStatement, IfStatement, LogicAssign
+    from logictree.nodes.ops.ops import LogicOp, LogicVar, LogicConst
+    from logictree.nodes.hole.hole import LogicHole
     if g is None:
         g = graphviz.Digraph()
 
@@ -108,14 +113,14 @@ def to_dot(tree, g=None, parent=None, node_id_gen=[0]):
 
     label = ""
     if isinstance(tree, str):
-        raise TypeError("Expected base.LogicTreeNode got str")
-    if isinstance(tree, ops.LogicOp):
+        raise TypeError("Expected LogicTreeNode got str")
+    if isinstance(tree, LogicOp):
         label = tree.op
-    elif isinstance(tree, ops.LogicVar):
+    elif isinstance(tree, LogicVar):
         label = tree.name
-    elif isinstance(tree, ops.LogicConst):
+    elif isinstance(tree, LogicConst):
         label = str(tree.value)
-    elif isinstance(tree, hole.LogicHole):
+    elif isinstance(tree, LogicHole):
         label = f"?{tree.name}"
     else:
         label = "UNKNOWN"
@@ -124,18 +129,19 @@ def to_dot(tree, g=None, parent=None, node_id_gen=[0]):
     if parent:
         g.edge(parent, my_id)
 
-    if isinstance(tree, ops.LogicOp):
+    if isinstance(tree, LogicOp):
         for child in tree.children:
             to_dot(child, g, my_id, node_id_gen)
 
     return g
 
 def to_symbolic_expr_str(node):
-    if isinstance(node, ops.LogicVar) or isinstance(node, hole.LogicHole):
+    from logictree.nodes.ops.ops import LogicConst, LogicVar, LogicOp
+    if isinstance(node, LogicVar) or isinstance(node, LogicHole):
         return node.name
-    elif isinstance(node, ops.LogicConst):
+    elif isinstance(node, LogicConst):
         return "1" if node.value else "0"
-    elif isinstance(node, ops.LogicOp):
+    elif isinstance(node, LogicOp):
         op = node.op
         args = [to_symbolic_expr_str(child) for child in node.children]
         if op == "NOT":
@@ -154,22 +160,23 @@ def to_symbolic_expr_str(node):
         return f"<?>"
 
 from sympy.logic.boolalg import BooleanTrue, BooleanFalse
-def to_sympy_expr(tree: base.LogicTreeNode):
-    if isinstance(tree, ops.LogicConst):
+def to_sympy_expr(tree):
+    from logictree.nodes.hole.hole import LogicHole
+    from logictree.nodes.ops.ops import LogicConst, LogicVar, LogicOp
+    from logictree.nodes.control import CaseStatement, IfStatement, LogicAssign
+    if isinstance(tree, LogicConst):
         val = int(tree.value)
-        #result = sympify(bool(val))
-        #print(f"[SYM CONST] Interpreting ops.LogicConst({tree.value}) as {val} ({type(val)})")
         if val == 0:
             return BooleanFalse()
         elif val == 1:
             return BooleanTrue()
-    elif isinstance(tree, ops.LogicVar):
+    elif isinstance(tree, LogicVar):
         return sympy.Symbol(tree.name)
 
-    elif isinstance(tree, hole.LogicHole):
+    elif isinstance(tree, LogicHole):
         return sympy.Symbol(tree.name)  # treat holes as symbolic vars too
 
-    elif isinstance(tree, ops.LogicOp):
+    elif isinstance(tree, LogicOp):
         # Recursively convert children
         children = [to_sympy_expr(c) for c in tree.children]
 
@@ -185,7 +192,6 @@ def to_sympy_expr(tree: base.LogicTreeNode):
         elif tree.op == "MUX":
             # MUX(cond, a, b) → (cond & a) | (~cond & b)
             cond_expr, a_expr, b_expr = children
-            #print(f"[MUX DEBUG] cond_expr={cond_expr} ({type(cond_expr)}), a_expr={a_expr} ({type(a_expr)}), b_expr={b_expr} ({type(b_expr)})")
             return Or(And(cond_expr, a_expr), And(Not(cond_expr), b_expr))
         elif tree.op == "EQ":
             assert len(children) == 2
@@ -205,7 +211,8 @@ def to_sympy_expr(tree: base.LogicTreeNode):
         raise TypeError(f"Unsupported node type: {type(tree)}")
 
 def explain_expr_tree(tree):
-    if isinstance(tree, ops.LogicOp):
+    from logictree.nodes.ops.ops import LogicConst, LogicVar, LogicOp
+    if isinstance(tree, LogicOp):
         if tree.op == "MUX":
             cond, a, b = tree.children
             return f"({explain_expr_tree(cond)} ? {explain_expr_tree(a)} : {explain_expr_tree(b)})"
@@ -220,9 +227,9 @@ def explain_expr_tree(tree):
             return f"(~{explain_expr_tree(tree.children[0])})"
         else:
             return f"{tree.op}({', '.join(explain_expr_tree(c) for c in tree.children)})"
-    elif isinstance(tree, ops.LogicVar):
+    elif isinstance(tree, LogicVar):
         return tree.name
-    elif isinstance(tree, ops.LogicConst):
+    elif isinstance(tree, LogicConst):
         return "1" if tree.value else "0"
     else:
         return f"{tree}"

@@ -1,5 +1,4 @@
 import itertools
-
 from logictree.api import lower_sv_to_logic
 from logictree.eval import evaluate                            # simple boolean evaluator
 
@@ -26,11 +25,6 @@ def test_default_maps_to_else_equivalence():
       end
     endmodule
     """
-
-    # Build logic map
-    #orig_map = lower_sv_to_logic(sv)  # {"y": <LogicTreeNode>}
-
-
     result = lower_sv_to_logic(sv)
     mod = lower_sv_to_logic(sv)["m"]
     module = result["m"]
@@ -42,8 +36,10 @@ def test_default_maps_to_else_equivalence():
     
     # Semantic equivalence over all inputs
     orig_map = dict(module.signal_map)
-    vars_ = sorted({n for node in orig_map.values() if hasattr(node, "free_vars")
-                    for n in node.free_vars()})
+    #vars_ = sorted({n for node in orig_map.values() if hasattr(node, "free_vars")
+    #                for n in node.free_vars()})
+    #vars_ = sorted({v.name for v in orig_map["y"].free_vars()})
+    vars_ = sorted({n.name for t in orig_map.values() for n in t.free_vars()})
 
     # Optional: spot-check that default path (s==01 or s==11) resolves to c.
     # Only run if your evaluator exposes s as s[0]/s[1] variables.

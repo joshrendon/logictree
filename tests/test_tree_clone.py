@@ -14,8 +14,14 @@ log = logging.getLogger(__name__)
 def _two_way_case(left_expr, right_expr):
     # out = (s ? right_expr : left_expr)
     s = LogicVar("s")
-    i0 = CaseItem(labels=[0], body=LogicAssign("out", left_expr))
-    i1 = CaseItem(labels=[1], body=LogicAssign("out", right_expr))
+    i0 = CaseItem(match=LogicConst(0),
+                  labels=[LogicConst(0)], 
+                  body=LogicAssign("out", left_expr),
+                  default=False)
+    i1 = CaseItem(match=LogicConst(1),
+                  labels=[LogicConst(1)],
+                  body=LogicAssign("out", right_expr),
+                  default=False)
     return CaseStatement(selector=s, items=[i0, i1])
 
 def test_case_lowers_to_if_then_mux_and_simplifies_to_aoi():

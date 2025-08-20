@@ -1,56 +1,65 @@
+from __future__ import annotations
 from dataclasses import dataclass, field
-from ..base.base import LogicTreeNode
-from typing import Dict, Tuple, Union, Optional, List, Set
+from typing import Optional, Set, FrozenSet, TYPE_CHECKING
+from logictree.nodes.ops.ops import LogicVar
+from logictree.nodes.base.base import LogicTreeNode
+from logictree.nodes.struct.statement import Statement
 import logging
 log = logging.getLogger(__name__)
 
 @dataclass
-class LogicAssign(LogicTreeNode):
+class LogicAssign(Statement):
+    lhs: LogicVar
+    rhs: LogicTreeNode
+    metadata: dict = field(default_factory=dict, compare=False, repr=False)
+    annotated_delay: Optional[int] = None
+
     def __init__(self, lhs: LogicTreeNode, rhs: LogicTreeNode):
         super().__init__()
         self.lhs = lhs
         self.rhs = rhs
-    lhs: str | LogicTreeNode
-    rhs: LogicTreeNode
-    annotated_delay: Optional[int] = None
-    metadata: dict = field(default_factory=dict, compare=False, repr=False)
 
-    # LHS is the sink, not an input var; only RHS contributes
-    def free_vars(self) -> set[str]:
-        if hasattr(self, "_free_vars"):
-            return set(self._free_vars)
-        s = self.rhs.free_vars()
-        try:
-            #self._free_vars = set(s)
-            object.__setattr__(self, "_free_vars", set(s))  # ok with frozen dataclasses
-        except Exception:
-            pass  # caching is optional; correctness doesn’t depend on it
-        return set(s)
+    # -- Variable Analysis -----------------------------------------------------
+    def free_vars(self) -> FrozenSet[LogicVar]:
+        """Variables used in RHS; LHS is not free."""
+        if self._free_cache is None:
+            self._free_cache = frozenset(self.rhs.free_vars())
+        return self._free_cache
 
-    def inputs(self) -> Set[str]:
-        log.debug(f"Calling inputs() on LogicAssign with lhs={self.lhs}")
-        return self.rhs.inputs()
+    def writes(self) -> FrozenSet[LogicVar]:
+        """LHS is always written."""
+        if self._w_cache is None:
+            base_lhs = self.lhs.base() if hasattr(self.lhs, "base") else self.lhs
+            self._w_cache = frozenset({base_lhs})
+        return self._w_cache
 
-    def __str__(self):
+    def writes_must(self) -> FrozenSet[LogicVar]:
+        """Assign always writes (unconditional)."""
+        if self._wm_cache is None:
+            self._wm_cache = self.writes()
+        return self._wm_cache
+
+    # -- Labeling and Stringification -----------------------------------------
+    def default_label(self) -> str:
         return f"{self.lhs} = {self.rhs}"
 
-    def default_label(self):
-        return f"{self.lhs} = {self.rhs}"
+    def __str__(self) -> str:
+        return self.default_label()
 
+    # -- Analysis Properties ---------------------------------------------------
     @property
     def depth(self) -> int:
         return getattr(self.rhs, "depth", 0)
 
     @property
-    def delay(self) ->int:
-        # placeholder for future gate-delay modeling
-        if hasattr(self, "annotated_delay"):
-            return self.annotated_delay
-        # Default to RHS delay
-        return getattr(self.rhs, "delay", 0)
+    def delay(self) -> int:
+        return self.annotated_delay if self.annotated_delay is not None else getattr(self.rhs, "delay", 0)
 
+    def inputs(self) -> Set[str]:
+        return self.rhs.inputs()
 
-    def to_json_dict(self):
+    # -- JSON / Visualization Support ------------------------------------------
+    def to_json_dict(self) -> dict:
         return {
             "type": self.__class__.__name__,
             "label": self.label(),
@@ -59,7 +68,8 @@ class LogicAssign(LogicTreeNode):
             "depth": self.depth,
             "delay": self.delay
         }
-    
-    def simplify(self):
+
+    # -- Simplification --------------------------------------------------------
+    def simplify(self) -> LogicAssign:
         return self
 

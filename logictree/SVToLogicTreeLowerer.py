@@ -9,6 +9,8 @@ from logictree.nodes.ops import LogicConst, LogicVar
 from logictree.nodes.selects import BitSelect, PartSelect, Concat
 from logictree.utils.display import pretty_print
 from logictree.nodes.struct.module import Module
+from typing import Tuple, List
+import BitVector
 import logging
 import sys, inspect
 import re
@@ -17,7 +19,6 @@ AssignStmtCtxtClass = SystemVerilogSubsetParser.Continuous_assignContext
 IfStmtCtxtClass = SystemVerilogSubsetParser.If_statementContext
 Expression_listCtxClass = SystemVerilogSubsetParser.Expression_listContext
 
-# --- helpers (add near other small utils) ---
 _BINARY_RE = re.compile(
     r"^(?P<width>\d+)\s*'\s*(?P<base>[bBoOdDhH])\s*(?P<digits>[_0-9a-fA-FxzXZ]+)$"
 )
@@ -38,107 +39,6 @@ def _parse_sv_int_literal(txt: str) -> int:
     digits = digits.translate(str.maketrans({"x": "0", "z": "0", "?": "0"}))
     return int(digits, base)
 
-def _labels_from_case_item(ci) -> "str|list[int]":
-    # 1) Explicit default?
-    if hasattr(ci, "DEFAULT") and callable(ci.DEFAULT) and ci.DEFAULT():
-        return "default"
-
-    labels: list[int] = []
-
-    # 2) Common shape: case_item_label_list -> case_item_label
-    try:
-        if hasattr(ci, "case_item_label_list") and ci.case_item_label_list():
-            for lab in ci.case_item_label_list().case_item_label():
-                # Try fast textual parse
-                txt = lab.getText()
-                try:
-                    labels.append(_parse_sv_int_literal(txt))
-                    continue
-                except Exception:
-                    pass
-                # Fallback: if the rule exposes an expression node
-                if hasattr(lab, "expression") and lab.expression():
-                    expr_node = self.visit(lab.expression())
-                    from logictree.nodes.base.base import LogicConst
-                    if isinstance(expr_node, LogicConst):
-                        labels.append(int(expr_node.value))
-            if labels:
-                return labels
-    except Exception:
-        # swallow and try other shapes
-        pass
-
-    # 3) Some grammars have expression_list() directly on the item
-    try:
-        if hasattr(ci, "expression_list") and ci.expression_list():
-            for e in ci.expression_list().expression():
-                txt = e.getText()
-                try:
-                    labels.append(_parse_sv_int_literal(txt))
-                except Exception:
-                    expr_node = self.visit(e)
-                    from logictree.nodes.base.base import LogicConst
-                    if isinstance(expr_node, LogicConst):
-                        labels.append(int(expr_node.value))
-            if labels:
-                return labels
-    except Exception:
-        pass
-
-    # 4) Text fallback: split before ':' (supports "L0, L1: stmt")
-    try:
-        raw = ci.getText()
-        head = raw.split(":", 1)[0]
-        parts = [p for p in head.split(",") if p]
-        if parts and parts[0].lower() == "default":
-            return "default"
-        for p in parts:
-            labels.append(_parse_sv_int_literal(p))
-        if labels:
-            return labels
-    except Exception:
-        pass
-
-    # If we get here, we truly found no labels and it wasn’t default
-    return []  # caller will enforce non-empty
-
-def _parse_const(self, txt: str):
-    """
-    Parse SystemVerilog-style integer constants.
-    Supports: 2'b10, 8'hFF, 12'd123, plain decimals like 42.
-    X/Z are rejected unless self.allow_unknown_bits is True, in which case we coerce to 0.
-    Returns (value:int, width:Optional[int])
-    """
-    m = _BINARY_RE.match(txt)
-    if m:
-        width = int(m.group("width"))
-        base  = m.group("base").lower()
-        digits = m.group("digits").replace("_", "")
-
-        if any(ch in "xXzZ" for ch in digits):
-            if not getattr(self, "allow_unknown_bits", False):
-                raise ValueError(f"Unknown bits in literal: {txt}")
-            # Coerce X/Z to 0 for now (documented behavior)
-            trans = str.maketrans({"x": "0", "X": "0", "z": "0", "Z": "0"})
-            digits = digits.translate(trans)
-
-        if base == "b":
-            val = int(digits, 2)
-        elif base == "o":
-            val = int(digits, 8)
-        elif base == "d":
-            val = int(digits, 10)
-        elif base == "h":
-            val = int(digits, 16)
-        else:
-            raise ValueError(f"Unsupported base in literal: {txt}")
-        return val, width
-
-    # plain decimal
-    if txt.isdigit():
-        return int(txt), None
-
-    raise ValueError(f"Unsupported literal syntax: {txt}")
 
 def where_defined(obj):
     mod = sys.modules.get(obj.__module__)
@@ -168,6 +68,157 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
     def bit_width(self, name: str) -> int | None:
         t = self.vector_widths.get(name)
         return (abs(t[0] - t[1]) + 1) if t else None
+
+    def _labels_from_case_item(self, ctx) -> Tuple[List[LogicConst], bool]:
+    
+        labels: List[LogicConst] = []
+    
+        raw_text = ctx.getText()
+        is_default = raw_text.strip().lower().startswith("default")
+    
+        if is_default:
+            labels.append(LogicConst("default"))
+            return labels, True
+    
+        # Fallback: attempt to extract constant expressions
+        expr_ctxs = getattr(ctx, "constant_expression", []) or getattr(ctx, "expression", [])
+        for expr_ctx in expr_ctxs:
+            expr_node = self.visit(expr_ctx)
+            if not isinstance(expr_node, LogicConst):
+                raise ValueError(f"Expected LogicConst, got {type(expr_node)} from {expr_ctx.getText()}")
+            labels.append(expr_node)
+    
+        return labels, False
+    #def _labels_from_case_item(self, ci) -> tuple[list[LogicConst], bool]:
+    #    """
+    #    Extracts labels from a CaseItem parse context.
+    #    Returns (labels, is_default).
+    #    - labels: list of LogicConst for case labels.
+    #    - is_default: True if this is a default case.
+    #    """
+    #    # 1) Check if it's explicitly marked default (for robust grammars)
+    #    if hasattr(ci, "DEFAULT") and callable(ci.DEFAULT) and ci.DEFAULT():
+    #        return [], True
+    #
+    #    labels: list[LogicConst] = []
+    #
+    #    # 2) Check for case_item_label_list → case_item_label
+    #    try:
+
+    #        if hasattr(ci, "case_item_label_list") and ci.case_item_label_list():
+    #            for lab in ci.case_item_label_list().case_item_label():
+    #                # Instead of parsing txt:
+    #                expr = lab.expression()
+    #                if expr:
+    #                    val = self.visit(expr)
+    #                    if isinstance(val, LogicConst):
+    #                        labels.append(val)
+    #            if labels:
+    #                return labels, False
+    #        #if hasattr(ci, "case_item_label_list") and ci.case_item_label_list():
+    #        #    for lab in ci.case_item_label_list().case_item_label():
+    #        #        txt = lab.getText()
+    #        #        try:
+    #        #            bv = BitVector.parse(txt)
+    #        #            labels.append(LogicConst(bv))
+    #        #            continue
+    #        #        except Exception:
+    #        #            # Fallback: try visiting the label
+    #        #            if hasattr(lab, "expression") and lab.expression():
+    #        #                expr_node = self.visit(lab.expression())
+    #        #                if isinstance(expr_node, LogicConst):
+    #        #                    labels.append(expr_node)
+    #        #    if labels:
+    #        #        return labels, False
+    #    except Exception:
+    #        pass  # fall through to next attempt
+    #
+    #    # 3) Alternative form: expression_list directly on the item
+    #    try:
+    #        if hasattr(ci, "expression_list") and ci.expression_list():
+    #            for e in ci.expression_list().expression():
+    #                txt = e.getText()
+    #                try:
+    #                    bv = BitVector.parse(txt)
+    #                    labels.append(LogicConst(bv))
+    #                except Exception:
+    #                    expr_node = self.visit(e)
+    #                    if isinstance(expr_node, LogicConst):
+    #                        labels.append(expr_node)
+    #            if labels:
+    #                return labels, False
+
+    #            if hasattr(ci, "expression_list") and ci.expression_list():
+    #                for lab in ci.expression_list().expression():
+    #                    # Instead of parsing txt:
+    #                    expr = lab.expression()
+    #                    if expr:
+    #                        val = self.visit(expr)
+    #                        if isinstance(val, LogicConst):
+    #                            labels.append(val)
+    #                if labels:
+    #                    return labels, False
+    #    except Exception:
+    #        pass
+    #
+    #    # 4) Final fallback: raw text parsing, check for default keyword
+    #    try:
+    #        raw = ci.getText()
+    #        head = raw.split(":", 1)[0].strip()
+    #        parts = [p.strip() for p in head.split(",") if p.strip()]
+    #        if head.lower() == "default":
+    #            return [LogicConst("default")], True
+    #        #if len(parts) == 1 and parts[0].lower() == "default":
+    #        #    return [LogicConst("default")], True
+    #        #for p in parts:
+    #        #    bv = BitVector.parse(p)
+    #        #    labels.append(LogicConst(bv))
+    #        #if labels:
+    #        #    return labels, False
+    #    except Exception:
+    #        pass
+    #
+    #    # 5) No labels and not default? Treat as empty (should be unreachable)
+    #    raise ValueError("Reached default fall through no labels and no default!")
+    #    return ["ERROR"], False
+
+    def _parse_const(self, txt: str):
+        """
+        Parse SystemVerilog-style integer constants.
+        Supports: 2'b10, 8'hFF, 12'd123, plain decimals like 42.
+        X/Z are rejected unless self.allow_unknown_bits is True, in which case we coerce to 0.
+        Returns (value:int, width:Optional[int])
+        """
+        m = _BINARY_RE.match(txt)
+        if m:
+            width = int(m.group("width"))
+            base  = m.group("base").lower()
+            digits = m.group("digits").replace("_", "")
+    
+            if any(ch in "xXzZ" for ch in digits):
+                if not getattr(self, "allow_unknown_bits", False):
+                    raise ValueError(f"Unknown bits in literal: {txt}")
+                # Coerce X/Z to 0 for now (documented behavior)
+                trans = str.maketrans({"x": "0", "X": "0", "z": "0", "Z": "0"})
+                digits = digits.translate(trans)
+    
+            if base == "b":
+                val = int(digits, 2)
+            elif base == "o":
+                val = int(digits, 8)
+            elif base == "d":
+                val = int(digits, 10)
+            elif base == "h":
+                val = int(digits, 16)
+            else:
+                raise ValueError(f"Unsupported base in literal: {txt}")
+            return val, width
+    
+        # plain decimal
+        if txt.isdigit():
+            return int(txt), None
+    
+        raise ValueError(f"Unsupported literal syntax: {txt}")
 
     def visit(self, tree):
         # E.g., AndExprContext -> visitAndExpr
@@ -540,130 +591,20 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
         for ci in ctx.case_item():
             # body: adjust to your rule name (statement / statement_or_null)
             body = self.visit(ci.statement())
-            labels = _labels_from_case_item(ci)
-    
-            # Final sanity: must be "default" or non-empty list[int]
-            if labels != "default":
-                if not (isinstance(labels, list) and labels and all(isinstance(x, int) for x in labels)):
-                    raise TypeError(f"CaseItem.labels must be 'default' or non-empty List[int], got {labels!r}")
-    
-            items.append(control.CaseItem(labels=labels, body=body))
-    
+            labels, is_default = self._labels_from_case_item(ci)
+            log.debug(f"visitCase_statement: labels, is_default: {labels}, {is_default}")
+            case_item = control.CaseItem(labels=labels, default=is_default, body=body)
+            items.append(case_item)
         return control.CaseStatement(selector=selector_node, items=items)
 
-    #def visitCase_statement(self, ctx):
-    #    selector_node = self.visit(ctx.expression())  # adjust accessor to your grammar
-    #    items = []
-    #    for ci in ctx.case_item():  # adjust to grammar
-    #        body = self.visit(ci.statement())  # or whatever your rule is
-    #        labels = _labels_from_case_item(ci)
-    #        # Final sanity: must be "default" or non-empty list[int]
-    #        if labels != "default":
-    #            if not (isinstance(labels, list) and labels and all(isinstance(x, int) for x in labels)):
-    #                raise TypeError(f"CaseItem.labels must be 'default' or non-empty List[int], got {labels!r}")
-    #        items.append(control.CaseItem(labels=labels, body=body))
-    #    return control.CaseStatement(selector=selector_node, items=items)
-
-    #def visitCase_statement(self, ctx):
-    #    selector_node = self.visit(ctx.expression())  # or however you get the selector
-    #    items = []
-    #
-    #    for ci in ctx.case_item():  #
-    #        # 1) build the body (statement) for this arm
-    #        stmt_tree = self.visit(ci.statement())  # adjust the rule name
-    #
-    #        # 2) build normalized labels
-    #        labels = _labels_from_case_item(ci)
-    #
-    #        # 3) sanity: must be "default" or List[int]
-    #        if labels != "default" and not (isinstance(labels, list) and all(isinstance(x, int) for x in labels)):
-    #            raise TypeError(f"lowerer produced bad CaseItem.labels: {labels!r}")
-    #
-    #        case_item = control.CaseItem(labels=labels, body=stmt_tree)
-    #        items.append(case_item)
-    #
-    #    return control.CaseStatement(selector=selector_node, items=items)
-    #def visitCase_statement(self, ctx):
-    #    log.debug("[visitCase_statement]")
-    #    # Get the switch expression
-    #    switch_expr_ctx = ctx.expression()
-    #    switch_tree = self.visit(switch_expr_ctx)
-    #
-    #    # Create a CaseStatement LogicTreeNode wrapper
-    #    case_node = control.CaseStatement(selector=switch_tree, items=[])
-    #
-    #    for item_ctx in ctx.case_item():
-    #        if item_ctx.DEFAULT():
-    #            label_exprs = ['default']
-    #        else:
-    #            label_exprs = [self.visit(e) for e in item_ctx.expression_list().expression()]
-    #
-    #        stmt_ctx = item_ctx.statement()
-    #        stmt_tree = self.visit(stmt_ctx)
-    #
-    #        case_item = control.CaseItem(labels=label_exprs, body=stmt_tree)
-    #        log.debug(f"CaseStatement: CaseItem(label:{label_exprs}, {stmt_tree})")
-    #        case_node.items.append(case_item)
-    #
-    #    # Store CaseStatement in a temporary logic tree hole (for now)
-    #    return case_node
 
     def visitExpression(self, ctx):
         log.debug("visitExpression fallback hit")
         return self.visitChildren(ctx)
-        #if ctx.getChildCount() == 1:
-        #    if ctx.identifier():
-        #        log.debug(f"visitExpression -> LogicVar: {ctx.getText()}")
-        #        return ops.LogicVar(name=ctx.getText())
-        #    if ctx.literal():
-        #        const = self.visitLiteral(ctx.literal())
-        #        log.debug(f"visitExpression -> Const: {const}")
-        #        return const
-
-        #elif ctx.getChildCount() == 2:  # Unary (e.g. ~a)
-        #    op = ctx.getChild(0).getText()
-        #    rhs = self.visit(ctx.getChild(1))
-        #    log.debug(f"Unary op '{op}' on {rhs}")
-        #    if op == '~':
-        #        log.debug(f"visitExpression() self.name: {self.name}, rhs: {rhs}")
-        #        return ops.NotOp(rhs)
-
-        #elif ctx.getChildCount() == 3:
-        #    lhs = self.visit(ctx.getChild(0))
-        #    op = ctx.getChild(1).getText()
-        #    rhs = self.visit(ctx.getChild(2))
-        #    log.debug(f" Binary '{op}': lhs={lhs}, rhs={rhs}")
-
-        #    if op == '&':  return ops.AndOp(lhs, rhs)
-        #    if op == '|':  return ops.OrOp(lhs, rhs)
-        #    if op == '^':  return ops.XorOp(lhs, rhs)
-        #    if op == '~^': return ops.XnorOp(lhs, rhs)
-        #    if op == '==':
-        #        if isinstance(rhs, list):
-        #            log.debug(f"Expanding bitvector comparison: {lhs} == {rhs}")
-        #            return ops.AndOp([
-        #                ops.XnorOp(ops.LogicVar(name=f"{lhs.name}_{i}"), ops.LogicConst(bit))
-        #                for i, bit in enumerate(rhs)
-        #            ])
-        #        else:
-        #            return ops.XnorOp(lhs, rhs)
-
-        #elif ctx.getChildCount() == 3 and ctx.getChild(0).getText() == '(':
-        #    log.debug("Parenthesized expression")
-        #    return self.visit(ctx.getChild(1))  # Parenthesized
-
-        #raise NotImplementedError("Unhandled expression structure: " + ctx.getText())
 
     def _as_int_if_const(self, node):
         return node.value if isinstance(node, LogicConst) else node
     
-    #def visitBitSelectExpr(self, ctx):
-    #    # expression '[' expression ']'
-    #    base = self.visit(ctx.expression(0))
-    #    idx  = self._as_int_if_const(self.visit(ctx.expression(1)))
-    #    return BitSelect(base, idx)
-    
-
     def visitBitSelectExpr(self, ctx):
         base = self.visit(ctx.expression(0))
         idx  = self.visit(ctx.expression(1))
@@ -677,30 +618,6 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
             else:
                 raise ValueError("Only constant bit-select index supported for now")
         return BitSelect(base, idx)
-    
-    #def visitPartSelectExpr(self, ctx):
-    #    # expression '[' expression ':' expression ']'
-    #    base = self.visit(ctx.expression(0))
-    #    msb  = self._as_int_if_const(self.visit(ctx.expression(1)))
-    #    lsb  = self._as_int_if_const(self.visit(ctx.expression(2)))
-    #    return PartSelect(base, msb, lsb)
-    
-    ##def visitPartSelectExpr(self, ctx):
-    ##    base = self.visit(ctx.expression(0))
-    ##    msb  = self.visit(ctx.expression(1))
-    ##    lsb  = self.visit(ctx.expression(2))
-    ##
-    ##    # If you only support constant bounds right now, coerce:
-    ##    def _to_int(node):
-    ##        from logictree.nodes.values import LogicConst
-    ##        if isinstance(node, LogicConst):
-    ##            return int(node.value)
-    ##        raise ValueError("Only constant part-select bounds supported for now")
-    ##
-    ##    msb_i = _to_int(msb)
-    ##    lsb_i = _to_int(lsb)
-    ##
-    ##    return PartSelect(base, msb_i, lsb_i)
     
     def visitPartSelectExpr(self, ctx):
         # expression '[' expression ':' expression ']'
@@ -765,7 +682,6 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
         rhs = self.visit(ctx.expression(1))
         return ops.XnorOp(lhs, rhs)
 
-    
     def visitEqExpr(self, ctx):
         kids = list(ctx.getChildren())  # <lhs> '==' <rhs>
         lhs  = self.visit(kids[0])
@@ -792,26 +708,6 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
         if isinstance(node, str):
             return self.current_module.signal_map[node]
         return node
-   # def visitEqExpr(self, ctx):
-   #     kids = list(ctx.getChildren())  # <lhs> '==' <rhs>
-   #     left  = self.visit(kids[0])
-   #     right = self.visit(kids[2])
-   # 
-   #     # normalize constants to int
-   #     def _to_int(v):
-   #         if isinstance(v, int): return v
-   #         val = getattr(v, "value", None)
-   #         return int(val if val is not None else v)
-   # 
-   #     # vector == const  OR  const == vector
-   #     if self._is_logic_var(left) and self._is_const(right):
-   #         return self._expand_eq_var_const(left, _to_int(right))
-   #     if self._is_logic_var(right) and self._is_const(left):
-   #         return self._expand_eq_var_const(right, _to_int(left))
-   # 
-   #     # (Optional) scalar == scalar  → reduce to gates
-   #     # return ops.NotOp(XorOp(left, right))  # only if you need general eq
-   #     raise NotImplementedError("Equality lowering supported only for <vector> == <const> in this subset")
     
     def _is_logic_var(self, node):
         return isinstance(node, LogicVar)
@@ -841,20 +737,6 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
         for t in terms[1:]:
             node = ops.AndOp(node, t)
         return node
-   # def visitEqExpr(self, ctx):
-   #     """ Expand (vector == const) into an AND of per-bit tests; otherwise keep as EqOp. """
-   #     left  = self.visit(ctx.expression(0))
-   #     right = self.visit(ctx.expression(1))
-   # 
-   #     # var == const  (or const == var)
-   #     if isinstance(left, LogicVar) and isinstance(right, LogicConst) and right.width:
-   #         return self._expand_eq_var_const(left, right)
-   #     if isinstance(right, LogicVar) and isinstance(left, LogicConst) and left.width:
-   #         return self._expand_eq_var_const(right, left)
-   # 
-   #     # fallback (e.g., scalar == scalar, or const == const)
-   #     return ops.EqOp(left, right)
-    
     
     def _to_int(self, c):
         if isinstance(c, int):
@@ -890,97 +772,9 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
             node = ops.AndOp(node, t)
         return node
 
-    ##def _expand_eq_var_const(self, var_node, const_value: int):
-    ##    """
-    ##    Build an MSB->LSB And-tree matching 'var_node == const_value',
-    ##    honoring the declared packed range orientation.
-    ##    """
-    ##    left, right = self.current_module.vector_widths.get(var_node.name, (None, None))
-    ##
-    ##    if left is None or right is None:
-    ##        # scalar (or unknown) → single-bit compare: y = s if const==1 else ~s
-    ##        return var_node if const_value else ops.NotOp(var_node)
-    ##
-    ##    width = abs(left - right) + 1
-    ##
-    ##    terms = []
-    ##    # pos = 0 corresponds to the MSB of the declared vector, pos = width-1 to the LSB
-    ##    for pos in range(width):
-    ##        # Which physical bit index is the MSB at this pos?
-    ##        if left >= right:               # descending [msb:lsb], e.g. [3:0]
-    ##            idx = left - pos            # 3,2,1,0
-    ##        else:                           # ascending  [lsb:msb], e.g. [0:3]
-    ##            idx = left + (width-1-pos)  # 3,2,1,0 when left=0,right=3
-    ##
-    ##        sel = BitSelect(var_node, idx)
-    ##
-    ##        # Extract the bit from const: MSB is at bit (width-1), LSB at 0
-    ##        bit = (const_value >> (width-1-pos)) & 1
-    ##        terms.append(sel if bit else ops.NotOp(sel))
-    ##
-    ##    # Build left-associated And-tree, MSB term first
-    ##    node = terms[0]
-    ##    for t in terms[1:]:
-    ##        node = ops.AndOp(node, t)
-    ##    return node
-    #def visitEqExpr(self, ctx):
-    #    lhs = self.visit(ctx.expression(0))
-    #    rhs = self.visit(ctx.expression(1))
-    #    log.debug("visitEqExpr with: lhs: {%s}, rhs: {%s}", lhs, rhs)
-    #    log.debug("rhs type: %s",  type(rhs))
-
-    #    # Case 1: Bitvector comparison against a constant like 7'b0110011
-    #    #if isinstance(rhs, ops.LogicConst) and isinstance(lhs, LogicHole):
-    #    if isinstance(rhs, list):
-    #        log.debug("visitEqExpr Found a bitvector comparison agains constant")
-    #        # Try to parse bitvector pattern from the original token
-    #        rhs_text = ctx.expression(1).getText()
-    #        if "'" in rhs_text:  # e.g., 7'b0110011
-    #            try:
-    #                width_str, value_str = rhs_text.split("'")
-    #                base = value_str[0].lower()
-    #                bits = value_str[1:]  # Just the bit pattern
-
-    #                if base != 'b':
-    #                    raise NotImplementedError("Only binary constants like 7'b0101 are supported")
-
-    #                xnor_terms = []
-    #                for i, bit_char in enumerate(bits[::-1]):  # LSB first
-    #                    bit_val = 1 if bit_char in ('1', 'x') else 0  # 'x' gets mapped to 1 for analysis
-    #                    var = ops.LogicVar(name=f"{lhs.name}_{i}")
-    #                    xnor = ops.XnorOp(var, ops.LogicConst(bit_val))
-    #                    xnor_terms.append(xnor)
-
-    #                if len(xnor_terms) == 1:
-    #                    return xnor_terms[0]
-    #                else:
-    #                    # Recursively reduce with ANDs
-    #                    from logictree.utils import balanced_tree_reduce
-    #                    return balanced_tree_reduce("AND", xnor_terms)
-
-    #            except Exception as e:
-    #                log.error(f"Failed to parse bitvector comparison: {rhs_text}")
-    #                raise e
-
-    #    # Case 2: Simple variable == variable or constant
-    #    return ops.XnorOp(lhs, rhs)
-
     def visitParenExpr(self, ctx):
         log.info("visitParenExpr with: %s", ctx.getText())
         return self.visit(ctx.expression())
-
-    #def visitLiteral(self, ctx):
-    #    log.debug("visitLiteral")
-    #    raw = ctx.getText()
-    #    if "'" in raw:
-    #        # binary constatn like 7'b0110011
-    #        bits = text.split("'")[1][1:]
-    #        #bits = [int(b) for b in raw.split("'")[1][1:]]
-    #        return [int(b) for b in bits]
-    #        #return ops.LogicConst(bits)  # for == bitvector case
-    #    else:
-    #        return ops.LogicConst(int(raw))
-
 
     def visitRange(self, ctx):
         log.debug("$visitRange")
@@ -1033,35 +827,6 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
     
         # NOTE: this assumes only 0/1 (no x/z) in tests
         return int(digits, base)
-
-    ##def visitConstExpr(self, ctx):
-    ##    """ labeled alt for constants, e.g. 2'b10 or 42 """
-    ##    log.debug("visitConstExpr")
-    ##    txt = ctx.getText()
-    ##    val, width = _parse_const(self, txt)
-    ##    return LogicConst(val, width=width)
-    #def visitConstExpr(self, ctx):
-    #    log.info("visitConstExpr with: %s", ctx.getText())
-    #    text = ctx.getText()
-    #    if "'" in text:
-    #        # Format: 7'b0110011 or similar
-    #        try:
-    #            width_str, base_and_value = text.split("'")
-    #            width = int(width_str)
-    #            base = base_and_value[0].lower()
-    #            value = base_and_value[1:]
-    #
-    #            if base == 'b':
-    #                bits = [int(b) for b in value]
-    #                return bits
-    #            else:
-    #                raise NotImplementedError(f"Base '{base}' not supported")
-    #        except Exception as e:
-    #            log.warning(f"Failed to parse bitvector constant: {text} with error: {e}")
-    #            return hole.LogicHole(text)
-    #    else:
-    #        # Just a number like `1` or `0`
-    #        return ops.LogicConst(int(text))
 
     def visitIdExpr(self, ctx):
         log.debug("visitIdExpr")
