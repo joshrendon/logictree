@@ -49,7 +49,3 @@ cd grammar/
 antlr -Dlanguage=Python3 <grammar.g4>
 antlr -Dlanguage=Python3 -visitor <grammar.g4>  # To generate a visitor file
 
-# 2) Badges & likely needed links
-- **CI Badge** `.github/workflows/ci.yml`: https://github.com/joshrendon/logictree/actions/workflows/ci.yml/badge.svg
-- **GH Pages:** https://joshrendon.github.io/logictree/
-- **PyPi: ** https://img.shields.io/pypi/v/logictree.svg
