@@ -1,10 +1,14 @@
+import pytest
+pytestmark = [pytest.mark.unit]
+
 from tests.utils import gate_count, literal_sig_set, flatten_or, flatten_and, leaves
 from logictree.nodes.ops.gates import NotOp
+from logictree.api import lower_sv_to_logic as lower_sv_text_to_logic
 
 def _rhs(sv, lower_sv_text_to_logic):
     return lower_sv_text_to_logic(sv)["m"].assignments["y"].rhs
 
-def test_if_true_false_becomes_identity(lower_sv_text_to_logic):
+def test_if_true_false_becomes_identity():
     sv = """
     module m(input logic a, output logic y);
       always_comb begin
@@ -23,7 +27,7 @@ def test_if_true_false_becomes_identity(lower_sv_text_to_logic):
     lits = literal_sig_set(rhs)
     assert ("a", True) in lits
 
-def test_if_else_selects_values(lower_sv_text_to_logic):
+def test_if_else_selects_values():
     sv = """
     module m(input logic a,b,c, output logic y);
       always_comb begin
@@ -36,7 +40,7 @@ def test_if_else_selects_values(lower_sv_text_to_logic):
     cs = gate_count(rhs)
     assert cs["OR"] == 1 and cs["AND"] == 2 and cs["NOT"] == 1
 
-def test_if_elseif_else_three_way(lower_sv_text_to_logic):
+def test_if_elseif_else_three_way():
     sv = """
     module m(input logic s0,s1, d0,d1,d2, output logic y);
       always_comb begin
@@ -52,7 +56,7 @@ def test_if_elseif_else_three_way(lower_sv_text_to_logic):
     cs = gate_count(rhs)
     assert cs["OR"] == 2 and cs["NOT"] == 2 and cs["AND"] == 5
 
-def test_if_w_eq_condition_reuses_equality(lower_sv_text_to_logic):
+def test_if_w_eq_condition_reuses_equality():
     sv = """
     module m(input logic [3:0] s, input logic d0, d1, output logic y);
       always_comb begin

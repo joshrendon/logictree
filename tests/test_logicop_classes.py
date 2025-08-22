@@ -1,13 +1,8 @@
 import pytest
 import inspect
 from logictree.nodes.ops.ops import LogicTreeNode, LogicVar
-
-# Exclude nodes that shouldn't implement `.operands`
-EXCLUDED_CLASSES = {
-    'LogicVar', 'LogicConst', 'LogicAssign', 'LogicHole',
-    'IfStatement', 'FlattenedIfStatement', 'CaseStatement',
-    'CaseItem', 'LogicOp',  # abstract base class
-}
+from tests.utils import EXCLUDED_CLASSES
+pytestmark = [pytest.mark.unit]
 
 def test_all_gates_implement_operands():
     """

@@ -1,3 +1,6 @@
+import pytest
+pytestmark = [pytest.mark.unit]
+
 import itertools
 from logictree.api import lower_sv_to_logic
 from logictree.eval import evaluate                            # simple boolean evaluator
@@ -29,16 +32,13 @@ def test_default_maps_to_else_equivalence():
     mod = lower_sv_to_logic(sv)["m"]
     module = result["m"]
     cs = mod.signal_map["y"]
-    print([(it.labels, type(it.labels)) for it in cs.items])
+    #print([(it.labels, type(it.labels)) for it in cs.items])
     from logictree.transforms.case_to_if import case_to_if_tree
     lowered_map = case_to_if_tree(module)   # -> {'y': IfStatement}
     assert "y" in lowered_map
     
     # Semantic equivalence over all inputs
     orig_map = dict(module.signal_map)
-    #vars_ = sorted({n for node in orig_map.values() if hasattr(node, "free_vars")
-    #                for n in node.free_vars()})
-    #vars_ = sorted({v.name for v in orig_map["y"].free_vars()})
     vars_ = sorted({n.name for t in orig_map.values() for n in t.free_vars()})
 
     # Optional: spot-check that default path (s==01 or s==11) resolves to c.

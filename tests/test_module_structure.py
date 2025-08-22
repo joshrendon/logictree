@@ -1,3 +1,6 @@
+import pytest
+pytestmark = [pytest.mark.unit]
+
 import unittest
 from antlr4 import *
 from sv_parser.SystemVerilogSubsetLexer import SystemVerilogSubsetLexer

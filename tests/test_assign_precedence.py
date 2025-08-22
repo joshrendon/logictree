@@ -1,4 +1,5 @@
 import pytest
+pytestmark = [pytest.mark.unit]
 from logictree.pipeline import lower_sv_text_to_logic
 from logictree.nodes.ops.gates import AndOp, OrOp, NotOp, XorOp
 

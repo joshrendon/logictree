@@ -1,4 +1,3 @@
-# logictree/pipeline.py
 from typing import Dict, Any
 from sv_parser.parse import parse_sv_text, parse_sv_file, first_module_declaration
 from sv_parser.SystemVerilogSubsetParser import SystemVerilogSubsetParser
@@ -13,7 +12,6 @@ except Exception:
     CaseStatement = CaseItem = None  # fallback if names differ
 
 from logictree.nodes.struct.module import Module
-#LogicMap = Dict[str, LogicTreeNode]
 ModuleMap = Dict[str, Module]
 log = logging.getLogger(__name__)
 
@@ -145,34 +143,16 @@ def _lower_all_modules(parse_tree) -> ModuleMap:
 
     for child in parse_tree.getChildren():
         if isinstance(child, SystemVerilogSubsetParser.Module_declarationContext):
-            print(f"DEBUG: child: {type(child)} {dir(child)}")
-            print(f"DEBUG: module_identifier: {child.module_identifier().getText()}")
-            print(f"DEBUG: __module__: {child.__module__}")
             mod_obj = lowerer.visitModule_declaration(child)
-            print(f"DEBUG: mod_obj.name: {mod_obj.name}")
             if not mod_obj:
-                print("WARNING: lowerer returned no module on vistModule_declaration()")
+                log.warn("lowerer returned no module on vistModule_declaration()")
                 continue
             if not hasattr(mod_obj, "name"):
                 log.warning("Skipping unnamed or invalid module")
-                print(f"DEBUG: mod: type(): {type(mod_obj)} dir: {dir(mod_obj)}")
-                print("WARNING: Skipping module missing .name")
+                log.debug(f"mod: type(): {type(mod_obj)} dir: {dir(mod_obj)}")
+                log.warn("Skipping module missing .name")
                 continue
 
-            #if not mod or not hasattr(mod, "name"):
-            #    log.warning("Skipping unnamed or invalid module")
-            #    print("WARNING: Skipping unnamed or invalid module")
-            #    continue
-
-            # Ensure mod is a LogicTree node we can normalize
-            ##signals = _normalize_outputs(mod)
-            ##ports = getattr(mod, "ports", [])
-            #module_obj = Module(
-            #    name=mod.name,
-            #    ports=ports,
-            #    signal_map=signals,
-            #    assignments=signals  # for now just mirror signal_map
-            #)
             module_map[mod_obj.name] = mod_obj
 
     if not module_map:
@@ -181,11 +161,8 @@ def _lower_all_modules(parse_tree) -> ModuleMap:
 
 def lower_sv_text_to_logic(src: str) -> ModuleMap:
     parse_tree = parse_sv_text(src)
-    #return _lower_module_and_normalize(parse_tree)
     return _lower_all_modules(parse_tree)
 
 def lower_sv_file_to_logic(path: str) -> ModuleMap:
     parse_tree = parse_sv_file(path)
     return _lower_all_modules(parse_tree)
-    #return _lower_module_and_normalize(parse_tree)
-

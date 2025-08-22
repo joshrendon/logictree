@@ -1,3 +1,6 @@
+import pytest
+pytestmark = [pytest.mark.unit]
+
 import unittest
 from antlr4 import *
 from sv_parser.SystemVerilogSubsetLexer import SystemVerilogSubsetLexer
@@ -16,19 +19,11 @@ class TestSystemVerilogParser(unittest.TestCase):
         tree = parser.compilation_unit()
 
         module_map = lower_sv_text_to_logic(code)
-        print(f"DEBUG: code: {code}")
-        print(f"type(module_map): {type(module_map)}")
-        print(f"module_map keys: {list(module_map.keys())}")
-        pprint(module_map)
+        #pprint(module_map)
 
-        for k, v in module_map.items():
-            print(f"{k}: {type(v)}, label={getattr(v, 'label', lambda: '?')()}")
+        #for k, v in module_map.items():
+        #    print(f"{k}: {type(v)}, label={getattr(v, 'label', lambda: '?')()}")
         mod = module_map["foo"]
         assert mod.name == "foo"
         assert mod.assignments['b'].__class__.__name__ == "LogicAssign"
 
-        #ast = ASTBuilder().visit(tree)
-        #print(f"dir(ast):{dir(ast)}")
-        #self.assertEqual(ast["op"], "foo")
-        #self.assertEqual(ast.ports, ["a", "b"])
-        #self.assertEqual(len(ast.items), 1)

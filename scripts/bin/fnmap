@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+rg --line-number --heading -n '^\s*(class|def)\s' src/logictree | less -R

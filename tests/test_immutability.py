@@ -1,3 +1,6 @@
+import pytest
+pytestmark = [pytest.mark.unit]
+
 # tests/test_immutability.py
 import pytest
 from logictree.nodes.ops import LogicVar, LogicConst

@@ -1,3 +1,6 @@
+import pytest
+pytestmark = [pytest.mark.unit]
+
 from logictree.pipeline import lower_sv_file_to_logic, lower_sv_text_to_logic
 from logictree.nodes.ops import LogicVar, AndOp
 from logictree.nodes.control.assign import LogicAssign
@@ -10,7 +13,6 @@ def test_eq_bitvector_const():
     endmodule
     """
     rhs = lower_sv_text_to_logic(sv)["m"].assignments["y"].rhs
-    #rhs = mod.assignments["y"].rhs
 
     # Expect s[1] = 1, s[0] = 0
     assert literal_sig_set(rhs, only_name="s") == {(1, True), (0, False)}

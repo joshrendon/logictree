@@ -1,4 +1,5 @@
 import pytest
+pytestmark = [pytest.mark.unit]
 from tests.utils import literal_sig_set, gate_count
 from logictree.pipeline import lower_sv_file_to_logic, lower_sv_text_to_logic
 
@@ -41,7 +42,7 @@ def test_eq_bitvector_systematic(rng, kvals_base):
         assert counts["XOR"] == 0
 
 
-def test_partselect_eq(lower_sv_text_to_logic):
+def test_partselect_eq():
     sv = """
     module m(input logic [7:0] s, output logic y);
       assign y = (s[7:4] == 4'b1010);
@@ -51,7 +52,7 @@ def test_partselect_eq(lower_sv_text_to_logic):
     assert literal_sig_set(rhs, only_name="s") == {(7, True), (6, False), (5, True), (4, False)}
 
 
-def test_concat_eq(lower_sv_text_to_logic):
+def test_concat_eq():
     sv = """
     module m(input logic a,b,c,d, output logic y);
       assign y = ({a,b,c,d} == 4'b1001);

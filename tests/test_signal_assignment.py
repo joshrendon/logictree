@@ -1,3 +1,6 @@
+import pytest
+pytestmark = [pytest.mark.unit]
+
 from logictree.pipeline import lower_sv_file_to_logic, lower_sv_text_to_logic
 from logictree.nodes.ops import LogicVar, AndOp
 from logictree.nodes.control.assign import LogicAssign
@@ -35,12 +38,12 @@ def test_simple_assign_and():
 
     assign = mod.assignments["c"]
     assert isinstance(assign.rhs, AndOp)
-    print(f"DEBUG: AndOp: {assign.rhs}")
+    #print(f"DEBUG: AndOp: {assign.rhs}")
     andop = assign.rhs
 
-    print(f"DEBUG: AndOp.right.name: {andop.right.name}")
-    print(f"DEBUG: AndOp.left.name:  {andop.left.name}")
-    print(f"DEBUG: AndOp.op:  {andop.op}")
+    #print(f"DEBUG: AndOp.right.name: {andop.right.name}")
+    #print(f"DEBUG: AndOp.left.name:  {andop.left.name}")
+    #print(f"DEBUG: AndOp.op:  {andop.op}")
     assert andop.right.name == "b"
     assert andop.left.name  == "a"
     assert andop.op == 'AND'

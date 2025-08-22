@@ -14,7 +14,6 @@ def _is_default_item(it: CaseItem) -> bool:
 
 
 def evaluate(n, env):
-    print(f"DEBUG: n: {n}")
     # High-level / structural nodes
     if isinstance(n, Module):
        # raise TypeError("evaluate() should not be called on Module; pass one of its output expressions instead.")
@@ -42,13 +41,6 @@ def evaluate(n, env):
         for it in n.items:
             if getattr(it, "labels", None) == "default":
                 return evaluate(it.body, env)
-        #for it in n.items:
-        #    labels = getattr(it, "labels", None)
-        #    if labels not in (None, [], "default") and sel_val in labels:
-        #        return evaluate(it.body, env)
-        #for it in n.items:
-        #    if _is_default_item(it):
-        #        return evaluate(it.body, env)
         return 0  # no matching arm
 
     # Leaves
@@ -69,41 +61,3 @@ def evaluate(n, env):
 
     # If we get here, we truly don't support this node
     raise TypeError(f"Unsupported node for evaluate(): {type(n).__name__}")
-#def evaluate(n, env):
-#    # Control nodes first
-#    if isinstance(n, LogicAssign):
-#        return evaluate(n.rhs, env)
-#
-#    if isinstance(n, IfStatement):
-#        cond_val = evaluate(n.cond, env)
-#        branch = n.then_branch if cond_val else n.else_branch
-#        return evaluate(branch, env)
-#
-#    if isinstance(n, CaseStatement):
-#        sel_val = evaluate(n.selector, env)
-#        # try labeled items
-#        for it in n.items:
-#            labels = getattr(it, "labels", None)
-#            if labels not in (None, [], "default") and sel_val in labels:
-#                return evaluate(it.body, env)
-#        # default
-#        for it in n.items:
-#            if _is_default_item(it):
-#                return evaluate(it.body, env)
-#        # no match, fall back to 0
-#        return 0
-#
-#    # Existing gate-based evaluation
-#    print(f"DEBUG: n: {n}")
-#    op = getattr(n, "op", None)
-#    if op == "CONST": return int(n.value) & 1
-#    if op == "VAR":   return int(env[n.name]) & 1
-#    if op == "NOT":   return 1 ^ evaluate(n.children[0], env)
-#    if op == "AND":   return evaluate(n.children[0], env) & evaluate(n.children[1], env)
-#    if op == "OR":    return evaluate(n.children[0], env) | evaluate(n.children[1], env)
-#    if op == "XOR":   return evaluate(n.children[0], env) ^ evaluate(n.children[1], env)
-#    #if op is None: return 0
-#
-#    print(f"DEBUG: Not Implemented op: {op}")
-#    raise NotImplementedError(op)
-

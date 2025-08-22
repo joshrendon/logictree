@@ -1,3 +1,6 @@
+import pytest
+pytestmark = [pytest.mark.unit]
+
 from logictree.transforms.simplify import simplify_logic_tree
 from logictree.nodes.ops.gates import AndOp, OrOp, NotOp, XorOp, XnorOp, NandOp, NorOp
 from logictree.nodes.ops.ops import LogicConst, LogicVar
@@ -39,8 +42,6 @@ def test_and_false_annihilator():
     zero = LogicConst(0)
     tree = AndOp(a, zero)
     simplified = simplify_logic_tree(tree)
-    print("simlified tree:", simplified)
-    print("Type:", type(simplified))
     assert isinstance(simplified, LogicConst)
     assert simplified.value == 0
 
@@ -49,8 +50,6 @@ def test_or_false_identity():
     zero = LogicConst(0)
     tree = OrOp(b, zero)
     simplified = simplify_logic_tree(tree)
-    print("simlified tree:", simplified)
-    print("Type:", type(simplified))
     assert isinstance(simplified, LogicVar)
     assert simplified.name == "b"
 
@@ -59,8 +58,6 @@ def test_or_true_annihilator():
     one = LogicConst(1)
     tree = OrOp(b, one)
     simplified = simplify_logic_tree(tree)
-    print("simlified tree:", simplified)
-    print("Type:", type(simplified))
     assert isinstance(simplified, LogicConst)
     assert simplified.value == 1
 
@@ -69,9 +66,6 @@ def test_double_negation():
     not1 = NotOp(x)
     not2 = NotOp(not1)
     simplified = simplify_logic_tree(not2)
-    print("simlified tree:", simplified)
-    print("Type:", type(simplified))
-    print("dir:", dir(simplified))
     assert isinstance(simplified, LogicVar)
     assert simplified.name == "x"
 
@@ -80,8 +74,6 @@ def test_xor_with_zero():
     zero = LogicConst(0)
     tree = XorOp(a, zero)
     simplified = simplify_logic_tree(tree)
-    print("simlified tree:", simplified)
-    print("Type:", type(simplified))
     assert isinstance(simplified, LogicVar)
     assert simplified.equals(a)
 
@@ -89,8 +81,6 @@ def test_xnor_same_var():
     a = LogicVar("a")
     tree = XnorOp(a, a)
     simplified = simplify_logic_tree(tree)
-    print("simlified tree:", simplified)
-    print("Type:", type(simplified))
     assert isinstance(simplified, LogicConst)
     assert simplified.value == 1
 
@@ -116,8 +106,6 @@ def test_and_with_zero_then_not():
     inner = AndOp(a, zero)
     tree = NotOp(inner)
     simplified = simplify_logic_tree(tree)
-    print("simlified tree:", simplified)
-    print("Type:", type(simplified))
     assert isinstance(simplified, LogicConst)
     assert simplified.value == 1
 

@@ -1,4 +1,6 @@
 import pytest
+pytestmark = [pytest.mark.unit]
+
 import inspect
 from logictree.nodes.ops.ops import LogicTreeNode, LogicVar
 from tests.utils import all_subclasses, safe_instantiate, EXCLUDED_CLASSES

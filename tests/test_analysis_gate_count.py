@@ -1,3 +1,6 @@
+import pytest
+pytestmark = [pytest.mark.unit]
+
 import unittest
 from logictree.nodes.ops.ops import LogicOp, LogicVar, LogicConst
 from logictree.nodes.ops.gates import NotOp, AndOp, OrOp

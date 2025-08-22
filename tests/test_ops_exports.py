@@ -1,3 +1,6 @@
+import pytest
+pytestmark = [pytest.mark.unit]
+
 def test_ops_exports_are_aggregated():
     # Import the package itself
     import logictree.nodes.ops as ops_pkg

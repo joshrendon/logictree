@@ -1,3 +1,6 @@
+import pytest
+pytestmark = [pytest.mark.unit]
+
 from logictree.pipeline import lower_sv_file_to_logic, lower_sv_text_to_logic
 from logictree.nodes.ops import LogicVar, AndOp, NotOp, OrOp
 from logictree.nodes.control.assign import LogicAssign

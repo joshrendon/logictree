@@ -1,4 +1,6 @@
 import pytest
+pytestmark = [pytest.mark.unit]
+
 from logictree.nodes.ops.ops import LogicConst, LogicVar, LogicOp
 from logictree.nodes.control.assign import LogicAssign
 from logictree.nodes.control.case import CaseItem, CaseStatement
@@ -31,12 +33,12 @@ def test_case_statement_rw_with_default_total_assignment():
     )
 
     fv = case.free_vars()
-    print("free_vars raw:", case.free_vars())
-    print("free_vars names:", {v.name for v in case.free_vars()})
-    for v in case.free_vars():
-        print(f"case.free_vars.v: {v}")
-        if not isinstance(v, LogicVar):
-            print("! Non-LogicVar in free_vars:", type(v), v)
+    #print("free_vars raw:", case.free_vars())
+    #print("free_vars names:", {v.name for v in case.free_vars()})
+    #for v in case.free_vars():
+    #    print(f"case.free_vars.v: {v}")
+    #    if not isinstance(v, LogicVar):
+    #        print("! Non-LogicVar in free_vars:", type(v), v)
 
     assert all(isinstance(v, LogicVar) for v in fv), "free_vars() must return LogicVar Objects!"
     assert {v.name for v in case.free_vars()} == {"sel", "a", "b", "c"}

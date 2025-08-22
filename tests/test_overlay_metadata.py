@@ -1,4 +1,6 @@
 import pytest
+pytestmark = [pytest.mark.unit]
+
 import copy
 
 from logictree.nodes.ops import LogicConst, LogicVar

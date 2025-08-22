@@ -1,4 +1,6 @@
 import pytest
+pytestmark = [pytest.mark.unit]
+
 from logictree.nodes.control.case import CaseItem, CaseStatement
 from logictree.nodes.ops.ops import LogicConst, LogicVar
 from logictree.nodes.control.assign import LogicAssign
@@ -81,7 +83,3 @@ def test_case_statement_dot_and_json_outputs(tmp_path):
     assert data["selector"]["name"] == "sel"
     assert isinstance(data["items"], list)
     assert len(data["items"]) == 3
-    #data = json_path.read_text()
-    #assert "CaseStatement" in data
-    #assert '"selector": "sel"' in data
-    #assert "default" in data

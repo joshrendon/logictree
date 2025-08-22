@@ -1,53 +1,34 @@
-
 ## Logictree: SystemVerilog Static Logic Analyzer — Project Status Summary
+[![Tests](https://github.com/<USER>/logictree/actions/workflows/ci.yml/badge.svg)](https://github.com/<USER>/logictree/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-This project is an open-source Python-based symbolic analysis toolchain for SystemVerilog logic expressions and RTL constructs.
-It parses a subset of SystemVerilog using ANTLR4 and converts it into an internal symbolic intermediate representation (IR) called LogicTree.
-The LogicTree IR enables structural analysis, visualization, and back end transformations.
+Logictree is a Python toolkit and IR for parsing, lowering, and analyzing SystemVerilog logic:
+- Lower `case → if → mux` with equivalence checks
+- Canonicalize to primitive gates; depth & gate-count analysis
+- Graphviz rendering, JSON export, and CLI
 
-### Supported Features:
-#### Core Parser (ANTLR4-based)
-- [x] SystemVerilog subset grammar implemented in SystemVerilogSubset.g4
-- [x] Supports module, input, output, assign statements
-- [x] Supports if and case statements (basic form)
-- [x] Supports binary expressions: &, |, ^, ~, ==, !=, bitvector literals (e.g., 3'b101)
-- [x] Partial support for ~, parentheses, and unary operations
-#### AST + IR Pipeline
-- [x] Full AST generation via ANTLR4 parse tree to custom Python AST classes
-- [x] LogicTree IR representation for symbolic Boolean structure
-- [x] Node types: And, Or, Not, Xor, Eq, Id, Const
-- [x] Bitvector equality comparisons expanded to logic trees (e.g., funct3 == 3'b000)
-- [x] Depth-aware analysis (tracks maximum path depth from inputs)
-#### Visualization
-- [x] to_dot() and Graphviz .png/.svg rendering of logic trees
-- [x]  Balanced reduction option for n-input AND/OR gates (--balanced)
-- [x] Tagging support for constant-time reductions
-#### CLI Tooling
-- [x] CLI frontend (cli.main) supports:
-- [x] File parsing
-- [x] LogicTree analysis
-- [x] DOT and image export (--to_dot, --to_png, --to_svg)
-- [x] Debug logging (--debug-log)
-- [x] Flattening/balancing options
-#### Extensible Infrastructure
-   Visitors and Lowering Passes:
-   - AST visitor extracts assign expressions to LogicTree
-   - Partial case → if lowering in progress
-   - IR collector for introspection, future Verilog or JSON export
+## Install (dev)
+```bash
+pip install -e .
+```
 
-In Progress / Planned Enhancements
+## CLI
+`logictree --help`
 
-|Feature|Status|Notes|
-|-------|---------|------|
-|case → if lowering  |🔄 In progress|Partial lowering implemented; full transformation planned|
-|if → mux lowering|🔜 Planned|Will enable hardware-oriented synthesis and depth estimation|
-|to_verilog() output|🔜 Planned|Will regenerate simplified RTL from LogicTree IR|
-|to_bdd() backend|🧪 Scaffolded|Initial plan written; to support BDD introspection|
-|Signal name → LogicTree mapping|✅ Done|Enables per-signal symbolic inspection|
-|AST ↔ LogicTree cross-reference|✅ Attached IR|AST nodes decorated with .logic_tree attribute|
-|assign logic depth estimation|✅ Supported|Includes coarse vs. fine depth estimation|
-|CLI: --strip-tags, --flatten| 🔜 Planned |Simplifies output for easier downstream use|
-|Comments in grammar|🔜 Planned|To allow ignoring or preserving comments in AST|
+## Run Tests (fast set)
+`pytest -q -m "unit or props or diff"`
+
+## Project layout
+```
+src/logictree/        # core library
+src/sv_parser/        # parser front-end
+src/cli/              # CLI entrypoint
+src/gui/              # explorer (optional)
+tests/{unit,props,diff,integ}/
+```
+## Docs & dashboards
+* Coverage dashboard (static): `coverage_dashboard/`
+* Golden circuits: `golden_circuits/`
 
 ---
 Philosophy and Use Case
@@ -65,3 +46,9 @@ Generating new visitor modules from grammar:
 cd grammar/
 antlr -Dlanguage=Python3 <grammar.g4>
 antlr -Dlanguage=Python3 -visitor <grammar.g4>  # To generate a visitor file
+
+# 2) Badges & likely needed links
+- **CI Badge** `.github/workflows/ci.yml`: https://github.com/joshrendon/logictree/actions/workflows/ci.yml/badge.svg
+- **GH Pages:** https://joshrendon.github.io/logictree/
+- **PyPi: ** https://img.shields.io/pypi/v/logictree.svg
+

@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+python scripts/gen_dev_map.py && bat docs/dev_map.md

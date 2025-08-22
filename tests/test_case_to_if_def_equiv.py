@@ -1,3 +1,6 @@
+import pytest
+pytestmark = [pytest.mark.unit]
+
 import itertools
 
 from logictree.api import lower_sv_to_logic
@@ -30,7 +33,7 @@ def test_case_to_if_define_equivalence_mux2_with_default():
     from logictree.transforms.case_to_if import case_to_if_tree
     import inspect, types
     
-    print("DBG case_to_if_tree:", case_to_if_tree, type(case_to_if_tree))
+    #print("DBG case_to_if_tree:", case_to_if_tree, type(case_to_if_tree))
     assert isinstance(case_to_if_tree, types.FunctionType), (
         "shadowed by", type(case_to_if_tree), "value:", case_to_if_tre
     )

@@ -1,3 +1,6 @@
+import pytest
+pytestmark = [pytest.mark.unit]
+
 import unittest
 from antlr4 import *
 from sv_parser.SystemVerilogSubsetLexer import SystemVerilogSubsetLexer
@@ -18,11 +21,11 @@ def test_mux_tree_outputs_mux():
     endmodule
     """
     module_map = lower_sv_text_to_logic(sv)
-    pprint(module_map)
+    #pprint(module_map)
     mod = module_map["m"]  # Use module name as key
-    pprint(mod)
+    #pprint(mod)
     y = mod.signal_map["y"]
-    print("mod.signal_map:\n")
-    pprint(mod.signal_map)
+    #print("mod.signal_map:\n")
+    #pprint(mod.signal_map)
     assert y.op == "mux"
 

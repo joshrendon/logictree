@@ -1,0 +1,19 @@
+[run]
+branch = True
+source = 
+    sv_ast
+    .
+parallel = True
+omit =
+    */venv/*
+    */.venv/*
+    */tests/*  # keep unit tests out of coverage
+
+[report]
+skip_covered = True
+show_missing = True
+precision = 1
+exclude_lines =
+    pragma: no cover
+    if TYPE_CHECKING:
+    raise NotImplementedError

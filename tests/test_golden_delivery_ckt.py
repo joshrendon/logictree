@@ -1,3 +1,6 @@
+import pytest
+pytestmark = [pytest.mark.unit]
+
 from logictree.nodes.ops import AndOp, LogicVar
 from logictree.transforms.simplify import simplify_logic_tree
 
@@ -9,8 +12,6 @@ A = LogicVar("arrived_on_truck")
 # Build tree
 S = AndOp(C, T)        # shipment_released
 D = AndOp(S, A)        # delivery_confirmed
-
-cloned = D.clone()
 
 simplified = simplify_logic_tree(D)
 print("Original Tree:")
