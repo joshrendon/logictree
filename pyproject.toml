@@ -7,27 +7,15 @@ name = "logictree"
 version = "0.0.1"
 description = "Logictree — a Symbolic IR for SystemVerilog logic"
 readme = "README.md"
-license = { file = "LICENSE" }
+license = {file = "LICENSE"}
 requires-python = ">=3.11"
-authors = [{ name = "Joshua Rendon" }]
+authors = [{name = "Joshua Rendon"}]
 dependencies = [
   # put runtime deps here, e.g. "graphviz", "sympy>=1.13"
-  "dd", #BDD/ZDD library
+  "dd", # BDD/ZDD library
   "antlr4-python3-runtime>4.13",
-  "graphviz", # Python bindings
+  "graphviz" # Python bindings
 ]
-
-# console script: `logictree`
-[project.scripts]
-logictree = "cli.main:main"
-
-[tool.setuptools]
-package-dir = {"" = "src"}
-
-# auto-discover packages under src/
-[tool.setuptools.packages.find]
-where = ["src"]
-include = ["logictree*", "sv_parser*", "cli*", "gui*"]
 
 # Optional: dev extras for contributors
 [project.optional-dependencies]
@@ -37,35 +25,25 @@ dev = [
   "pytest-xdist",
   "ruff",
   "mypy",
-  "build",           # `python -m build` to make wheels/sdist
-  "hypothesis",      # property-based testing
+  "build", # `python -m build` to make wheels/sdist
+  "hypothesis" # property-based testing
 ]
 
-# Centralize tool configs (optional but nice)
-[tool.pytest.ini_options]
-#addopts = "-ra"
-addopts = "--cov-context=test"
-testpaths = ["tests"]
-markers = [
-  "unit: Small, isolated tests",
-  "props: Property/metamorphic tests",
-  "diff: Differential/equivalence tests",
-  "integ: End-to-end CLI/flows",
-  "slow: Long-running tests",
-  "mutation: Mutation-testing harness",
-  "flaky: Known flaky tests",
-  "requires_sympy: Needs SymPy",
-  "requires_graphviz: Needs Graphviz",
+# console script: `logictree`
+[project.scripts]
+logictree = "cli.main:main"
+
+[tool.coverage.html]
+directory = "htmlcov"
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+# Keep reports clean
+omit = [
+  "tests/*",
+  "**/__init__.py"
 ]
-
-[tool.ruff]
-line-length = 100
-extend-select = ["I"]  # import sorting
-target-version = "py311"
-
-[tool.mypy]
-python_version = "3.11"
-ignore_missing_imports = true
 
 [tool.coverage.run]
 branch = true
@@ -77,14 +55,36 @@ parallel = true
 # Optional, sets a useful context tag (visible in HTML)
 dynamic_context = "test_function"
 
-[tool.coverage.report]
-show_missing = true
-skip_covered = false
-# Keep reports clean
-omit = [
-  "tests/*",
-  "**/__init__.py",
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+
+# Centralize tool configs (optional but nice)
+[tool.pytest.ini_options]
+# addopts = "-ra"
+addopts = "--cov-context=test"
+testpaths = ["tests"]
+markers = [
+  "unit: Small, isolated tests",
+  "props: Property/metamorphic tests",
+  "diff: Differential/equivalence tests",
+  "integ: End-to-end CLI/flows",
+  "slow: Long-running tests",
+  "mutation: Mutation-testing harness",
+  "flaky: Known flaky tests",
+  "requires_sympy: Needs SymPy",
+  "requires_graphviz: Needs Graphviz"
 ]
 
-[tool.coverage.html]
-directory = "htmlcov"
+[tool.ruff]
+line-length = 100
+extend-select = ["I"] # import sorting
+target-version = "py311"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+# auto-discover packages under src/
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["logictree*", "sv_parser*", "cli*", "gui*"]
