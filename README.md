@@ -1,5 +1,5 @@
 
-## SV_AST: SystemVerilog Static Logic Analyzer — Project Status Summary
+## Logictree: SystemVerilog Static Logic Analyzer — Project Status Summary
 
 This project is an open-source Python-based symbolic analysis toolchain for SystemVerilog logic expressions and RTL constructs.
 It parses a subset of SystemVerilog using ANTLR4 and converts it into an internal symbolic intermediate representation (IR) called LogicTree.
