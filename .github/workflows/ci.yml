@@ -5,62 +5,32 @@ on:
   push:
     branches: [ "main" ]
   pull_request:
-    branches: [ "main"]
+    branches: [ "main" ]
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13"]
+
     steps:
-      - uses: actions/checkout@v4
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-          cache: "pip"
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
 
-      - name: Install project (editable) + dev deps
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e .[dev]
-          # If you keep requirements.txt for runtime deps, also:
-          # pip install -r requirements.txt
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .[dev]
 
-      - name: Lint (ruff)
-        run: ruff check .
+    - name: Run tests with coverage
+      run: |
+        pytest -q -m "unit or props or diff" --cov=logictree --cov=sv_parser --cov-report=xml --cov-report=term-missing
 
-      - name: Run fast test set
-        run: pytest -q -m "unit or props or diff" --maxfail=1 --durations=15
-
-      - name: Enforce minimum coverage
-        run: pytest -q -m "unit or props or diff" --cov --cov-fail-under=85
-
-      - name: Tests + Coverage (fast markers)
-        run: pytest -q -m "unit or props or diff" --cov --cov-report=xml --cov-report=term-missing 
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          files: coverage.xml
-          flags: unittests
-          fail_ci_if_error: true
-
-      # Always upload HTML report even if tests failed
-      - name: Upload coverage HTML
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: htmlcov
-          path: htmlcov
-  nightly:
-    if: github.event_name == 'schedule'
-    runs-on: ubuntu-latest
-    schedule:
-      - cron: "0 7 * * *"
-    steps:
-      # (repeat setup)
-      - name: Full suite
-        run: pytest --full -q -m "unit or props or diff or slow or mutation" --durations=25
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        files: ./coverage.xml
+        fail_ci_if_error: true

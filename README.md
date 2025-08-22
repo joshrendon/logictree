@@ -1,6 +1,6 @@
 ## Logictree: SystemVerilog Static Logic Analyzer — Project Status Summary
 
-[![CI](https://github.com/joshrendon/logictree/actions/workflows/ci.yml/badge.svg)](https://github.com/joshrendon/logictree/actions/workflows/ci.yml)
+![CI](https://github.com/joshrendon/logictree/actions/workflows/ci.yml/badge.svg?branch=main)
 [![codecov](https://codecov.io/gh/joshrendon/logictree/branch/main/graph/badge.svg)](https://codecov.io/gh/joshrendon/logictree)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
