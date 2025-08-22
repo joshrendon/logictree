@@ -38,7 +38,8 @@ dev = [
 
 # Centralize tool configs (optional but nice)
 [tool.pytest.ini_options]
-addopts = "-ra"
+#addopts = "-ra"
+addopts = "--cov-context=test"
 testpaths = ["tests"]
 markers = [
   "unit: Small, isolated tests",
@@ -60,3 +61,25 @@ target-version = "py311"
 [tool.mypy]
 python_version = "3.11"
 ignore_missing_imports = true
+
+[tool.coverage.run]
+branch = true
+# Only measure your packages (import names, not paths)
+source = ["logictree", "sv_parser"]
+# If you someday add xdist or multiprocessing:
+concurrency = ["thread", "multiprocessing"]
+parallel = true
+# Optional, sets a useful context tag (visible in HTML)
+dynamic_context = "test_function"
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+# Keep reports clean
+omit = [
+  "tests/*",
+  "**/__init__.py",
+]
+
+[tool.coverage.html]
+directory = "htmlcov"

@@ -88,7 +88,7 @@ def test_case_to_if_mux_mode_and_simplify_no_constants():
     # Still an expression (not turned back into IfStatement)
     assert not isinstance(simplified, IfStatement)
 
-@pytest.mark.parametrize("left_is_const, const_val", [(True, 0), (False, 1)])
+@pytest.mark.parametrize("left_is_const, const_val", sorted([(True, 0), (False, 1)]))
 def test_case_to_if_mux_simplifies_with_constant_arm(left_is_const, const_val):
     # Build case with one constant arm
     if left_is_const:

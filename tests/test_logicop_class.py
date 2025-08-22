@@ -98,12 +98,13 @@ def test_all_gates_implement_depth_and_delay():
     assert not bad_depth, f"Missing or bad `.depth()` in: {', '.join(bad_depth)}"
     assert not bad_delay, f"Missing or bad `.delay()` in: {', '.join(bad_delay)}"
 
-import pytest
 
-@pytest.mark.parametrize("cls", [
-    cls for cls in all_subclasses(LogicTreeNode)
-    if cls.__name__ not in EXCLUDED_CLASSES
-])
+subclasses = sorted(
+    (cls for cls in all_subclasses(LogicTreeNode) if cls.__name__ not in EXCLUDED_CLASSES),
+    key=lambda c: c.__name__,
+)
+
+@pytest.mark.parametrize("cls", subclasses, ids=lambda c: c.__name__)
 def test_label_method(cls):
     instance = safe_instantiate(cls)
     assert instance is not None, f"Failed to instantiate {cls.__name__}"
@@ -135,11 +136,8 @@ def safe_instantiate(cls):
     except Exception:
         return None
 
-@pytest.mark.parametrize("method_name", ["label", "depth", "delay", "to_json_dict"])
-@pytest.mark.parametrize("cls", [
-    cls for cls in all_subclasses(LogicTreeNode)
-    if cls.__name__ not in EXCLUDED_CLASSES
-])
+@pytest.mark.parametrize("method_name", sorted(["label", "depth", "delay", "to_json_dict"]))
+@pytest.mark.parametrize("cls", subclasses, ids=lambda c: c.__name__)
 def test_method_implementation(cls, method_name):
     instance = safe_instantiate(cls)
     assert instance is not None, f"Could not instantiate {cls.__name__}"

@@ -3,12 +3,12 @@ pytestmark = [pytest.mark.unit]
 from tests.utils import literal_sig_set, gate_count
 from logictree.pipeline import lower_sv_file_to_logic, lower_sv_text_to_logic
 
-@pytest.mark.parametrize("rng", [(3,0), (0,3), (7,0), (0,7), (15,0)])
-@pytest.mark.parametrize("kvals_base", [
+@pytest.mark.parametrize("rng", sorted([(3,0), (0,3), (7,0), (0,7), (15,0)]))
+@pytest.mark.parametrize("kvals_base", sorted([
     ("b", [0b0, 0b1, 0b1010, 0b0101]),
     ("h", [0x0, 0xF, 0xA, 0x5]),
     ("d", [0, 1, 3, 7, 15]),
-])
+]))
 def test_eq_bitvector_systematic(rng, kvals_base):
     hi, lo = rng
     width = abs(hi - lo) + 1

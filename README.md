@@ -1,5 +1,7 @@
 ## Logictree: SystemVerilog Static Logic Analyzer — Project Status Summary
-[![Tests](https://github.com/<USER>/logictree/actions/workflows/ci.yml/badge.svg)](https://github.com/<USER>/logictree/actions/workflows/ci.yml)
+
+[![CI](https://github.com/joshrendon/logictree/actions/workflows/ci.yml/badge.svg)](https://github.com/joshrendon/logictree/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/joshrendon/logictree/branch/main/graph/badge.svg)](https://codecov.io/gh/joshrendon/logictree)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 Logictree is a Python toolkit and IR for parsing, lowering, and analyzing SystemVerilog logic:
@@ -51,4 +53,3 @@ antlr -Dlanguage=Python3 -visitor <grammar.g4>  # To generate a visitor file
 - **CI Badge** `.github/workflows/ci.yml`: https://github.com/joshrendon/logictree/actions/workflows/ci.yml/badge.svg
 - **GH Pages:** https://joshrendon.github.io/logictree/
 - **PyPi: ** https://img.shields.io/pypi/v/logictree.svg
-
