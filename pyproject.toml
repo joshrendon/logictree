@@ -34,7 +34,7 @@ include = ["logictree*", "sv_parser*", "cli*", "gui*"]
 dev = [
   "pytest>=8.0",
   "pytest-cov",
-  "pytest-xdist"
+  "pytest-xdist",
   "ruff",
   "mypy",
   "build",           # `python -m build` to make wheels/sdist
