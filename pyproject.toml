@@ -12,6 +12,7 @@ requires-python = ">=3.11"
 authors = [{name = "Joshua Rendon"}]
 dependencies = [
   # put runtime deps here, e.g. "graphviz", "sympy>=1.13"
+  "sympy",
   "dd", # BDD/ZDD library
   "antlr4-python3-runtime>4.13",
   "graphviz" # Python bindings
