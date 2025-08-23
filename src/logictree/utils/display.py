@@ -131,8 +131,8 @@ def to_dot(tree, g=None, parent=None, node_id_gen=[0]):
     return g
 
 def to_symbolic_expr_str(node):
-    from logictree.nodes.ops.ops import LogicConst, LogicOp, LogicVar
     from logictree.nodes.hole.hole import LogicHole
+    from logictree.nodes.ops.ops import LogicConst, LogicOp, LogicVar
     if isinstance(node, LogicVar) or isinstance(node, LogicHole):
         return node.name
     elif isinstance(node, LogicConst):

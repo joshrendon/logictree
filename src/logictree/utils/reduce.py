@@ -1,5 +1,7 @@
 from logictree.nodes.ops.ops import LogicOp
+
 from .gate_factory import create_gate
+
 
 def balance_logic_tree(tree):
     if isinstance(tree, LogicOp):

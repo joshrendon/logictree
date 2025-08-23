@@ -9,4 +9,7 @@ __pycache__/
 *.svg
 *.png
 build/
+# Ignore ANTLR-generated parser files
+src/sv_parser/SystemVerilogSubset*.py
+src/sv_parser/SimpleVerilogExpr*.py
 
