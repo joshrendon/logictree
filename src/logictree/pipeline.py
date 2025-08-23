@@ -1,17 +1,18 @@
-from typing import Dict, Any
-from sv_parser.parse import parse_sv_text, parse_sv_file, first_module_declaration
-from sv_parser.SystemVerilogSubsetParser import SystemVerilogSubsetParser
+import logging
+from typing import Any, Dict
+
 from logictree.nodes.base.base import LogicTreeNode
 from logictree.SVToLogicTreeLowerer import SVToLogicTreeLowerer
-from typing import Dict, Any
-import logging
+from sv_parser.parse import parse_sv_file, parse_sv_text
+from sv_parser.SystemVerilogSubsetParser import SystemVerilogSubsetParser
 
 try:
-    from logictree.nodes.control.case import CaseStatement, CaseItem
+    from logictree.nodes.control.case import CaseItem, CaseStatement
 except Exception:
     CaseStatement = CaseItem = None  # fallback if names differ
 
 from logictree.nodes.struct.module import Module
+
 ModuleMap = Dict[str, Module]
 log = logging.getLogger(__name__)
 

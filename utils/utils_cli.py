@@ -1,6 +1,7 @@
 import json
 import os
 
+
 def write_golden_file(path, name, logic_hash, expr_str, inputs_flat, inputs_decl):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     data = {

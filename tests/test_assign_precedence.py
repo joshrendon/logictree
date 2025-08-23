@@ -1,7 +1,9 @@
 import pytest
+
 pytestmark = [pytest.mark.unit]
+from logictree.nodes.ops.gates import AndOp, OrOp, XorOp
 from logictree.pipeline import lower_sv_text_to_logic
-from logictree.nodes.ops.gates import AndOp, OrOp, NotOp, XorOp
+
 
 @pytest.mark.parametrize("rhs, expect_top", sorted([
     ("a & b | c", OrOp),      # & before |

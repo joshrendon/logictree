@@ -1,17 +1,20 @@
-from antlr4 import *
 import sys
 from pathlib import Path
+
+from antlr4 import *
 
 # Dynamically add project root to sys.path
 project_root = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(project_root))
 
+from pprint import pprint
+
+from to_dot_util import to_dot
+
 from sv_parser.SystemVerilogSubsetLexer import SystemVerilogSubsetLexer
 from sv_parser.SystemVerilogSubsetParser import SystemVerilogSubsetParser
-from sv_parser.SystemVerilogSubsetVisitor import SystemVerilogSubsetVisitor
 from sv_parser.visitor import ASTBuilder
-from pprint import pprint
-from to_dot_util import to_dot
+
 
 def parse_sv_file(filename):
     with open(filename, "r") as f:

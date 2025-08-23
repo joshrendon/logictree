@@ -1,14 +1,14 @@
-from typing import Optional, Any
-from typing import Literal
-from logictree.nodes.base.base import LogicTreeNode
-from logictree.nodes.ops import LogicConst, LogicVar, AndOp, OrOp, NotOp
-from logictree.nodes.control.case import CaseStatement, CaseItem  # your actual classes
-from logictree.transforms.simplify import simplify_logic_tree
-from logictree.nodes.control.assign import LogicAssign
-from logictree.nodes.struct.module import Module
-from logictree.nodes.control.ifstatement import IfStatement
-from logictree.nodes.selects import BitSelect
 import logging
+from typing import Any, Literal, Optional
+
+from logictree.nodes.base.base import LogicTreeNode
+from logictree.nodes.control.assign import LogicAssign
+from logictree.nodes.control.case import CaseItem, CaseStatement  # your actual classes
+from logictree.nodes.control.ifstatement import IfStatement
+from logictree.nodes.ops import AndOp, LogicConst, NotOp, OrOp
+from logictree.nodes.selects import BitSelect
+from logictree.nodes.struct.module import Module
+
 log = logging.getLogger(__name__)
 
 def _meta_copy(node):

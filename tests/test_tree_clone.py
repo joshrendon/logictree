@@ -1,15 +1,18 @@
 import pytest
+
 pytestmark = [pytest.mark.unit]
-from logictree.nodes.ops.ops import LogicVar, LogicConst
-from logictree.nodes.control.case import CaseStatement, CaseItem
+import logging
+
 from logictree.nodes.control.assign import LogicAssign
-from logictree.nodes.ops.gates import AndOp, OrOp, NotOp
+from logictree.nodes.control.case import CaseItem, CaseStatement
 from logictree.nodes.control.ifstatement import IfStatement
+from logictree.nodes.ops.gates import AndOp, NotOp, OrOp
+from logictree.nodes.ops.ops import LogicConst, LogicVar
 from logictree.transforms.case_to_if import case_to_if_tree
 from logictree.transforms.simplify import simplify_logic_tree
-from tests.utils import _is_mux_tree, _expr
 from logictree.utils.display import pretty_inline
-import logging
+from tests.utils import _expr, _is_mux_tree
+
 log = logging.getLogger(__name__)
 
 def _two_way_case(left_expr, right_expr):

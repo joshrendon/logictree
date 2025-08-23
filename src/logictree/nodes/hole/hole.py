@@ -1,5 +1,6 @@
 from ..base.base import LogicTreeNode
 
+
 class LogicHole(LogicTreeNode):
     def __init__(self, name: str="UNSPECIFIED"):
         super().__init__()

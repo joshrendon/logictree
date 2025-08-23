@@ -1,4 +1,5 @@
 import pytest
+
 pytestmark = [pytest.mark.unit]
 
 from logictree.nodes.ops import AndOp, LogicVar

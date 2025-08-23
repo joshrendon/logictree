@@ -1,8 +1,11 @@
 import pytest
+
 pytestmark = [pytest.mark.unit]
 import inspect
+
 from logictree.nodes.ops.ops import LogicTreeNode, LogicVar
-from tests.utils import all_subclasses, safe_instantiate, EXCLUDED_CLASSES
+from tests.utils import EXCLUDED_CLASSES, all_subclasses, safe_instantiate
+
 
 def test_all_gates_implement_operands():
     bad_classes = []
@@ -111,7 +114,6 @@ def test_label_method(cls):
     label = instance.label()
     assert isinstance(label, str), f"{cls.__name__}.label() did not return a string"
 
-from logictree.nodes.ops.ops import LogicVar
 
 # Properties like these are NOT callable
 PROPERTY_METHODS = {"depth", "delay"}

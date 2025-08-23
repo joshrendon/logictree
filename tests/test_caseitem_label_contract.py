@@ -1,9 +1,11 @@
 import pytest
+
 pytestmark = [pytest.mark.unit]
 
+from logictree.nodes.control.assign import LogicAssign
 from logictree.nodes.control.case import CaseItem, CaseStatement
 from logictree.nodes.ops.ops import LogicConst, LogicVar
-from logictree.nodes.control.assign import LogicAssign
+
 
 def make_assign(lhs_name, rhs_name):
     return LogicAssign(lhs=LogicVar(lhs_name), rhs=LogicVar(rhs_name))

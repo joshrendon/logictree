@@ -1,5 +1,15 @@
 import graphviz
-from sv_parser.ast_nodes import BinaryOp, UnaryOp, IdNode, Number, Assign, Module, CaseStatement, CaseItem
+from sv_parser.ast_nodes import (
+    Assign,
+    BinaryOp,
+    CaseItem,
+    CaseStatement,
+    IdNode,
+    Module,
+    Number,
+    UnaryOp,
+)
+
 
 def to_dot(ast):
     dot = graphviz.Digraph(comment="SystemVerilog AST")

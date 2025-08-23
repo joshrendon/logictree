@@ -1,12 +1,14 @@
 from __future__ import annotations
-from logictree.nodes.base import LogicTreeNode
-from typing import List, Union, Optional, Tuple, FrozenSet, Set
-from logictree.utils.display import indent
-from logictree.utils import overlay
-from logictree.nodes.types import GATE_TYPES, COMMUTATIVE_OPS
-from dataclasses import dataclass, replace, field
-from abc import abstractmethod
+
 import logging
+from abc import abstractmethod
+from dataclasses import dataclass, field, replace
+from typing import FrozenSet, Optional, Union
+
+from logictree.nodes.base import LogicTreeNode
+from logictree.nodes.types import COMMUTATIVE_OPS
+from logictree.utils import overlay
+
 log = logging.getLogger(__name__)
 
 @dataclass(frozen=True)
@@ -58,19 +60,11 @@ class LogicVar(LogicTreeNode):
             "children": [child.to_json_dict() for child in self.children],
         }
         
-    @property
-    def children(self):
-        return  []
-
     def equals(self, other):
         return isinstance(other, LogicVar) and self.name == other.name
 
     def __str__(self) -> str:
         return self.name
-
-    # TODO: remove mokeypatched __repr__
-    def __repr__(self):
-        return f"LogicVar(name={self.name})"
 
     @property
     def depth(self):
@@ -135,13 +129,9 @@ class LogicConst(LogicTreeNode):
         return "CONST"
 
     @property
-    def children(self): #leaf
+    def children(self):
         return []
 
-    @property
-    def children(self):
-        return  []
-    
     def equals(self, other):
         return isinstance(other, LogicConst) and self.value == other.value
 
@@ -223,15 +213,6 @@ class LogicConst(LogicTreeNode):
             return f"{width}'{sflag}{base}{digits(val, base)}"
         return digits(val, base) if base == "d" else f"'{sflag}{base}{digits(val, base)}"
 
-    def equals(self, other: object) -> bool:
-        if not isinstance(other, LogicConst):
-            return False
-        # Consider constants equal if their masked numeric values and widths/sign match when specified.
-        same_num = self.masked_int() == other.masked_int()
-        same_w = (self.width == other.width) or (self.width is None or other.width is None)
-        same_s = (self.is_signed == other.is_signed) or (self.is_signed is False and other.is_signed is False)
-        return same_num and same_w and same_s
-
     def to_json_dict(self):
         return {
             "type": self.__class__.__name__,
@@ -255,7 +236,6 @@ class LogicConst(LogicTreeNode):
 
 class LogicOp(LogicTreeNode):
     """Base for operator nodes (AND/OR/NOT/etc.)."""
-    name: str = "OP"
     def __init__(self, *inputs):
         super().__init__()
         if type(self) is LogicOp:

@@ -1,7 +1,10 @@
-import pytest
 import inspect
+
+import pytest
+
 from logictree.nodes.ops.ops import LogicTreeNode, LogicVar
 from tests.utils import EXCLUDED_CLASSES
+
 pytestmark = [pytest.mark.unit]
 
 def test_all_gates_implement_operands():

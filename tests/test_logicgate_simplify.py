@@ -1,9 +1,9 @@
 import pytest
+
 pytestmark = [pytest.mark.unit]
 
-import inspect
-from logictree.nodes.ops.ops import LogicTreeNode, LogicVar
-from tests.utils import all_subclasses, safe_instantiate, EXCLUDED_CLASSES
+from logictree.nodes.ops.ops import LogicTreeNode
+from tests.utils import EXCLUDED_CLASSES, all_subclasses, safe_instantiate
 
 
 def test_all_gates_implement_simplify():

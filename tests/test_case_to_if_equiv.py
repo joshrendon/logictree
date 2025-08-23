@@ -1,11 +1,14 @@
 import pytest
+
 pytestmark = [pytest.mark.unit]
 
 import itertools
 import types
+
 from logictree.api import lower_sv_to_logic
-from logictree.nodes.struct.module import Module
 from logictree.eval import evaluate
+from logictree.nodes.struct.module import Module
+
 
 def _assignments(vars_):
     for bits in itertools.product([0,1], repeat=len(vars_)):

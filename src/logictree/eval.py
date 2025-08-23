@@ -1,9 +1,10 @@
-from logictree.nodes.control.ifstatement import IfStatement
-from logictree.nodes.control.case import CaseStatement, CaseItem
 from logictree.nodes.control.assign import LogicAssign
+from logictree.nodes.control.case import CaseItem, CaseStatement
+from logictree.nodes.control.ifstatement import IfStatement
+from logictree.nodes.ops.gates import AndOp, NotOp, OrOp, XorOp
 from logictree.nodes.ops.ops import LogicConst, LogicVar
-from logictree.nodes.ops.gates import AndOp, OrOp, XorOp, NotOp
 from logictree.nodes.struct.module import Module
+
 
 def _is_default_item(it: CaseItem) -> bool:
     # Be liberal: treat “default” if it has no labels, None, or explicit flag
@@ -25,8 +26,6 @@ def evaluate(n, env):
         branch = n.then_branch if cond_val else n.else_branch
         return evaluate(branch, env)
     if isinstance(n, CaseStatement):
-        sel_val = evaluate(n.selector, env)
-
         for it in n.items:
             labels = getattr(it, "labels", None)
             if labels in (None, [], "default"):

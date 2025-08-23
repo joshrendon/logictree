@@ -1,9 +1,12 @@
-from ..base.base import LogicTreeNode
+import logging
+from dataclasses import field
+from typing import FrozenSet, List, Optional
+
 from logictree.nodes.ops.ops import LogicVar
 from logictree.nodes.struct.statement import Statement
-from typing import Dict, Tuple, Union, Optional, List, FrozenSet
-from dataclasses import dataclass, field
-import logging
+
+from ..base.base import LogicTreeNode
+
 log = logging.getLogger(__name__)
 
 def pretty_print_eq_label(op_node):
@@ -139,7 +142,7 @@ class FlattenedIfStatement(LogicTreeNode):
         self.else_branch = current.else_branch
 
     def default_label(self):
-        return f"FlattenedIfStatement"
+        return "FlattenedIfStatement"
 
     @property
     def depth(self):

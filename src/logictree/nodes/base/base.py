@@ -1,6 +1,7 @@
 import copy
 import logging
-from dataclasses import replace, field
+from dataclasses import field, replace
+
 from logictree.utils import overlay
 
 log = logging.getLogger(__name__)
@@ -98,7 +99,6 @@ class LogicTreeNode:
         return logic_tree_to_json(self)
 
     def clone(self):
-        import copy
         clone = copy.deepcopy(self)
         if hasattr(clone, "_depth"):
             clone._depth = None

@@ -1,5 +1,6 @@
-from logictree.nodes.base import LogicTreeNode
-from logictree.nodes.ops import LogicOp, LogicVar, LogicConst
+from logictree.nodes.ops import LogicConst, LogicOp, LogicVar
+
+
 #from logictree.nodes import LogicNode, LogicOp, LogicVar, LogicConst
 # utils/ascii_tree.py
 def logic_tree_to_ascii(node, indent: int = 0) -> str:

@@ -1,6 +1,8 @@
-from logictree.nodes import ops, control, base, hole
-from logictree.nodes.base import LogicTreeNode
 import logging
+
+from logictree.nodes import ops
+from logictree.nodes.base import LogicTreeNode
+
 log = logging.getLogger(__name__)
 
 def resolve_signal_vars(tree: LogicTreeNode, signal_map: dict) -> LogicTreeNode:

@@ -1,6 +1,8 @@
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
+
 from logictree.nodes.ops.ops import LogicTreeNode
+
 
 @dataclass
 class Module:

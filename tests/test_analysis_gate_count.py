@@ -1,10 +1,13 @@
 import pytest
+
 pytestmark = [pytest.mark.unit]
 
 import unittest
-from logictree.nodes.ops.ops import LogicOp, LogicVar, LogicConst
-from logictree.nodes.ops.gates import NotOp, AndOp, OrOp
+
+from logictree.nodes.ops.gates import AndOp, NotOp, OrOp
+from logictree.nodes.ops.ops import LogicConst, LogicVar
 from logictree.utils.analysis import gate_count
+
 
 class TestGateCount(unittest.TestCase):
     def test_simple_and(self):

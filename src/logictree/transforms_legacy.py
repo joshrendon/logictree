@@ -1,7 +1,8 @@
-from logictree.nodes import ops, control, base, hole
-from logictree.nodes.base import LogicTreeNode
-from .transforms.case_to_if import case_to_if_tree
 import logging
+
+from logictree.nodes import ops
+from logictree.nodes.base import LogicTreeNode
+
 log = logging.getLogger(__name__)
 
 def resolve_signal_vars(tree: LogicTreeNode, signal_map: dict) -> LogicTreeNode:
@@ -21,9 +22,8 @@ def resolve_signal_vars(tree: LogicTreeNode, signal_map: dict) -> LogicTreeNode:
         return tree
 
 def lower_case_statements_in_signal_map(signal_map: dict[str, LogicTreeNode]) -> None:
-    from logictree.nodes.control.case import CaseStatement
-    from logictree.nodes.control.ifstatement import IfStatement
     from logictree.nodes.control.assign import LogicAssign
+    from logictree.nodes.control.case import CaseStatement
     from logictree.nodes.ops.ops import LogicConst, LogicOp
     """
     Rewrites CaseStatement nodes in-place inside the signal_map into nested LogicMux or LogicOp trees.
@@ -53,10 +53,10 @@ def lower_case_statements_in_signal_map(signal_map: dict[str, LogicTreeNode]) ->
             signal_map[name] = mux_tree
 
 def case_to_if_tree(case_stmt: LogicTreeNode) -> LogicTreeNode:
-    from logictree.nodes.control.case import CaseStatement
+    from pprint import pprint
+
     from logictree.nodes.control.ifstatement import IfStatement
     from logictree.nodes.ops.ops import LogicConst, LogicOp
-    from pprint import pprint
     """Lower a CaseStatement node into a nested IfStatement tree."""
     log.info(f" Lowering CaseStatement with {len(case_stmt.items)} items")
     log.info(f"                             selector: {case_stmt.selector}")
@@ -130,5 +130,3 @@ def case_to_if_tree(case_stmt: LogicTreeNode) -> LogicTreeNode:
 
     return build_if_tree(0)
 
-#__all__ = ["case_to_if_tree", "resolve_signal_vars", "lower_case_statements_in_signal_map"]
-__all__ = ["case_to_if_tree"]

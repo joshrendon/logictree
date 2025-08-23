@@ -1,7 +1,9 @@
-from logictree.nodes import ops, control, base, hole
-from sv_parser.SystemVerilogSubsetVisitor import SystemVerilogSubsetVisitor
-from sv_parser.SystemVerilogSubsetParser import *
 import logging
+
+from logictree.nodes import control, hole, ops
+from sv_parser.SystemVerilogSubsetParser import *
+from sv_parser.SystemVerilogSubsetVisitor import SystemVerilogSubsetVisitor
+
 log = logging.getLogger(__name__)
 Continuous_assignCtxtClass = SystemVerilogSubsetParser.Continuous_assignContext
 IfStmtCtxtClass = SystemVerilogSubsetParser.If_statementContext

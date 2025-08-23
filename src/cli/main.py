@@ -1,23 +1,23 @@
 import argparse
 import logging
+
+from logictree.nodes import ops
 from logictree.pipeline import lower_sv_file_to_logic
 from logictree.SVToLogicTreeLowerer import SVToLogicTreeLowerer
+from logictree.transforms.case_to_if import case_to_if_tree
+from logictree.transforms.if_to_mux import if_tree_to_mux_tree
 from logictree.transforms.signal_resolution import resolve_signal_vars
-from logictree.utils.analysis import get_logic_hash, explain_logic_hash
+from logictree.utils.analysis import explain_logic_hash, get_logic_hash
 from logictree.utils.display import (
+    explain_expr_tree,
     pretty_print,
     to_dot,
     to_sympy_expr,
-    explain_expr_tree,
 )
 from logictree.utils.reduce import balanced_tree_reduce
-from logictree.utils.analysis import gate_summary, gate_count
-from logictree.nodes import ops
-from utils.graphviz_export import save_dot_svg_png
-from utils.utils_cli import write_golden_file
 from utils.ascii_tree import logic_tree_to_ascii, to_ascii
-import json
-from pathlib import Path
+from utils.utils_cli import write_golden_file
+
 log = logging.getLogger(__name__)
 
 MODULE_NAME = ""

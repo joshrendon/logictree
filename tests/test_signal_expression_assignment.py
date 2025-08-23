@@ -1,12 +1,14 @@
 import pytest
+
 pytestmark = [pytest.mark.unit]
 
-import unittest
-from antlr4 import *
-from logictree.pipeline import lower_sv_file_to_logic, lower_sv_text_to_logic
-from logictree.nodes.ops import LogicVar
-from logictree.nodes.control.assign import LogicAssign
 from pprint import pprint
+
+from antlr4 import *
+
+from logictree.nodes.control.assign import LogicAssign
+from logictree.pipeline import lower_sv_text_to_logic
+
 
 def test_simple_module():
     code = "module foo(input logic a, output logic b); assign b = a; endmodule"

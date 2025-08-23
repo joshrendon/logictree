@@ -1,4 +1,5 @@
 import pytest
+
 pytestmark = [pytest.mark.unit]
 
 def test_ops_exports_are_aggregated():
@@ -6,7 +7,6 @@ def test_ops_exports_are_aggregated():
     import logictree.nodes.ops as ops_pkg
 
     # These should be re-exported from submodules via __init__.py
-    from logictree.nodes.ops import LogicOp, LogicConst, LogicVar, AndOp, OrOp, NotOp
 
     # Basic presence checks
     for name in ["LogicOp", "LogicConst", "LogicVar", "AndOp", "OrOp", "NotOp"]:

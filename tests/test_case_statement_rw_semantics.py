@@ -1,13 +1,13 @@
 import pytest
+
 pytestmark = [pytest.mark.unit]
 
-from logictree.nodes.ops.ops import LogicConst, LogicVar, LogicOp
 from logictree.nodes.control.assign import LogicAssign
 from logictree.nodes.control.case import CaseItem, CaseStatement
-from logictree.nodes.struct.statement import Statement
+from logictree.nodes.ops.ops import LogicConst, LogicVar
+
 
 def test_case_statement_rw_with_default_total_assignment():
-    from logictree.nodes.ops.ops import LogicVar, LogicConst
     case = CaseStatement(
         selector=LogicVar("sel"),
         items=(

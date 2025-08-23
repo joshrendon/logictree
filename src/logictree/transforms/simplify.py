@@ -1,8 +1,9 @@
-from logictree.nodes.ops import LogicOp, LogicConst, LogicVar
-from logictree.nodes.base import LogicTreeNode
-from logictree.nodes.ops.gates import AndOp, OrOp, NotOp, XorOp, XnorOp, NandOp, NorOp
-
 from functools import singledispatch
+
+from logictree.nodes.base import LogicTreeNode
+from logictree.nodes.ops import LogicConst, LogicVar
+from logictree.nodes.ops.gates import AndOp, NandOp, NorOp, NotOp, OrOp, XnorOp, XorOp
+
 
 @singledispatch
 def simplify(node):

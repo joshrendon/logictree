@@ -1,13 +1,11 @@
 import pytest
+
 pytestmark = [pytest.mark.unit]
 
-import unittest
 from antlr4 import *
-from sv_parser.SystemVerilogSubsetLexer import SystemVerilogSubsetLexer
-from sv_parser.SystemVerilogSubsetParser import SystemVerilogSubsetParser
-from sv_parser.visitor import ASTBuilder
-from logictree.pipeline import lower_sv_file_to_logic, lower_sv_text_to_logic
-from pprint import pprint
+
+from logictree.pipeline import lower_sv_text_to_logic
+
 
 def test_mux_tree_outputs_mux():
     sv = """

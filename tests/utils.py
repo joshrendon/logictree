@@ -1,9 +1,10 @@
 # tests/util.py
 import itertools
 import re
+
 from logictree.nodes.control.assign import LogicAssign
-from logictree.nodes.ops.ops import LogicVar, LogicConst
-from logictree.nodes.ops.gates import AndOp, OrOp, NotOp
+from logictree.nodes.ops.gates import AndOp, NotOp, OrOp
+from logictree.nodes.ops.ops import LogicConst, LogicVar
 from logictree.nodes.selects import BitSelect
 
 # Nodes to skip because they don't implement or need these methods
@@ -134,8 +135,8 @@ def assert_eq_1001_terms(rhs, sig_name="s"):
     want = [(sig_name, 3, True), (sig_name, 2, False), (sig_name, 1, False), (sig_name, 0, True)]
     assert sorted(terms) == sorted(want), f"\nGot:  {sorted(terms)}\nWant: {sorted(want)}"
 
-from logictree.nodes.ops.gates import AndOp, OrOp, XorOp, NotOp
-from logictree.nodes.selects import BitSelect
+from logictree.nodes.ops.gates import XorOp
+
 
 def _unary_operand(n):
     # many NotOp nodes store .child or .operand; try both
@@ -204,13 +205,16 @@ def gate_count(n):
     def walk(x):
         if isinstance(x, AndOp):
             counts["AND"] += 1
-            walk(x.left); walk(x.right)
+            walk(x.left)
+            walk(x.right)
         elif isinstance(x, OrOp):
             counts["OR"] += 1
-            walk(x.left); walk(x.right)
+            walk(x.left)
+            walk(x.right)
         elif isinstance(x, XorOp):
             counts["XOR"] += 1
-            walk(x.left); walk(x.right)
+            walk(x.left)
+            walk(x.right)
         elif isinstance(x, NotOp):
             counts["NOT"] += 1
             o = _unary_operand(x)
@@ -221,7 +225,6 @@ def gate_count(n):
     walk(n)
     return counts
 
-import re
 
 def _unary_operand(n):
     # Support either .child or .operand
@@ -262,7 +265,6 @@ def _literal_sig(n):
         is_pos = False
 
     # Expect a BitSelect; if not, bail out gracefully
-    from logictree.nodes.selects import BitSelect
     if not isinstance(n, BitSelect):
         return (None, None, is_pos)
 

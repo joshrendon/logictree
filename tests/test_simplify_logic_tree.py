@@ -1,9 +1,11 @@
 import pytest
+
 pytestmark = [pytest.mark.unit]
 
-from logictree.transforms.simplify import simplify_logic_tree
-from logictree.nodes.ops.gates import AndOp, OrOp, NotOp, XorOp, XnorOp, NandOp, NorOp
+from logictree.nodes.ops.gates import AndOp, NandOp, NorOp, NotOp, OrOp, XnorOp, XorOp
 from logictree.nodes.ops.ops import LogicConst, LogicVar
+from logictree.transforms.simplify import simplify_logic_tree
+
 
 def test_and_true_identity():
     a = LogicVar("a")

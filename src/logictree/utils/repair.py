@@ -1,7 +1,7 @@
 # LogicTree utils that repair the tree structure/nodes
-from logictree.nodes.base import LogicTreeNode
-from logictree.nodes.ops import LogicOp
 from logictree.nodes.hole import LogicHole
+from logictree.nodes.ops import LogicOp
+
 
 def repair_tree_inputs(node):
     if isinstance(node, LogicOp):

@@ -1,11 +1,13 @@
-from logictree.nodes import ops, control, base, hole
 #from logictree.nodes import LogicOp, LogicVar, LogicConst, LogicHole, LogicNode, CaseStatement, CaseItem, IfStatement, LogicAssign
 #import hashlib
 import itertools
-import re
+
 from dd.autoref import BDD
-from typing import Dict, Tuple, Union, Optional
+
+from logictree.nodes import base
+from logictree.utils.analysis import get_logic_hash
 from logictree.utils.build import _build_bdd
+
 
 # === LOGICTREE COMPARISON ===
 def compare_logic_trees(tree1, tree2, method='auto', debug=False):

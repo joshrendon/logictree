@@ -1,7 +1,8 @@
-from logictree.nodes.control.assign import LogicAssign
-from logictree.nodes.control.ifstatement import IfStatement
 import json
 import logging
+
+from logictree.nodes.control.assign import LogicAssign
+
 log = logging.getLogger(__name__)
 
 def logic_tree_to_json(tree):

@@ -1,7 +1,9 @@
 import os
 import subprocess
 from typing import Optional
+
 from utils.graphviz_export import logic_tree_to_dot
+
 OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "..", "output")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
@@ -23,7 +25,7 @@ def _run_dot(dot_path: str, fmt:str = "png", output_path: Optional[str] = None):
         output_path = dot_path.replace(".dot", f".{fmt}")
 
     if fmt not in ('svg', 'png'):
-        raise ValueError(f"Unsupported output format: {out_format}")
+        raise ValueError(f"Unsupported output format: {fmt}")
 
     try:
         print(f"DEBUG: _run_dot() dot -T{fmt} {dot_path} -o {output_path}")

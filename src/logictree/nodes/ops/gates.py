@@ -1,7 +1,7 @@
+from dataclasses import field
+
 from ..base.base import LogicTreeNode
 from .ops import LogicOp
-from typing import List, Union
-from dataclasses import dataclass, field
 
 __all__ = ["NotOp", "AndOp", "OrOp", "XorOp", "XnorOp", "NandOp", "NorOp"]
 def _commutative_equals(a, b):

@@ -1,12 +1,13 @@
 import pytest
+
 pytestmark = [pytest.mark.unit]
 
 import unittest
-from logictree.nodes.ops.ops import LogicOp, LogicConst, LogicVar
-from logictree.nodes.ops.gates import NotOp, AndOp, OrOp
-from logictree.utils.display import pretty_print
+
+from logictree.nodes.ops.gates import AndOp, NotOp, OrOp
+from logictree.nodes.ops.ops import LogicConst, LogicVar
 from logictree.transforms.simplify import simplify_logic_tree
-from logictree.utils.display import pretty_inline
+
 
 class TestLogicSimplification(unittest.TestCase):
 

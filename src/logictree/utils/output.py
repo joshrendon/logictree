@@ -1,6 +1,8 @@
+import json
+
 from logictree.utils.display import to_dot
 from logictree.utils.serialize import logic_tree_to_json
-import json
+
 
 def write_dot_to_file(node, filepath):
     dot_str = to_dot(node)

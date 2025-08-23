@@ -1,8 +1,10 @@
 import pytest
+
 pytestmark = [pytest.mark.unit]
 
-from logictree.pipeline import lower_sv_file_to_logic, lower_sv_text_to_logic
-from tests.utils import gate_count, flatten_and, flatten_or, leaves
+from logictree.pipeline import lower_sv_text_to_logic
+from tests.utils import flatten_and, gate_count, leaves
+
 
 def _rhs(sv, lower_sv_text_to_logic):
     return lower_sv_text_to_logic(sv)["m"].assignments["y"].rhs

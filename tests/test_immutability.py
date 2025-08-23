@@ -1,9 +1,12 @@
 import pytest
+
 pytestmark = [pytest.mark.unit]
 
 # tests/test_immutability.py
 import pytest
-from logictree.nodes.ops import LogicVar, LogicConst
+
+from logictree.nodes.ops import LogicConst, LogicVar
+
 
 def test_logicvar_frozen():
     v = LogicVar("a", width=1)

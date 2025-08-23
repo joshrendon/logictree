@@ -1,8 +1,8 @@
-from logictree.nodes import ops, control, base, hole
-import itertools
-import re
+
 from dd.autoref import BDD
-from typing import Dict, Tuple, Union, Optional
+
+from logictree.nodes import base, hole, ops
+
 
 def _build_bdd(tree: base.LogicTreeNode, bdd: BDD, var_map: dict) -> int:
     if isinstance(tree, ops.LogicConst):

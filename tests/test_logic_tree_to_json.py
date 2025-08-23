@@ -1,10 +1,12 @@
 import pytest
+
 pytestmark = [pytest.mark.unit]
 
 import json
-from logictree.utils.serialize import logic_tree_to_json
-from logictree.nodes.ops.ops import LogicVar, LogicConst
+
 from logictree.nodes.ops import AndOp, OrOp
+from logictree.nodes.ops.ops import LogicConst, LogicVar
+from logictree.utils.serialize import logic_tree_to_json
 
 tree = AndOp(
        LogicVar("a"),
@@ -12,6 +14,7 @@ tree = AndOp(
 )
 
 from logictree.transforms.simplify import simplify_logic_tree
+
 simplified = simplify_logic_tree(tree)
 print("LogicTree:")
 print(tree)

@@ -1,19 +1,17 @@
-from antlr4 import FileStream, CommonTokenStream
-from sv_parser.SystemVerilogSubsetLexer import SystemVerilogSubsetLexer
-from sv_parser.SystemVerilogSubsetParser import SystemVerilogSubsetParser
-from sv_parser.SystemVerilogSubsetVisitor import SystemVerilogSubsetVisitor
-from sv_parser.visitor import lower_stmt_to_logic_tree
-from logictree.nodes import ops, control, base, hole
+import logging
+import re
+import sys
+from typing import List, Tuple
+
+from logictree.nodes import control, ops
 from logictree.nodes.control.assign import LogicAssign
 from logictree.nodes.ops import LogicConst, LogicVar
-from logictree.nodes.selects import BitSelect, PartSelect, Concat
-from logictree.utils.display import pretty_print
+from logictree.nodes.selects import BitSelect, Concat, PartSelect
 from logictree.nodes.struct.module import Module
-from typing import Tuple, List
-import BitVector
-import logging
-import sys, inspect
-import re
+from logictree.utils.display import pretty_print
+from sv_parser.SystemVerilogSubsetParser import SystemVerilogSubsetParser
+from sv_parser.SystemVerilogSubsetVisitor import SystemVerilogSubsetVisitor
+
 log = logging.getLogger(__name__)
 AssignStmtCtxtClass = SystemVerilogSubsetParser.Continuous_assignContext
 IfStmtCtxtClass = SystemVerilogSubsetParser.If_statementContext
@@ -282,7 +280,6 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
         return self.visit(ctx.module_declaration(0))
 
     def visitModule_declaration(self, ctx):
-        from logictree.utils.display import pretty_inline
         log.debug("visiting module_declaration")
 
         # Clear maps at start of module
@@ -402,9 +399,6 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
             # debug like before
             self.logger.debug(f"Port {direction_tok:<6} {name:<10} width={width_str}")
 
-    def visitRange(self, ctx):
-        return self.visitChildren(ctx)
-
     def visitData_type(self, ctx):
         return self.visitChildren(ctx)
 
@@ -458,7 +452,7 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
             log.debug("visitStatement case_statement")
             case_node = self.visit(ctx.case_statement())
             if isinstance(case_node, control.CaseStatement):
-                log.debug(f"Located a CaseStatement node!")
+                log.debug("Located a CaseStatement node!")
                 # Extract LHS from teh first case item (assumes consistemnt assignment target)
                 lhs = case_node.items[0].body.lhs
                 self.current_module.signal_map[lhs] = case_node
@@ -580,10 +574,6 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
             log.warning(f"type(ctx.getText()): {type(ctx.getText()).__name__}")
             log.warning(f"Failed to parse assign: {ctx.getText()} — {e}")
             return None
-
-    def visitExpression_list(self, ctx):
-        log.debug("[][]visitExpression_list")
-        return self.visitChildren(ctx)
 
     def visitCase_statement(self, ctx):
         selector_node = self.visit(ctx.expression())  # adjust if your rule name differs
@@ -777,14 +767,13 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
         return self.visit(ctx.expression())
 
     def visitRange(self, ctx):
-        log.debug("$visitRange")
+        log.debug("visitRange")
         return self.visitChildren(ctx)
 
     def _parse_binary_literal(self, txt: str):
         # e.g. "4'b1010" or "2'B01"
         width_str, rest = txt.split("'")
         width = int(width_str)
-        base = rest[0].lower()           # 'b'
         bits = rest[1:]                  # "1010"
         if any(ch in "xzXZ" for ch in bits):
             if not getattr(self, "allow_unknown_bits", False):

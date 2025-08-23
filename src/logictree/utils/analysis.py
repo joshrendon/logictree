@@ -1,12 +1,15 @@
+import hashlib
+import logging
+from typing import Dict
+
+from dd.autoref import BDD
+
 from logictree.nodes.base import LogicTreeNode
 from logictree.nodes.ops import LogicOp
 from logictree.nodes.types import GATE_TYPES
-from dd.autoref import BDD
-from typing import Dict, Tuple, Union, Optional
 from logictree.utils.build import _build_bdd
-from logictree.utils.display import to_symbolic_expr_str, _pretty_print_expr
-import hashlib
-import logging
+from logictree.utils.display import _pretty_print_expr, to_symbolic_expr_str
+
 log = logging.getLogger(__name__)
 
 def count_gate_type(tree, gate_name):

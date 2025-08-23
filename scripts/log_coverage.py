@@ -26,12 +26,13 @@ Optional args:
 """
 
 from __future__ import annotations
+
 import argparse
-import csv
 import datetime as dt
 import json
 import sys
 from pathlib import Path
+
 
 def parse_args():
     p = argparse.ArgumentParser(description="Append coverage/test metrics to a CSV without needing XML.")
@@ -69,7 +70,7 @@ def read_coverage_datafile():
     """Use coverage.py API to analyze .coverage data file(s)."""
     try:
         import coverage
-    except Exception as e:
+    except Exception:
         print("[warn] coverage module not available; cannot read .coverage data", file=sys.stderr)
         return None
 

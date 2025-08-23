@@ -1,10 +1,11 @@
 import pytest
+
 pytestmark = [pytest.mark.unit]
 
-from logictree.pipeline import lower_sv_file_to_logic, lower_sv_text_to_logic
-from logictree.nodes.ops import LogicVar, AndOp, NotOp, OrOp
-from logictree.nodes.control.assign import LogicAssign
+from logictree.nodes.ops import AndOp, NotOp
+from logictree.pipeline import lower_sv_text_to_logic
 from tests.utils import assert_eq_1001_terms
+
 
 def test_bitselect_in_eq_const():
     sv = """
@@ -56,8 +57,7 @@ def test_eq_descending_range():
     rhs = mod.assignments["y"].rhs
     assert_eq_1001_terms(rhs, "s")
     # Expect (s[3] & ~s[2] & ~s[1] & s[0]) with left=MSB
-    from logictree.nodes.selects import BitSelect
-    from logictree.nodes.ops.gates import AndOp, NotOp
+    from logictree.nodes.ops.gates import AndOp
     assert isinstance(rhs, AndOp)
     #assert isinstance(rhs.left, BitSelect) and rhs.left.index == 3
 

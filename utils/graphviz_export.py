@@ -1,7 +1,8 @@
 # utils/graphviz_export.py
 
-from pathlib import Path
 import subprocess
+from pathlib import Path
+
 
 def logic_tree_to_dot(logic_tree, signal_name="logic", gate_colors=None):
     """Generate a Graphviz .dot string from a LogicTree structure."""

@@ -1,5 +1,5 @@
-from weakref import WeakKeyDictionary
 from typing import Optional
+from weakref import WeakKeyDictionary
 
 VIZ_LABEL_KEY = "viz_label"
 EXPR_SOURCE_KEY = "expr_source"

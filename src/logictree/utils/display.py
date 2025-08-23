@@ -1,25 +1,21 @@
-from logictree.utils.formating import indent
-import hashlib
-import itertools
 import re
-from dd.autoref import BDD
-from sympy import symbols
-from sympy import sympify
-from sympy.logic.boolalg import And, Or, Not
+
 import sympy as sympy
 from rich.console import Console
 from rich.text import Text
-from typing import Dict, Tuple, Union, Optional
+from sympy.logic.boolalg import And, Not, Or
+
 import graphviz
+
 
 def pretty_print(tree, indent=0):
     spacer = "  " * indent
     label = tree.__class__.__name__
 
-    from logictree.nodes.ops.gates import NotOp
+    from logictree.nodes.control import CaseItem, CaseStatement, IfStatement, LogicAssign
     from logictree.nodes.hole.hole import LogicHole
-    from logictree.nodes.ops.ops import LogicConst, LogicVar, LogicOp
-    from logictree.nodes.control import CaseStatement, CaseItem, IfStatement, LogicAssign
+    from logictree.nodes.ops.gates import NotOp
+    from logictree.nodes.ops.ops import LogicConst, LogicOp, LogicVar
 
     if isinstance(tree, NotOp):
         op_str = f"{spacer}NOT"
@@ -86,7 +82,7 @@ def _pretty_print_expr(expr_str):
     console.print(styled)
 
 def pretty_inline(tree):
-    from logictree.nodes.ops.ops import LogicConst, LogicVar, LogicOp
+    from logictree.nodes.ops.ops import LogicConst, LogicOp, LogicVar
     """
     Compact single-line representation: OP{child1, child2, ...}
     """
@@ -102,9 +98,8 @@ def pretty_inline(tree):
         return tree.default_label()
 
 def to_dot(tree, g=None, parent=None, node_id_gen=[0]):
-    from logictree.nodes.control import CaseStatement, IfStatement, LogicAssign
-    from logictree.nodes.ops.ops import LogicOp, LogicVar, LogicConst
     from logictree.nodes.hole.hole import LogicHole
+    from logictree.nodes.ops.ops import LogicConst, LogicOp, LogicVar
     if g is None:
         g = graphviz.Digraph()
 
@@ -136,7 +131,8 @@ def to_dot(tree, g=None, parent=None, node_id_gen=[0]):
     return g
 
 def to_symbolic_expr_str(node):
-    from logictree.nodes.ops.ops import LogicConst, LogicVar, LogicOp
+    from logictree.nodes.ops.ops import LogicConst, LogicOp, LogicVar
+    from logictree.nodes.hole.hole import LogicHole
     if isinstance(node, LogicVar) or isinstance(node, LogicHole):
         return node.name
     elif isinstance(node, LogicConst):
@@ -157,13 +153,14 @@ def to_symbolic_expr_str(node):
         else:
             return f"{op}({', '.join(args)})"
     else:
-        return f"<?>"
+        return "<?>"
 
-from sympy.logic.boolalg import BooleanTrue, BooleanFalse
+from sympy.logic.boolalg import BooleanFalse, BooleanTrue
+
+
 def to_sympy_expr(tree):
     from logictree.nodes.hole.hole import LogicHole
-    from logictree.nodes.ops.ops import LogicConst, LogicVar, LogicOp
-    from logictree.nodes.control import CaseStatement, IfStatement, LogicAssign
+    from logictree.nodes.ops.ops import LogicConst, LogicOp, LogicVar
     if isinstance(tree, LogicConst):
         val = int(tree.value)
         if val == 0:
@@ -211,7 +208,7 @@ def to_sympy_expr(tree):
         raise TypeError(f"Unsupported node type: {type(tree)}")
 
 def explain_expr_tree(tree):
-    from logictree.nodes.ops.ops import LogicConst, LogicVar, LogicOp
+    from logictree.nodes.ops.ops import LogicConst, LogicOp, LogicVar
     if isinstance(tree, LogicOp):
         if tree.op == "MUX":
             cond, a, b = tree.children

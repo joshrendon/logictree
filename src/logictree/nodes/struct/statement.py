@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import FrozenSet, Optional
+
 from logictree.nodes.ops.ops import LogicVar
+
 
 class Statement(ABC):
     """

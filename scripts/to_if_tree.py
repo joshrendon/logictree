@@ -1,6 +1,5 @@
-from sv_parser.ast_nodes import (
-    CaseStatement, CaseItem, Assign, IdNode, Number, BinaryOp, IfElse
-)
+from sv_parser.ast_nodes import BinaryOp, CaseStatement, IfElse
+
 
 def to_if_tree(case_stmt: CaseStatement):
     """

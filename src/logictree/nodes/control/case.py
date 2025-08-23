@@ -1,17 +1,17 @@
+import copy
+import logging
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, FrozenSet, List, Optional, Tuple
+
 from logictree.nodes.base.base import LogicTreeNode
-from logictree.nodes.control.assign import LogicAssign
-from logictree.nodes.ops.ops import LogicVar, LogicConst
+from logictree.nodes.ops.ops import LogicConst, LogicVar
 from logictree.nodes.struct.statement import Statement
-from typing import Dict, Tuple, Union, Optional, List, TYPE_CHECKING, FrozenSet, Set
-from dataclasses import dataclass, field 
 from logictree.utils.formating import indent
 
-import logging
-import copy
 log = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from logictree.nodes.ops import LogicConst, LogicVar, LogicOp
+    from logictree.nodes.ops import LogicConst, LogicVar
 
 @dataclass(frozen=True)
 class CaseItem(LogicTreeNode):
@@ -92,6 +92,7 @@ class CaseItem(LogicTreeNode):
 
     def simplify(self):    
         import warnings
+
         from logictree.transforms.simplify import simplify_logic_tree
         warnings.warn(
             ".simplify() is deprecated; use simplify_logic_tree(node) instead.",

@@ -1,7 +1,8 @@
-from flask import Flask, render_template, jsonify, request, current_app
+import logging
 import threading
 import webbrowser
-import logging
+
+from flask import Flask, current_app, jsonify, render_template, request
 
 app = Flask(__name__)
 logic_tree_data = None
@@ -26,7 +27,7 @@ def api_tree():
     return jsonify(logic_tree_to_json(current_tree))
 
 import copy
-from logictree.transforms import case_to_if_tree  # or wherever it lives
+
 
 def launch_explorer(logic_tree_original, tree_name_input="LogicTree"):
     from logictree.utils.serialize import logic_tree_to_json

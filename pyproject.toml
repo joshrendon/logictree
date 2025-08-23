@@ -64,7 +64,6 @@ ignore_missing_imports = true
 
 # Centralize tool configs (optional but nice)
 [tool.pytest.ini_options]
-# addopts = "-ra"
 addopts = "--cov-context=test"
 testpaths = ["tests"]
 markers = [
@@ -81,24 +80,31 @@ markers = [
 
 [tool.ruff]
 line-length = 100
-extend-select = ["I"] # import sorting
 target-version = "py311"
 
+# Skip scripts and other noise dirs
+exclude = [
+  "scripts/",
+  "data/",
+  "coverage_dashboard/",
+  "coverage_dashboard_old/",
+  "incomplete_scripts/",
+]
 [tool.ruff.lint]
-# Rules to ignore for now
+# Start small: only enforce core errors and import sorting
+select = ["E4", "E7", "E9", "F", "I"]
+
+# Ignore noisy or style-only rules for now
 ignore = [
   "F405",  # star imports
   "E402",  # import not at top
-  "E701",  # multiple statements on one line (colon)
+  "E701",  # multiple statements on one line
+  "E741",  # ambiguous variable names (too noisy at start)
 ]
 
-# Rules we’ll still enforce
-select = ["E", "F"]
-
 # Per-file ignores for __init__.py (allow re-exports)
-per-file-ignores = {
-  "__init__.py" = ["F401", "F403"],
-}
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401", "F403"]
 
 [tool.setuptools]
 package-dir = {"" = "src"}

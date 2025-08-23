@@ -1,10 +1,11 @@
 import pytest
+
 pytestmark = [pytest.mark.unit]
 
 import copy
 
 from logictree.nodes.ops import LogicConst, LogicVar
-from logictree.utils import overlay
+
 
 def test_logicconst_overlay_behavior():
     c = LogicConst(1)

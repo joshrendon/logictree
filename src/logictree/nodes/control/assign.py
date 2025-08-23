@@ -1,10 +1,13 @@
 from __future__ import annotations
-from dataclasses import dataclass, field
-from typing import Optional, Set, FrozenSet, TYPE_CHECKING
-from logictree.nodes.ops.ops import LogicVar
-from logictree.nodes.base.base import LogicTreeNode
-from logictree.nodes.struct.statement import Statement
+
 import logging
+from dataclasses import dataclass, field
+from typing import FrozenSet, Optional, Set
+
+from logictree.nodes.base.base import LogicTreeNode
+from logictree.nodes.ops.ops import LogicVar
+from logictree.nodes.struct.statement import Statement
+
 log = logging.getLogger(__name__)
 
 @dataclass

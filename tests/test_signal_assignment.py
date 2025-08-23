@@ -1,9 +1,11 @@
 import pytest
+
 pytestmark = [pytest.mark.unit]
 
-from logictree.pipeline import lower_sv_file_to_logic, lower_sv_text_to_logic
-from logictree.nodes.ops import LogicVar, AndOp
 from logictree.nodes.control.assign import LogicAssign
+from logictree.nodes.ops import AndOp, LogicVar
+from logictree.pipeline import lower_sv_text_to_logic
+
 
 def test_signal_assignment():
     code = "module foo(input logic a, output logic b); assign b = a; endmodule"
