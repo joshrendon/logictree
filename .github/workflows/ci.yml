@@ -26,13 +26,22 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: "pip"
 
-      #- name: Install system dependencies
-      #  run: sudo apt-get update && sudo apt-get install -y graphviz
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update && sudo apt-get install -y graphviz
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -e .[dev]
+
+      - name: Generate ANTLR parser
+        run: make gen-parser
+
+      - name: Generate parser code
+        run: |
+          java -jar antlr-4.13.1-complete.jar -Dlanguage=Python3 -visitor -o src/sv_parser grammars/SystemVerilogSubset.g4
+          java -jar antlr-4.13.1-complete.jar -Dlanguage=Python3 -visitor -o src/sv_parser grammars/SimpleVerilogExpr.g4
 
       - name: Lint (ruff)
         run: ruff check . || true

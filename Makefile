@@ -14,9 +14,15 @@ COV_TERM   := term-missing
 FAST_MARK  := "unit or props or diff"
 FULL_MARK  := "unit or props or diff or slow or mutation"
 
+ANTLR_JAR := antlr-4.13.1-complete.jar
+GRAMMAR_DIR := grammar
+PARSER_OUT := src/sv_parser
+GRAMMAR := $(GRAMMAR_DIR)/SystemVerilogSubset.g4
+
 # --- Phony targets ------------------------------------------------------------
 .PHONY: help install dev clean lint format typecheck test test-fast test-full \
-        coverage coverage-ok cov cov-html fnmap fnmapb fnmapbat devmap build dist
+        coverage coverage-ok cov cov-html fnmap fnmapb fnmapbat devmap build dist \
+		gen-parser clean-parser
 
 # --- Help ---------------------------------------------------------------------
 help:
@@ -29,6 +35,8 @@ help:
 	@echo "  make coverage     - run tests (FAST) with coverage"
 	@echo "  make coverage-ok  - run tests (FAST) with coverage-ok (always succeed)"
 	@echo "  make cov-html     - open htmlcov/ (if generated)"
+	@echo "  make gen-parser   - generate parser scripts from antlr4 grammar"
+	@echo "  make clean-parser - clean parser scripts"
 	@echo "  make lint         - ruff check"
 	@echo "  make format       - ruff format"
 	@echo "  make typecheck    - mypy on src/"
@@ -90,6 +98,28 @@ cov-html:
 
 cov-clean:
 	@rm -rf .coverage* htmlcov .pytest_cache
+
+# --- Gen parser
+gen-parser:
+	@echo "Generating Python parser from $(GRAMMAR)..."
+	@if [ ! -f $(ANTLR_JAR) ]; then \
+	  echo "Downloading ANTLR jar..."; \
+	  curl -L -o $(ANTLR_JAR) https://www.antlr.org/download/$(ANTLR_JAR); \
+	fi
+	# Run ANTLR inside grammar/, output to grammar/
+	cd $(GRAMMAR_DIR) && java -jar ../$(ANTLR_JAR) -Dlanguage=Python3 -visitor $(notdir $(GRAMMAR))
+	# Move Python outputs into src/sv_parser/
+	@mv $(GRAMMAR_DIR)/*.py $(PARSER_OUT)/
+	# Clean up leftover .tokens and .interp
+	@rm -f $(GRAMMAR_DIR)/*.tokens $(GRAMMAR_DIR)/*.interp
+
+clean-parser:
+	@echo "Cleaning generated ANTLR files from $(PARSER_OUT)..."
+	rm -f $(PARSER_OUT)/*Lexer.py \
+	      $(PARSER_OUT)/*Parser.py \
+	      $(PARSER_OUT)/*Listener.py \
+	      $(PARSER_OUT)/*Visitor.py
+
 # --- Dev helpers (your scripts) -----------------------------------------------
 fnmap:
 	scripts/bin/fnmap
