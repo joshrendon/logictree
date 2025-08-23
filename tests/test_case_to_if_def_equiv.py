@@ -38,7 +38,7 @@ def test_case_to_if_define_equivalence_mux2_with_default():
     
     #print("DBG case_to_if_tree:", case_to_if_tree, type(case_to_if_tree))
     assert isinstance(case_to_if_tree, types.FunctionType), (
-        "shadowed by", type(case_to_if_tree), "value:", case_to_if_tre
+        "shadowed by", type(case_to_if_tree), "value:", case_to_if_tree
     )
     
     assert callable(case_to_if_tree), type(case_to_if_tree)

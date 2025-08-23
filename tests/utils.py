@@ -257,7 +257,7 @@ def _logicvar_name(x):
     m = re.match(r"([A-Za-z_]\w*)\[\d+\]", sx) or re.match(r".*?\(([^)]+)\)", sx)
     return m.group(1) if m else None
 
-def _literal_sig(n):
+def _literal_sig(n, expected_name: str | None = None):
     """Return (name, index, is_positive) for BitSelect or Not(BitSelect)."""
     is_pos = True
     if isinstance(n, NotOp):

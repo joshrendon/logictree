@@ -4,7 +4,7 @@ pytestmark = [pytest.mark.unit]
 
 import unittest
 
-from antlr4 import *
+from antlr4 import InputStream, CommonTokenStream
 
 from logictree.pipeline import lower_sv_text_to_logic
 from sv_parser.SystemVerilogSubsetLexer import SystemVerilogSubsetLexer
@@ -18,7 +18,6 @@ class TestSystemVerilogParser(unittest.TestCase):
         lexer = SystemVerilogSubsetLexer(input_stream)
         stream = CommonTokenStream(lexer)
         parser = SystemVerilogSubsetParser(stream)
-        tree = parser.compilation_unit()
 
         module_map = lower_sv_text_to_logic(code)
         #pprint(module_map)

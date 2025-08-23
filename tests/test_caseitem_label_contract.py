@@ -11,11 +11,6 @@ def make_assign(lhs_name, rhs_name):
     return LogicAssign(lhs=LogicVar(lhs_name), rhs=LogicVar(rhs_name))
 
 def test_caseitem_label_rendering():
-    a = LogicVar("a")
-    b = LogicVar("b")
-    c = LogicVar("c")
-    y = LogicVar("y")
-
     # 1. Regular case item
     item1 = CaseItem(labels=[LogicConst(0)], default=False, body=[make_assign("y", "a")])
     assert item1.label() == "case 0"
@@ -30,7 +25,6 @@ def test_caseitem_label_rendering():
 
 def test_casestatement_label_propagation():
     selector = LogicVar("s")
-    y = LogicVar("y")
 
     case_stmt = CaseStatement(
         selector=selector,

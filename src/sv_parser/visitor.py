@@ -5,19 +5,6 @@ from sv_parser.SystemVerilogSubsetParser import *
 from sv_parser.SystemVerilogSubsetVisitor import SystemVerilogSubsetVisitor
 
 log = logging.getLogger(__name__)
-Continuous_assignCtxtClass = SystemVerilogSubsetParser.Continuous_assignContext
-IfStmtCtxtClass = SystemVerilogSubsetParser.If_statementContext
-IdExprCtxtClass = SystemVerilogSubsetParser.IdExprContext
-EqExprCtxtClass = SystemVerilogSubsetParser.EqExprContext
-AndExprCtxtClass = SystemVerilogSubsetParser.AndExprContext
-OrExprCtxtClass = SystemVerilogSubsetParser.OrExprContext
-XorExprCtxtClass = SystemVerilogSubsetParser.XorExprContext
-XnorExprCtxtClass = SystemVerilogSubsetParser.XnorExprContext
-NegateExprCtxtClass = SystemVerilogSubsetParser.NegateExprContext
-BitwiseNotExprCtxtClass = SystemVerilogSubsetParser.BitwiseNotExprContext
-LogicalNotExprCtxtClass = SystemVerilogSubsetParser.LogicalNotExprContext
-ParenExprCtxtClass = SystemVerilogSubsetParser.ParenExprContext
-ConstExprCtxtClass = SystemVerilogSubsetParser.ConstExprContext
 
 def BinaryOp(op, lhs, rhs):
     return ops.LogicOp(op, [lhs, rhs])
@@ -43,12 +30,12 @@ def lower_expr_to_logic_tree(expr):
         return hole.LogicHole("unhandled_expr")
 
 def lower_stmt_to_logic_tree(stmt):
-    if isinstance(stmt, Continuous_assignCtxtClass):
+    if isinstance(stmt, Continuous_assignContext):
         lhs = stmt.Identifier().getText()
         rhs = lower_stmt_to_logic_tree(stmt.expression())
         #return lower_expr_to_logic_tree(stmt.source)
         return control.LogicAssign(lhs=lhs, rhs=rhs)
-    elif isinstance(stmt, IfStmtCtxtClass):
+    elif isinstance(stmt, If_statementContext):
         cond = lower_expr_to_logic_tree(stmt.condition)
         then = lower_stmt_to_logic_tree(stmt.then_body)
         if stmt.else_body:
@@ -60,42 +47,42 @@ def lower_stmt_to_logic_tree(stmt):
             ops.LogicOp("AND", [cond, then]),
             ops.LogicOp("AND", [ops.LogicOp("NOT", [cond]), elze])
         ])
-    elif isinstance(stmt, ParenExprCtxtClass):
+    elif isinstance(stmt, ParenExprContext):
         expr = lower_stmt_to_logic_tree(stmt.expression())
         return expr
-    elif isinstance(stmt, IdExprCtxtClass):
+    elif isinstance(stmt, IdExprContext):
         name = stmt.getText()
         return LogicVar(name)
-    elif isinstance(stmt, ConstExprCtxtClass):
+    elif isinstance(stmt, ConstExprContext):
         name = stmt.getText()
         return LogicVar(name)
-    elif isinstance(stmt, EqExprCtxtClass):
+    elif isinstance(stmt, EqExprContext):
         lhs = lower_stmt_to_logic_tree(stmt.expression(0))
         rhs = lower_stmt_to_logic_tree(stmt.expression(1))
         return ops.LogicOp("EQ", [lhs, rhs])
-    elif isinstance(stmt, AndExprCtxtClass):
+    elif isinstance(stmt, AndExprContext):
         lhs = lower_stmt_to_logic_tree(stmt.expression(0))
         rhs = lower_stmt_to_logic_tree(stmt.expression(1))
         return ops.LogicOp("AND", [lhs, rhs])
-    elif isinstance(stmt, OrExprCtxtClass):
+    elif isinstance(stmt, OrExprContext):
         lhs = lower_stmt_to_logic_tree(stmt.expression(0))
         rhs = lower_stmt_to_logic_tree(stmt.expression(1))
         return ops.LogicOp("OR", [lhs, rhs])
-    elif isinstance(stmt, XorExprCtxtClass):
+    elif isinstance(stmt, XorExprContext):
         lhs = lower_stmt_to_logic_tree(stmt.expression(0))
         rhs = lower_stmt_to_logic_tree(stmt.expression(1))
         return ops.LogicOp("XOR", [lhs, rhs])
-    elif isinstance(stmt, XnorExprCtxtClass):
+    elif isinstance(stmt, XnorExprContext):
         lhs = lower_stmt_to_logic_tree(stmt.expression(0))
         rhs = lower_stmt_to_logic_tree(stmt.expression(1))
         return ops.LogicOp("XNOR", [lhs, rhs])
-    elif isinstance(stmt, NegateExprCtxtClass):
+    elif isinstance(stmt, NegateExprContext):
         expr = lower_stmt_to_logic_tree(stmt.expression())
         return ops.LogicOp("NOT", [expr])
-    elif isinstance(stmt, BitwiseNotExprCtxtClass):
+    elif isinstance(stmt, BitwiseNotExprContext):
         expr = lower_stmt_to_logic_tree(stmt.expression())
         return ops.LogicOp("NOT", [expr])
-    elif isinstance(stmt, LogicalNotExprCtxtClass):
+    elif isinstance(stmt, LogicalNotExprContext):
         expr = lower_stmt_to_logic_tree(stmt.expression())
         return ops.LogicOp("NOT", [expr])
     else:
@@ -248,15 +235,6 @@ class ASTBuilder(SystemVerilogSubsetVisitor):
             log.error("ERROR Unhandled statement:\n", ctx.getText())
             return None
 
-    def visitContinuous_assign(self, ctx):
-        lhs = ctx.Identifier().getText()
-        rhs = self.visit(ctx.expression())
-        return {
-           "type": "assign",
-           "target": lhs,
-           "value": rhs,
-        }
-    
     def visitIf_statement(self, ctx):
         log.debug(" visitIf_statement()")
         cond_expr_ctx = ctx.expression()

@@ -35,8 +35,6 @@ def test_case_to_if_define_equivalence_mux2_with_default():
     # Expect {'m': Module(...)}
     result = lower_sv_to_logic(sv)
     mod = lower_sv_to_logic(sv)["m"]
-    cs = mod.signal_map["out"]
-    #print([(it.labels, type(it.labels)) for it in cs.items])
     assert isinstance(result, dict) and "m" in result
     module = result["m"]
     assert isinstance(module, Module)

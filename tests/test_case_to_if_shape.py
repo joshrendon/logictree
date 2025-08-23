@@ -34,8 +34,6 @@ def test_default_maps_to_else_equivalence():
     result = lower_sv_to_logic(sv)
     mod = lower_sv_to_logic(sv)["m"]
     module = result["m"]
-    cs = mod.signal_map["y"]
-    #print([(it.labels, type(it.labels)) for it in cs.items])
     from logictree.transforms.case_to_if import case_to_if_tree
     lowered_map = case_to_if_tree(module)   # -> {'y': IfStatement}
     assert "y" in lowered_map
