@@ -1,5 +1,6 @@
 from .gate_factory import create_gate
 
+
 def balance_logic_tree(tree):
     try:
         balanced_children = [balance_logic_tree(child) for child in tree.children]
