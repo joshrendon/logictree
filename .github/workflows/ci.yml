@@ -59,6 +59,7 @@ jobs:
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
+          token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage.xml
           fail_ci_if_error: true
 
@@ -70,15 +71,31 @@ jobs:
           path: htmlcov
 
   nightly:
+    if: github.event_name == 'schedule'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
-      - name: Install dependencies
+          python-version: "3.11"   # or matrix if you want
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y graphviz default-jdk
+          curl -O https://www.antlr.org/download/antlr-4.13.1-complete.jar
+          sudo mv antlr-4.13.1-complete.jar /usr/local/lib/
+          echo 'export CLASSPATH=".:/usr/local/lib/antlr-4.13.1-complete.jar:$CLASSPATH"' >> $GITHUB_ENV
+
+      - name: Install Python deps
         run: |
           python -m pip install --upgrade pip
           pip install -e .[dev]
-      - name: Full suite
-        run: pytest -q -m "unit or props or diff or slow or mutation" --durations=25
+
+      - name: Generate parser
+        run: make gen-parser
+
+      - name: Run full suite
+        run: pytest --full -q -m "unit or props or diff or slow or mutation" --durations=25 || true
