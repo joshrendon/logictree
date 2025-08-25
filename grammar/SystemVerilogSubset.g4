@@ -29,7 +29,7 @@ port_list: port (',' port)* ;
 port:
       ('input' | 'output') data_type range? Identifier (',' Identifier)*
     ;
-range: '[' DecimalNumber ':' DecimalNumber ']';
+range: '[' expression ':' expression ']';
 
 data_type: 'logic' ;
 
@@ -106,11 +106,17 @@ expression
 literal:
       DecimalNumber
     | BinaryLiteral
+    | HexLiteral
+    | DecLiteral
     ;
 
-BinaryLiteral: DecimalNumber '\'' [bB] [01xXzZ]+ ;
+
 Identifier: [a-zA-Z_][a-zA-Z_0-9]* ;
 DecimalNumber: [0-9]+ ;
+
+BinaryLiteral : DecimalNumber '\'' [bB] [01xXzZ]+ ;
+HexLiteral    : DecimalNumber '\'' [hH] [0-9a-fA-FxXzZ]+ ;
+DecLiteral    : DecimalNumber '\'' [dD] [0-9]+ ;
 
 WS: [ \t\r\n]+ -> skip ;
 LINE_COMMENT

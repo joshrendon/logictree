@@ -1,7 +1,24 @@
 import logging
 
-from logictree.nodes import control, hole, ops
-from sv_parser.SystemVerilogSubsetParser import *
+from logictree.nodes import control, gates, hole, ops
+from logictree.nodes.ops.ops import LogicVar
+from sv_parser.SystemVerilogSubsetParser import (
+    AndExprContext,
+    BitwiseNotExprContext,
+    ConstExprContext,
+    Continuous_assignContext,
+    EqExprContext,
+    IdExprContext,
+    IdNode,
+    If_statementContext,
+    LogicalNotExprContext,
+    NegateExprContext,
+    Number,
+    OrExprContext,
+    ParenExprContext,
+    XnorExprContext,
+    XorExprContext,
+)
 from sv_parser.SystemVerilogSubsetVisitor import SystemVerilogSubsetVisitor
 
 log = logging.getLogger(__name__)
@@ -125,10 +142,11 @@ class ASTBuilder(SystemVerilogSubsetVisitor):
         text = ctx.getText()
         log.debug(f"[GENERIC VISIT] {rule_name}: {text}")
         return self.visitChildren(ctx)
+
     def visitCompilation_unit(self, ctx):
         return {'modules': [self.visit(mod) for mod in ctx.module_declaration()]}
 
-    def visitModule_declaration(sef, ctx):
+    def visitModule_declaration(self, ctx):
         module_name = ctx.module_identifier().getText()
         ports = []
         items = []

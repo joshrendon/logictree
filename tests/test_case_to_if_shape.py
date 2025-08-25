@@ -6,6 +6,8 @@ import itertools
 
 from logictree.api import lower_sv_to_logic
 from logictree.eval import evaluate  # simple boolean evaluator
+from logictree.nodes.struct.module import Module
+from logictree.transforms.case_to_if import lower_module_cases
 
 
 def _assignments(vars_):
@@ -33,8 +35,9 @@ def test_default_maps_to_else_equivalence():
     """
     result = lower_sv_to_logic(sv)
     module = result["m"]
-    from logictree.transforms.case_to_if import case_to_if_tree
-    lowered_map = case_to_if_tree(module)   # -> {'y': IfStatement}
+    lowered_module = lower_module_cases(module)   # -> {'y': IfStatement}
+    assert isinstance(lowered_module, Module)
+    lowered_map = dict(lowered_module.signal_map)
     assert "y" in lowered_map
     
     # Semantic equivalence over all inputs

@@ -1,0 +1,41 @@
+
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "0 0 * * *"   # nightly
+    - cron: "0 0 * * 0"   # weekly
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [smoke, nightly, weekly, release]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install deps
+        run: pip install -e .[dev]
+      - name: Run pytest (${{ matrix.target }})
+        run: |
+          case "${{ matrix.target }}" in
+            smoke)
+              pytest -m "smoke or unit or cli" --maxfail=1
+              ;;
+            nightly)
+              pytest -m "not (slow or flaky or dev)"
+              ;;
+            weekly)
+              pytest -m "slow or mutation or props"
+              ;;
+            release)
+              pytest -m "not flaky" --cov=logictree --cov-fail-under=90
+              ;;
+          esac

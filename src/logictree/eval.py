@@ -1,6 +1,7 @@
 from logictree.nodes.control.assign import LogicAssign
 from logictree.nodes.control.case import CaseItem, CaseStatement
 from logictree.nodes.control.ifstatement import IfStatement
+from logictree.nodes.ops.comparison import EqOp, NeqOp
 from logictree.nodes.ops.gates import AndOp, NotOp, OrOp, XorOp
 from logictree.nodes.ops.ops import LogicConst, LogicVar
 from logictree.nodes.struct.module import Module
@@ -47,6 +48,18 @@ def evaluate(n, env):
         return int(n.value) & 1
     if isinstance(n, LogicVar):
         return int(env[n.name]) & 1
+
+    # Eq Op
+    if isinstance(n, EqOp):
+        lhs_val = evaluate(n.lhs, env)
+        rhs_val = evaluate(n.rhs, env)
+        return int(lhs_val == rhs_val)
+
+    # Neq
+    if isinstance(n, NeqOp):
+        lhs_val = evaluate(n.lhs, env)
+        rhs_val = evaluate(n.rhs, env)
+        return int(lhs_val != rhs_val)
 
     # Gates
     if isinstance(n, NotOp):

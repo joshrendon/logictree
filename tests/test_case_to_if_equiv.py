@@ -43,10 +43,13 @@ def test_case_to_if_define_equivalence_mux2_with_default():
     #print(f"DEBUG: signal_map: {module.signal_map}")
 
     # Transform entire module → {signal_name: lowered_node}
-    from logictree.transforms.case_to_if import case_to_if_tree
-    assert isinstance(case_to_if_tree, types.FunctionType) and callable(case_to_if_tree)
-    lowered_map = case_to_if_tree(module)
-    assert isinstance(lowered_map, dict) and "out" in lowered_map
+    from logictree.transforms.case_to_if import lower_module_cases
+    assert isinstance(lower_module_cases, types.FunctionType) and callable(lower_module_cases)
+    lowered_module = lower_module_cases(module)
+    assert isinstance(lowered_module, Module) 
+    lowered_map = dict(lowered_module.signal_map)
+    assert isinstance(lowered_map, dict)
+    assert "out" in lowered_map
 
     # Inputs from original outputs (works with method- or set-style free_vars)
     #def _free_vars_of(node):
