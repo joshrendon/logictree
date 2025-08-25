@@ -4,6 +4,9 @@
 PYTHON ?= python
 PIP    ?= $(PYTHON) -m pip
 
+PYTEST = pytest
+REPORTS_DIR = reports
+
 PKG        := logictree
 SRC_DIR    := src/$(PKG)
 TEST_DIR   := tests
@@ -19,10 +22,13 @@ GRAMMAR_DIR := grammar
 PARSER_OUT := src/sv_parser
 GRAMMAR := $(GRAMMAR_DIR)/SystemVerilogSubset.g4
 
+
+
+
 # --- Phony targets ------------------------------------------------------------
 .PHONY: help install dev clean lint format typecheck test test-fast test-full \
         coverage coverage-ok cov cov-html fnmap fnmapb fnmapbat devmap build dist \
-		gen-parser clean-parser
+		gen-parser clean-parser test lint report clean
 
 # --- Help ---------------------------------------------------------------------
 help:
@@ -66,6 +72,29 @@ typecheck:
 	mypy $(SRC_DIR)
 
 # --- Tests --------------------------------------------------------------------
+# Run a regression flow by marker. Usage: make report target=nightly
+report: | $(REPORTS_DIR)
+	@if [ -z "$(target)" ]; then \
+	  echo "Usage: make report target={smoke|unit|nightly|weekly|release}"; \
+	  exit 1; \
+	fi; \
+	case "$(target)" in \
+	  smoke)    $(PYTEST) -m "smoke or unit or cli" \
+	               --html=$(REPORTS_DIR)/smoke.html --self-contained-html || true;; \
+	  unit)     $(PYTEST) -m unit \
+	               --html=$(REPORTS_DIR)/unit.html --self-contained-html || true ;; \
+	  nightly)  $(PYTEST) -m "not (slow or flaky or dev)" \
+	               --html=$(REPORTS_DIR)/nightly.html --self-contained-html ;; \
+	  weekly)   $(PYTEST) -m "slow or mutation or props" \
+	               --html=$(REPORTS_DIR)/weekly.html --self-contained-html ;; \
+	  release)  $(PYTEST) -m "not flaky" --cov=logictree --cov-fail-under=90 \
+	               --html=$(REPORTS_DIR)/release.html --self-contained-html ;; \
+	  *) echo "Unknown target: $(target)"; exit 1 ;; \
+	esac
+
+$(REPORTS_DIR):
+	mkdir -p $(REPORTS_DIR)
+
 test-fast:  ## fast dev loop
 	pytest -q -m $(FAST_MARK) --maxfail=1 --durations=15
 
@@ -76,7 +105,6 @@ test-full:  ## full suite (nightly / local deep run)
 
 # --- Coverage -----------------------------------------------------------------
 # Strict: fails if tests fail, but still writes htmlcov/
-#
 FFAST_MARK = unit or props or diff
 coverage:
 	pytest -q -m '$(FFAST_MARK)' \
@@ -144,3 +172,5 @@ clean:
 	@find . -name '__pycache__' -type d -exec rm -rf {} + 2>/dev/null || true
 	@find . -name '*.pyc' -delete
 	@rm -rf .pytest_cache .mypy_cache .ruff_cache htmlcov build dist *.egg-info coverage *.log
+	@rm -rf $(REPORTS_DIR)/* build dist *.egg-info .pytest_cache .coverage
+

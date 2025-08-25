@@ -67,15 +67,20 @@ ignore_missing_imports = true
 addopts = "--cov-context=test"
 testpaths = ["tests"]
 markers = [
-  "unit: Small, isolated tests",
-  "props: Property/metamorphic tests",
+  "unit: fast constructor/init and isolate tests",
+  "props: Property/metamorphic tests (e.g. Hypothesis)",
   "diff: Differential/equivalence tests",
-  "integ: End-to-end CLI/flows",
-  "slow: Long-running tests",
-  "mutation: Mutation-testing harness",
-  "flaky: Known flaky tests",
+  "integration: multi-node or lowering tests",
+  "regression: golden reference or bugfix tests",
+  "smoke: super-fast import/run sanity tests (CI pre-check)",
+  "cli: tests for command-line interfaces",
+  "slow: long-running tests (perf, stress, scalability)",
+  "mutation: mutation-testing harness",
+  "flaky: known flaky tests, under investigation",
   "requires_sympy: Needs SymPy",
-  "requires_graphviz: Needs Graphviz"
+  "requires_graphviz: Needs Graphviz",
+  "dev: exploratory / scratch tests (excluded from CI)",
+  "known_issue: tracks a bug under investigation (pairs with xfail)"
 ]
 
 [tool.ruff]

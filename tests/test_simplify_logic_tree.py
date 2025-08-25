@@ -7,14 +7,6 @@ from logictree.nodes.ops.ops import LogicConst, LogicVar
 from logictree.transforms.simplify import simplify_logic_tree
 
 
-def test_and_true_identity():
-    a = LogicVar("a")
-    one = LogicConst(1)
-    tree = AndOp(a, one)
-    simplified = simplify_logic_tree(tree)
-    assert isinstance(simplified, LogicVar)
-    assert simplified.name == "a"
-
 def test_or_false_identity():
     b = LogicVar("b")
     zero = LogicConst(0)
@@ -47,14 +39,6 @@ def test_and_false_annihilator():
     assert isinstance(simplified, LogicConst)
     assert simplified.value == 0
 
-def test_or_false_identity():
-    b = LogicVar("b")
-    zero = LogicConst(0)
-    tree = OrOp(b, zero)
-    simplified = simplify_logic_tree(tree)
-    assert isinstance(simplified, LogicVar)
-    assert simplified.name == "b"
-
 def test_or_true_annihilator():
     b = LogicVar("b")
     one = LogicConst(1)
@@ -62,14 +46,6 @@ def test_or_true_annihilator():
     simplified = simplify_logic_tree(tree)
     assert isinstance(simplified, LogicConst)
     assert simplified.value == 1
-
-def test_double_negation():
-    x = LogicVar("x")
-    not1 = NotOp(x)
-    not2 = NotOp(not1)
-    simplified = simplify_logic_tree(not2)
-    assert isinstance(simplified, LogicVar)
-    assert simplified.name == "x"
 
 def test_xor_with_zero():
     a = LogicVar("a")

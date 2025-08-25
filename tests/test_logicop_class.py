@@ -1,9 +1,8 @@
 import pytest
 
 pytestmark = [pytest.mark.unit]
-import inspect
 
-from logictree.nodes.ops.ops import LogicTreeNode, LogicVar
+from logictree.nodes.ops.ops import LogicTreeNode
 from tests.utils import EXCLUDED_CLASSES, all_subclasses, safe_instantiate
 
 
@@ -117,26 +116,6 @@ def test_label_method(cls):
 
 # Properties like these are NOT callable
 PROPERTY_METHODS = {"depth", "delay"}
-
-def all_subclasses(cls):
-    subclasses = set()
-    work = [cls]
-    while work:
-        parent = work.pop()
-        for child in parent.__subclasses__():
-            if child not in subclasses:
-                subclasses.add(child)
-                work.append(child)
-    return subclasses
-
-def safe_instantiate(cls):
-    try:
-        sig = inspect.signature(cls.__init__)
-        num_args = len(sig.parameters) - 1
-        dummy_args = [LogicVar(name=f"x{i}") for i in range(num_args)]
-        return cls(*dummy_args)
-    except Exception:
-        return None
 
 @pytest.mark.parametrize("method_name", sorted(["label", "depth", "delay", "to_json_dict"]))
 @pytest.mark.parametrize("cls", subclasses, ids=lambda c: c.__name__)

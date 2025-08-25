@@ -5,6 +5,7 @@ __pycache__/
 *.log
 .idea/
 .vscode/
+.coverage
 *.DS_Store
 *.svg
 *.png

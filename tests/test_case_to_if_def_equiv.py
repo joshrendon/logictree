@@ -44,7 +44,7 @@ def test_case_to_if_define_equivalence_mux2_with_default():
     assert callable(case_to_if_tree), type(case_to_if_tree)
     lowered = {k: case_to_if_tree(v) for k, v in orig_map.items()}
 
-    vars_ = sorted({n for t in orig_map.values() for n in t.free_vars()})
+    vars_ = sorted({n.name for t in orig_map.values() for n in t.free_vars()})
     # vars_ should include s, a, b, c
     assert len(vars_) <= 8
     for asn in _assignments(vars_):

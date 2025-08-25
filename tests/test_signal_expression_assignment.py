@@ -4,8 +4,6 @@ pytestmark = [pytest.mark.unit]
 
 from pprint import pprint
 
-from antlr4 import *
-
 from logictree.nodes.control.assign import LogicAssign
 from logictree.pipeline import lower_sv_text_to_logic
 

@@ -19,6 +19,11 @@ class LogicVar(LogicTreeNode):
     is_signed: bool = False
     metadata: dict = field(default_factory=dict, compare=False, repr=False)
 
+    def __lt__(self, other):
+        if not isinstance(other, LogicVar):
+            return NotImplemented
+        return self.name < other.name
+
     def __post_init__(self):
         LogicTreeNode.__init__(self)
 

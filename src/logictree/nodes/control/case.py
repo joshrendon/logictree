@@ -166,21 +166,73 @@ class CaseStatement(Statement):
         return self._w_cache
 
     def writes_must(self) -> FrozenSet[LogicVar]:
+        """
+        Compute the set of variables that are *must-writes* for this case statement.
+    
+        Semantics:
+          - A variable is considered a "must-write" if every possible execution path
+            through the case assigns to it.
+    
+          - With no `default` arm, only variables written in *all* case items qualify
+            (pure intersection of branch writes).
+    
+          - With a `default` arm, coverage is extended: if the default writes a
+            variable, then for any selector value not handled by an explicit case,
+            that variable is guaranteed to be assigned. In that situation:
+              * If a variable is written in every case arm → it's a must-write.
+              * If a variable is written in the default AND in at least one case arm,
+                it's also a must-write, since together those cover the entire selector space.
+    
+        Examples:
+          case (s)
+            0: y = a;
+            1: y = b;
+            // no default
+          endcase
+            → writes_must = {}  (y not guaranteed, selector may be != 0/1)
+    
+          case (s)
+            0: y = a;
+            1: z = b;
+            default: y = c;
+          endcase
+            → writes_must = {y}  (y is always assigned: either by case0 or default;
+                                  z is conditional, only in one branch)
+    
+          case (s)
+            0: y = a;
+            1: y = b;
+            default: y = c;
+          endcase
+            → writes_must = {y}  (y written in all arms including default)
+        """
         if self._wm_cache is not None:
             return self._wm_cache
-
+    
         if not self.items:
             object.__setattr__(self, "_wm_cache", frozenset())
             return self._wm_cache
-
-        must_writes = self.items[0].body.writes()
-        for item in self.items[1:]:
-            must_writes &= item.body.writes()
-
-        if self.default is not None:
-            must_writes &= self.default.body.writes()
-
-        object.__setattr__(self, "_wm_cache", frozenset(must_writes))
+    
+        branch_writes = [it.body.writes() for it in self.items]
+    
+        # Note: if no default, we cannot guarantee any must-write
+        if self.default is None:
+            object.__setattr__(self, "_wm_cache", frozenset())
+            return self._wm_cache
+    
+        default_writes = self.default.body.writes()
+        must = set()
+    
+        # Consider all variables that appear anywhere
+        all_written = set().union(*branch_writes, default_writes)
+        for v in all_written:
+            in_all_cases = all(v in bw for bw in branch_writes)
+            in_default_and_some = (v in default_writes) and any(v in bw for bw in branch_writes)
+    
+            if in_all_cases or in_default_and_some:
+                must.add(v)
+    
+        object.__setattr__(self, "_wm_cache", frozenset(must))
         return self._wm_cache
 
     def children(self):
