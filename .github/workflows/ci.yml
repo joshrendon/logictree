@@ -100,5 +100,9 @@ jobs:
       - name: Generate parser
         run: make gen-parser
 
+      - name: Generate parser code
+        run: |
+          java -jar antlr-4.13.1-complete.jar -Dlanguage=Python3 -visitor -o src/sv_parser grammar/SystemVerilogSubset.g4
+
       - name: Run full suite
         run: pytest --full -q -m "unit or props or diff or slow or mutation" --durations=25 || true
