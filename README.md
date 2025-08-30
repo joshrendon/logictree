@@ -17,8 +17,10 @@ pip install -e .
 ## CLI
 `logictree --help`
 
+`logictree golden_circuits/mux2.sv --explore`
+
 ## Run Tests (fast set)
-`pytest -q -m "unit or props or diff"`
+`make test`
 
 ## Project layout
 ```
