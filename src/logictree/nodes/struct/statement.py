@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import FrozenSet, List, Optional
 
-from logictree.nodes import LogicVar
+from logictree.nodes.ops.ops import LogicVar
 
 
 class Statement(ABC):

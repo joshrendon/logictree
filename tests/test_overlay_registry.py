@@ -1,6 +1,6 @@
-from logictree.utils.overlay import overlay
 from logictree.nodes import LogicVar
-from logictree.utils.overlay import get_label, set_label
+from logictree.utils.overlay import get_label, overlay, set_label
+
 
 def test_no_overlay_methods_on_base_node():
     x = LogicVar("x")

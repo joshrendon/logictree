@@ -1,4 +1,5 @@
-from logictree.nodes import LogicConst, LogicVar, BitSelect, PartSelect, Concat
+from logictree.nodes import BitSelect, Concat, LogicConst, LogicVar, PartSelect
+
 
 def test_bitselect_concat_depth():
     # Replace with a real parse if needed

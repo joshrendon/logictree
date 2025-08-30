@@ -43,7 +43,10 @@ jobs:
           java -jar antlr-4.13.1-complete.jar -Dlanguage=Python3 -visitor -o src/sv_parser grammar/SystemVerilogSubset.g4
 
       - name: Lint (ruff)
-        run: ruff check . || true
+        run: ruff check src/ || true
+
+      - name: Add src/ to PYTHONPATH
+        run: echo "PYTHONPATH=$PWD/src" >> $GITHUB_ENV
 
       - name: Run fast test set
         run: pytest -q -m "unit or props or diff" --maxfail=1 --durations=15 || true

@@ -1,9 +1,9 @@
 # tests/test_sv_to_logic_tree_fields.py
-import pytest
 import dataclasses
+
+from logictree.nodes import AndOp, BitSelect, LogicVar, NotOp
+from logictree.pipeline import lower_sv_text_to_logic
 from logictree.SVToLogicTreeLowerer import SVToLogicTreeLowerer
-from logictree.pipeline import lower_sv_file_to_logic, lower_sv_text_to_logic
-from logictree.nodes import AndOp, NotOp, BitSelect, LogicVar
 from logictree.utils.debug import assert_no_fields
 
 

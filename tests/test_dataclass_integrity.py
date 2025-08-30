@@ -1,9 +1,11 @@
 # tests/test_dataclass_integrity.py
-import pkgutil
+import dataclasses
 import importlib
 import inspect
-import dataclasses
+import pkgutil
+
 import pytest
+
 import logictree
 
 

@@ -1,17 +1,15 @@
 import inspect
-import pytest
-from logictree.nodes.registry import all_node_classes
-from logictree.nodes.ops.ops import LogicConst, LogicVar, LogicOp
-from logictree.nodes.ops.gates import AndOp, OrOp, NotOp, XorOp, XnorOp, NandOp
 
 from logictree.nodes.control.assign import LogicAssign
-from logictree.nodes.control.case import CaseStatement, CaseItem
+from logictree.nodes.control.case import CaseItem, CaseStatement
 from logictree.nodes.control.ifstatement import IfStatement
+from logictree.nodes.ops.gates import AndOp, NandOp, NotOp, OrOp, XnorOp, XorOp
 from logictree.nodes.ops.mux import LogicMux
+from logictree.nodes.ops.ops import LogicConst, LogicOp, LogicVar
+from logictree.nodes.registry import all_node_classes
+from logictree.nodes.selects import BitSelect, Concat, PartSelect
 from logictree.nodes.struct.module import Module
-from logictree.nodes.selects import BitSelect, PartSelect, Concat
 
-import inspect
 
 def test_all_nodes_depth_returns_int():
     failed = []

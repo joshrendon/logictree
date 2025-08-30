@@ -1,10 +1,10 @@
 # tests/test_dataclass_defaults.py
 
-import inspect
 import dataclasses
 import importlib
+import inspect
 import pkgutil
-import types
+
 import pytest
 
 import logictree.nodes as nodes_pkg

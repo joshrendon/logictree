@@ -36,6 +36,19 @@ dev = [
 [project.scripts]
 logictree = "cli.main:main"
 
+[tool.black]
+line-length = 88
+target-version = ['py311']
+exclude = '''
+/(
+    \.venv
+  | \.git
+  | \.pytest_cache
+  | build
+  | dist
+)/
+'''
+
 [tool.coverage.html]
 directory = "htmlcov"
 

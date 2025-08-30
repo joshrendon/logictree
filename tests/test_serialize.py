@@ -1,8 +1,8 @@
 # tests/test_serialize.py
-import pytest
-from logictree.nodes import LogicVar, AndOp
+from logictree.nodes import AndOp, LogicVar
+from logictree.utils.overlay import set_label
 from logictree.utils.serialize import logic_tree_to_json
-from logictree.utils.overlay import get_label, set_label
+
 #from logictree.utils.visual import label_for, set_label
 
 def test_serialize_simple_and_gate():

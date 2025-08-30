@@ -45,6 +45,7 @@ It’s especially suited to analyzing RISC-V instruction decoders, and will serv
 for future articles, tutorials, and FPGA validation studies.
 
 Generating new visitor modules from grammar:
+`make gen-parser`
 cd grammar/
 antlr -Dlanguage=Python3 <grammar.g4>
 antlr -Dlanguage=Python3 -visitor <grammar.g4>  # To generate a visitor file

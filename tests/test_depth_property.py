@@ -1,8 +1,9 @@
 
 import pytest
-from logictree.utils.serialize import logic_tree_to_json  # optional, if you want to dump on failure
-from logictree.pipeline import lower_sv_file_to_logic, lower_sv_text_to_logic
+
 from logictree.nodes import LogicAssign
+from logictree.pipeline import lower_sv_text_to_logic
+
 
 def assert_all_nodes_have_depth(node, path="root"):
     try:

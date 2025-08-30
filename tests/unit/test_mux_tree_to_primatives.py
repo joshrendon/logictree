@@ -1,10 +1,7 @@
 import pytest
 
-from logictree.eval import evaluate
-from logictree.nodes.control.assign import LogicAssign
-from logictree.nodes.control.ifstatement import IfStatement
-from logictree.nodes.ops.ops import LogicConst, LogicVar
 from logictree.nodes import LogicMux
+from logictree.nodes.ops.ops import LogicConst, LogicVar
 
 pytestmark = [pytest.mark.unit]
 
