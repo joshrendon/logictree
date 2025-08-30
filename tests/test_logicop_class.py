@@ -3,7 +3,7 @@ import pytest
 pytestmark = [pytest.mark.unit]
 
 from logictree.nodes.ops.ops import LogicTreeNode
-from tests.utils import EXCLUDED_CLASSES, all_subclasses, safe_instantiate
+from tests.utils_bitselect import EXCLUDED_CLASSES, all_subclasses, safe_instantiate
 
 
 def test_all_gates_implement_operands():

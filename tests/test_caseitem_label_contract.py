@@ -13,15 +13,15 @@ def make_assign(lhs_name, rhs_name):
 def test_caseitem_label_rendering():
     # 1. Regular case item
     item1 = CaseItem(labels=[LogicConst(0)], default=False, body=[make_assign("y", "a")])
-    assert item1.label() == "case 0"
+    assert item1.label() == "1'd0"
 
     # 2. Multiple labels
     item2 = CaseItem(labels=[LogicConst(1), LogicConst(2)], default=False, body=[make_assign("y", "b")])
-    assert item2.label() == "case 1, 2"
+    assert item2.label() == "1'd1, 2'd2"
 
     # 3. Default case
-    item3 = CaseItem(labels=[LogicConst("default")], default=True, body=[make_assign("y", "c")])
-    assert item3.label() == "case default"
+    item3 = CaseItem(labels=[], default=True, body=[make_assign("y", "c")])
+    assert item3.label() == "default"
 
 def test_casestatement_label_propagation():
     selector = LogicVar("s")
@@ -31,12 +31,12 @@ def test_casestatement_label_propagation():
         items=[
             CaseItem(labels=[LogicConst(0)], default=False, body=[make_assign("y", "a")]),
             CaseItem(labels=[LogicConst(1)], default=False, body=[make_assign("y", "b")]),
-            CaseItem(labels=[LogicConst("default")], default=True, body=[make_assign("y", "c")])
+            CaseItem(labels=[], default=True, body=[make_assign("y", "c")])
         ]
     )
 
     # Check label string generation of each item inside CaseStatement
-    expected_labels = ["case 0", "case 1", "case default"]
+    expected_labels = ["1'd0", "1'd1", "default"]
     actual_labels = [item.label() for item in case_stmt.items]
     assert actual_labels == expected_labels
 
@@ -54,7 +54,7 @@ def test_case_statement_dot_and_json_outputs(tmp_path):
         items=[
             CaseItem(labels=[LogicConst(0)], default=False, body=[LogicAssign(lhs=y, rhs=LogicVar("a"))]),
             CaseItem(labels=[LogicConst(1)], default=False, body=[LogicAssign(lhs=y, rhs=LogicVar("b"))]),
-            CaseItem(labels=[LogicConst("default")], default=True, body=[LogicAssign(lhs=y, rhs=LogicVar("c"))])
+            CaseItem(labels=[], default=True, body=[LogicAssign(lhs=y, rhs=LogicVar("c"))])
         ]
     )
 

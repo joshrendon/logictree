@@ -2,7 +2,7 @@ import pytest
 
 pytestmark = [pytest.mark.unit]
 from logictree.pipeline import lower_sv_text_to_logic
-from tests.utils import gate_count, literal_sig_set
+from tests.utils_bitselect import gate_count, literal_sig_set
 
 
 @pytest.mark.parametrize("rng", sorted([(3,0), (0,3), (7,0), (0,7), (15,0)]))

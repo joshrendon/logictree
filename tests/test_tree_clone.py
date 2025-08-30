@@ -11,7 +11,7 @@ from logictree.nodes.ops.ops import LogicConst, LogicVar
 from logictree.transforms.case_to_if import case_to_if_tree
 from logictree.transforms.simplify import simplify_logic_tree
 from logictree.utils.display import pretty_inline
-from tests.utils import _expr, _is_mux_tree
+from tests.utils_bitselect import _expr, _is_mux_tree
 
 log = logging.getLogger(__name__)
 

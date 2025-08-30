@@ -1,4 +1,4 @@
-# utils/graphviz_export.py
+# logictree.utils/graphviz_export.py
 
 import subprocess
 from pathlib import Path

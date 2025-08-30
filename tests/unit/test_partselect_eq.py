@@ -3,7 +3,7 @@ import pytest
 from logictree.api import lower_sv_to_logic
 from logictree.eval import evaluate
 from logictree.nodes.struct.module import Module
-from tests.utils import assert_neq_const_terms
+from tests.utils_bitselect import assert_neq_const_terms
 
 pytestmark = [pytest.mark.unit]
 

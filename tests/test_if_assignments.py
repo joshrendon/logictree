@@ -3,7 +3,7 @@ import pytest
 pytestmark = [pytest.mark.unit]
 
 from logictree.api import lower_sv_to_logic as lower_sv_text_to_logic
-from tests.utils import gate_count, literal_sig_set
+from tests.utils_bitselect import gate_count, literal_sig_set
 
 
 def _rhs(sv, lower_sv_text_to_logic):

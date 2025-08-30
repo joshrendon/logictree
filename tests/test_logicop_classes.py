@@ -3,7 +3,7 @@ import inspect
 import pytest
 
 from logictree.nodes.ops.ops import LogicTreeNode, LogicVar
-from tests.utils import EXCLUDED_CLASSES
+from tests.utils_bitselect import EXCLUDED_CLASSES
 
 pytestmark = [pytest.mark.unit]
 

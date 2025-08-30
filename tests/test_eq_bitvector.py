@@ -3,7 +3,7 @@ import pytest
 pytestmark = [pytest.mark.unit]
 
 from logictree.pipeline import lower_sv_text_to_logic
-from tests.utils import gate_count, literal_sig_set
+from tests.utils_bitselect import gate_count, literal_sig_set
 
 
 def test_eq_bitvector_const():

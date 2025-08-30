@@ -2,7 +2,7 @@ import pytest
 
 pytestmark = [pytest.mark.unit]
 
-from tests.utils import LogicConstSV
+from tests.utils_bitselect import LogicConstSV
 
 
 def test_logic_const_str():

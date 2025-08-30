@@ -18,6 +18,7 @@ from logictree.utils.display import (
     to_dot,
     to_sympy_expr,
 )
+from logictree.utils.graphviz_utils import to_svg, to_png
 from logictree.utils.reduce import balanced_tree_reduce
 from logictree.utils.utils_cli import check_against_golden, write_golden_file
 
@@ -75,14 +76,9 @@ def handle_output(signal_map, args):
             print(to_ascii(expr))
 
         if args.to_svg:
-            from logictree.graphviz_utils import to_svg
-
             to_svg(expr, name=name)
 
         if args.to_png:
-            from logictree.graphviz_utils import to_png
-
-            # to_png(expr, name=name)
             balanced_tree = (
                 balanced_tree_reduce(expr.op, expr.children)
                 if isinstance(expr, LogicOp)

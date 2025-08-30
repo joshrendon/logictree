@@ -89,7 +89,7 @@ class CaseItem(LogicTreeNode):
     def label(self) -> str:
         if self.default:
             return "default"
-        return ", ".join(l.label() for l in self.labels)
+        return ", ".join(str(l) for l in self.labels)
 
     def to_json_dict(self) -> dict:
         return {
@@ -176,7 +176,7 @@ class CaseStatement(Statement):
                 vars.update(stmt.free_vars())
 
         if self.default:
-            for stmt in iter_body(self.default):
+            for stmt in iter_body(self.default.body if self.default else None):
                 vars.update(stmt.free_vars())
 
         object.__setattr__(self, "_free_cache", frozenset(vars))
@@ -191,7 +191,7 @@ class CaseStatement(Statement):
             for stmt in iter_body(it.body):
                 vars.update(stmt.writes())
         if self.default:
-            for stmt in iter_body(self.default):
+            for stmt in iter_body(self.default.body if self.default else None):
                 vars.update(stmt.writes())
 
         object.__setattr__(self, "_w_cache", frozenset(vars))
@@ -257,7 +257,7 @@ class CaseStatement(Statement):
             return self._wm_cache
 
         default_writes = set()
-        for stmt in iter_body(self.default):
+        for stmt in iter_body(self.default.body if self.default else None):
             default_writes.update(stmt.writes())
 
         must = set()
@@ -326,7 +326,7 @@ class CaseStatement(Statement):
             ),
             "items": [
                 {
-                    "labels": [lbl.label() for lbl in item.labels],
+                    "labels": [str(lbl) for lbl in item.labels],
                     "default": item.default,
                     "body": [
                         stmt.to_ir_dict() if hasattr(stmt, "to_ir_dict") else str(stmt)

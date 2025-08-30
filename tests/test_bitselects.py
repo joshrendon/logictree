@@ -7,7 +7,7 @@ from logictree.nodes.ops.comparison import EqOp
 from logictree.nodes.ops.ops import LogicConst
 from logictree.nodes.selects import BitSelect
 from logictree.pipeline import lower_sv_text_to_logic
-from tests.utils import assert_eq_const_terms
+from tests.utils_bitselect import assert_eq_const_terms
 
 
 def test_bitselect_in_eq_const():
