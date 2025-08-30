@@ -12,6 +12,7 @@ def parse_sv_file(path: str):
     parser = SystemVerilogSubsetParser(tokens)
     return parser.compilation_unit()
 
+
 def parse_sv_text(src: str):
     """Parse SystemVerilog source text into an ANTLR parse tree (compilation_unit)."""
     input_stream = InputStream(src)
@@ -20,12 +21,14 @@ def parse_sv_text(src: str):
     parser = SystemVerilogSubsetParser(tokens)
     return parser.compilation_unit()
 
+
 def first_module_declaration(tree):
     """
     Breadth-first search for the first SystemVerilog 'module_declaration' context.
     Raises RuntimeError if none is found.
     """
     from collections import deque
+
     q = deque([tree])
     while q:
         node = q.popleft()

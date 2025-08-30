@@ -2,12 +2,26 @@ import pytest
 
 pytestmark = [pytest.mark.unit]
 
-from logictree.nodes.ops import AndOp, NotOp
+from logictree.nodes.ops import AndOp
+from logictree.nodes.ops.comparison import EqOp
+from logictree.nodes.ops.ops import LogicConst
+from logictree.nodes.selects import BitSelect
 from logictree.pipeline import lower_sv_text_to_logic
-from tests.utils import assert_eq_1001_terms
+from tests.utils import assert_eq_const_terms
 
 
 def test_bitselect_in_eq_const():
+    """
+    Verify that equality of a 2-bit vector against a constant literal
+    is expanded into the expected per-bit equality checks.
+    
+    Example:
+        assign y = (s == 2'b10);
+
+    Should lower into:
+        y = (s[0] == 1'd0) & (s[1] == 1'd1)
+    """
+
     sv = """
     module m(input logic [1:0] s, output logic y);
       assign y = (s == 2'b10);
@@ -15,13 +29,26 @@ def test_bitselect_in_eq_const():
     """
     mod = lower_sv_text_to_logic(sv)["m"]
     rhs = mod.assignments["y"].rhs
-    from logictree.nodes.selects import BitSelect
+
+    
+    # Top-level should be an AND of two EqOps
     assert isinstance(rhs, AndOp)
-    assert isinstance(rhs.left, BitSelect)
-    assert rhs.left.base.name == "s" and rhs.left.index == 1
-    assert isinstance(rhs.right, NotOp)
-    assert isinstance(rhs.right.operand, BitSelect)
-    assert rhs.right.operand.base.name == "s" and rhs.right.operand.index == 0
+
+    # Collect both equality terms (order not guaranteed in AndOp)
+    eqs = [rhs.left, rhs.right]
+    for eq in eqs:
+        assert isinstance(eq, EqOp)
+        # LHS of each EqOp should be a BitSelect from the vector 's'
+        lhs, rhs_const = eq.operands
+        assert isinstance(lhs, BitSelect)
+        assert lhs.base.name == "s"  # BitSelect should target signal 's'
+        assert isinstance(rhs_const, LogicConst)  # RHS should be a logic constant
+
+    # Extract (bit_index, const_value) pairs for easy semantic check
+    terms = [(eq.operands[0].index, eq.operands[1].value) for eq in eqs]
+
+    # Expect s[0] == 0 and s[1] == 1, regardless of order
+    assert set(terms) == {(0, 0), (1, 1)}, f"Unexpected terms: {terms}"
 
 def test_partselect_passthrough():
     sv = """
@@ -55,11 +82,9 @@ def test_eq_descending_range():
     """
     mod = lower_sv_text_to_logic(sv)["m"]
     rhs = mod.assignments["y"].rhs
-    assert_eq_1001_terms(rhs, "s")
-    # Expect (s[3] & ~s[2] & ~s[1] & s[0]) with left=MSB
-    from logictree.nodes.ops.gates import AndOp
-    assert isinstance(rhs, AndOp)
-    #assert isinstance(rhs.left, BitSelect) and rhs.left.index == 3
+
+    # Expect semantic expansion to 1001 on 4 bits
+    assert_eq_const_terms(rhs, 0b1001, 4, "s")
 
 def test_eq_ascending_range():
     sv = """
@@ -69,6 +94,6 @@ def test_eq_ascending_range():
     """
     mod = lower_sv_text_to_logic(sv)["m"]
     rhs = mod.assignments["y"].rhs
-    assert_eq_1001_terms(rhs, "s")
-    # Expect indices [0..3] still map LSB->index 0, MSB->index 3
-    #assert isinstance(rhs.left, BitSelect) and rhs.left.index == 3
+
+    # Same semantic check, despite [0:3] syntax
+    assert_eq_const_terms(rhs, 0b1001, 4, "s")

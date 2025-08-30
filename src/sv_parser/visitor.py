@@ -23,11 +23,14 @@ from sv_parser.SystemVerilogSubsetVisitor import SystemVerilogSubsetVisitor
 
 log = logging.getLogger(__name__)
 
+
 def BinaryOp(op, lhs, rhs):
     return ops.LogicOp(op, [lhs, rhs])
 
+
 def UnaryOp(op, val):
     return ops.LogicOp(op, [val])
+
 
 # This lives in visitor.py or a separate lowerer.py
 def lower_expr_to_logic_tree(expr):
@@ -46,11 +49,12 @@ def lower_expr_to_logic_tree(expr):
         log.info(f"[lower_expr_to_logic_tree] Unhandled: {expr}")
         return hole.LogicHole("unhandled_expr")
 
+
 def lower_stmt_to_logic_tree(stmt):
     if isinstance(stmt, Continuous_assignContext):
         lhs = stmt.Identifier().getText()
         rhs = lower_stmt_to_logic_tree(stmt.expression())
-        #return lower_expr_to_logic_tree(stmt.source)
+        # return lower_expr_to_logic_tree(stmt.source)
         return control.LogicAssign(lhs=lhs, rhs=rhs)
     elif isinstance(stmt, If_statementContext):
         cond = lower_expr_to_logic_tree(stmt.condition)
@@ -60,10 +64,13 @@ def lower_stmt_to_logic_tree(stmt):
         else:
             elze = hole.LogicHole("missing_else")
         # return a 2:1 mux: (cond AND then) OR (~cond AND else)
-        return ops.LogicOp("OR", [
-            ops.LogicOp("AND", [cond, then]),
-            ops.LogicOp("AND", [ops.LogicOp("NOT", [cond]), elze])
-        ])
+        return ops.LogicOp(
+            "OR",
+            [
+                ops.LogicOp("AND", [cond, then]),
+                ops.LogicOp("AND", [ops.LogicOp("NOT", [cond]), elze]),
+            ],
+        )
     elif isinstance(stmt, ParenExprContext):
         expr = lower_stmt_to_logic_tree(stmt.expression())
         return expr
@@ -107,11 +114,13 @@ def lower_stmt_to_logic_tree(stmt):
         log.warning(f" [lower_stmt_to_logic_tree] Unhandled: {stmt.getText()}")
         return hole.LogicHole("unhandled_stmt")
 
+
 def flatten_stmt(stmt):
     # If we have a list with one item, unwrap it
     if isinstance(stmt, list) and len(stmt) == 1:
         return stmt[0]
     return stmt
+
 
 def simplify_xnor(lhs, rhs):
     """Simplify an XNOR expression if possible."""
@@ -123,7 +132,7 @@ def simplify_xnor(lhs, rhs):
     # Case: XNOR(x, 0) => NOT(x)
     if isinstance(rhs, ops.LogicConst):
         if rhs.value == "1'b1":
-            return lhs # A == 1 -> A
+            return lhs  # A == 1 -> A
         if rhs.value == "1'b0":
             return gates.NotOp(lhs)  # A == 0 -> ~A
 
@@ -133,7 +142,7 @@ def simplify_xnor(lhs, rhs):
         if lhs.value == "0":
             return gates.NotOp(rhs)
 
-    return ops.LogicOp('XNOR', [lhs, rhs])
+    return ops.LogicOp("XNOR", [lhs, rhs])
 
 
 class ASTBuilder(SystemVerilogSubsetVisitor):
@@ -144,66 +153,70 @@ class ASTBuilder(SystemVerilogSubsetVisitor):
         return self.visitChildren(ctx)
 
     def visitCompilation_unit(self, ctx):
-        return {'modules': [self.visit(mod) for mod in ctx.module_declaration()]}
+        return {"modules": [self.visit(mod) for mod in ctx.module_declaration()]}
 
     def visitModule_declaration(self, ctx):
         module_name = ctx.module_identifier().getText()
         ports = []
         items = []
-    
+
         log.info("Visiting module:", module_name)
 
         for item in ctx.module_item():
             result = self.visit(item)
             if result:
                 items.append(result)
-    
+
         return {
             "type": "module",
             "name": module_name,
             "ports": ports,  # You can fill this in later
-            "items": items
+            "items": items,
         }
 
     def visitChildren(self, ctx):
         log.debug(f"[children] visiting children of {type(ctx).__name__}")
         return self.genericVisit(ctx)
-        #return super().visitChildren(ctx)
+        # return super().visitChildren(ctx)
 
     def visitModule_item(self, ctx):
         if ctx.always_comb_block():
             return self.visit(ctx.always_comb_block())
-        #return {'type': 'unhandled', 'ctx': ctx}
+        # return {'type': 'unhandled', 'ctx': ctx}
 
     def visitAlways_comb_block(self, ctx):
         return self.visit(ctx.statement())
 
     def visitContinuous_assign(self, ctx):
         return {
-            'type': 'assign',
-            'target': ctx.Identifier().getText(),
-            'source': self.visit(ctx.expression()),
-            'ctx': ctx  # attach for lowering
+            "type": "assign",
+            "target": ctx.Identifier().getText(),
+            "source": self.visit(ctx.expression()),
+            "ctx": ctx,  # attach for lowering
         }
 
     def visitCase_statement(self, ctx):
         cond_expr = self.visit(ctx.expression())
         result = None
-    
+
         for item in reversed(ctx.case_item()):
             log.debug(" visitCase_statement() dir(item)", dir(item))
             case_value_exprs = item.constant_expression()
             case_result_stmt = self.visit(item.statement())
             if case_value_exprs:
-                conds = [ops.LogicOp("EQ", [cond_expr, self.visit(expr)]) for expr in case_value_exprs]
+                conds = [
+                    ops.LogicOp("EQ", [cond_expr, self.visit(expr)])
+                    for expr in case_value_exprs
+                ]
                 total_cond = conds[0] if len(conds) == 1 else ops.LogicOp("OR", conds)
-                result = ops.LogicOp("ITE", [total_cond, case_result_stmt, result or ops.LogicConst(0)])
+                result = ops.LogicOp(
+                    "ITE", [total_cond, case_result_stmt, result or ops.LogicConst(0)]
+                )
             else:
                 # default
                 result = case_result_stmt if result is None else result
-    
-        return result
 
+        return result
 
     def visitCase_item(self, ctx):
         if ctx.DEFAULT():
@@ -230,8 +243,8 @@ class ASTBuilder(SystemVerilogSubsetVisitor):
 
     def visitStatement(self, ctx):
         log.debug(" visitStatement() - ctx:", ctx.getText())
-        #log.debug("DEBUG: visitStatement() dir(ctx):", dir(ctx))
-        #log.debug("DEBUG: TREE:\n", ctx.toStringTree(recog=ctx.parser))
+        # log.debug("DEBUG: visitStatement() dir(ctx):", dir(ctx))
+        # log.debug("DEBUG: TREE:\n", ctx.toStringTree(recog=ctx.parser))
         if ctx.begin_end_block():
             log.debug(" visitStatement begin_end_block")
             return [self.visit(s) for s in ctx.begin_end_block().statement()]
@@ -257,7 +270,7 @@ class ASTBuilder(SystemVerilogSubsetVisitor):
         log.debug(" visitIf_statement()")
         cond_expr_ctx = ctx.expression()
         then_stmt_ctx = ctx.statement(0)
-        log.debug("Condition:",   cond_expr_ctx.getText())
+        log.debug("Condition:", cond_expr_ctx.getText())
         log.debug("Then branch:", then_stmt_ctx.getText())
         else_stmt_ctx = ctx.statement(1) if ctx.ELSE() else None
         log.debug("Else exists:", else_stmt_ctx.getText())
@@ -278,48 +291,54 @@ class ASTBuilder(SystemVerilogSubsetVisitor):
         }
 
     def visitAndExpr(self, ctx):
-        left  = self.visit(ctx.expression(0))
+        left = self.visit(ctx.expression(0))
         right = self.visit(ctx.expression(0))
         if left is None or right is None:
             log.debug(" visitAndExpr with", ctx.getText())
-        #return BinaryOp('AND', left, right)
-        return ops.LogicOp('AND', [left, right])
+        # return BinaryOp('AND', left, right)
+        return ops.LogicOp("AND", [left, right])
 
     def visitOrExpr(self, ctx):
         log.debug(" visitOrExpr with", ctx.getText())
-        #return BinaryOp('OR', self.visit(ctx.expression(0)), self.visit(ctx.expression(1)))
-        return ops.LogicOp('OR', [self.visit(ctx.expression(0)), self.visit(ctx.expression(1))])
+        # return BinaryOp('OR', self.visit(ctx.expression(0)), self.visit(ctx.expression(1)))
+        return ops.LogicOp(
+            "OR", [self.visit(ctx.expression(0)), self.visit(ctx.expression(1))]
+        )
 
     def visitXorExpr(self, ctx):
         log.debug(" visitXOrExpr with", ctx.getText())
-        #return BinaryOp('XOR', self.visit(ctx.expression(0)), self.visit(ctx.expression(1)))
-        return ops.LogicOp('XOR', [self.visit(ctx.expression(0)), self.visit(ctx.expression(1))])
+        # return BinaryOp('XOR', self.visit(ctx.expression(0)), self.visit(ctx.expression(1)))
+        return ops.LogicOp(
+            "XOR", [self.visit(ctx.expression(0)), self.visit(ctx.expression(1))]
+        )
 
     def visitXnorExpr(self, ctx):
         log.debug(" visitXnorExpr with", ctx.getText())
-        #return BinaryOp('XNOR', self.visit(ctx.expression(0)), self.visit(ctx.expression(1)))
-        return ops.LogicOp('XNOR', [self.visit(ctx.expression(0)), self.visit(ctx.expression(1))])
+        # return BinaryOp('XNOR', self.visit(ctx.expression(0)), self.visit(ctx.expression(1)))
+        return ops.LogicOp(
+            "XNOR", [self.visit(ctx.expression(0)), self.visit(ctx.expression(1))]
+        )
 
     def visitLogicalNotExpr(self, ctx):
         log.debug(" visitLogicalNotExpr with", ctx.getText())
         sub = self.visit(ctx.expression())
         if sub is None:
             log.debug(" visitLogicalNotExpr() got None for sub-expression")
-        return UnaryOp('NOT', sub)
+        return UnaryOp("NOT", sub)
 
     def visitBitwiseNotExpr(self, ctx):
         log.debug(" visitBitwiseNotExpr with", ctx.getText())
         sub = self.visit(ctx.expression())
         if sub is None:
             log.debug(" visitBitwiseNotExpr() got None for sub-expression")
-        return UnaryOp('NOT', sub)
+        return UnaryOp("NOT", sub)
 
     def visitNegateExpr(self, ctx):
         log.debug(" visitNegateExpr with", ctx.getText())
         sub = self.visit(ctx.expression())
         if sub is None:
             log.debug(" visitNegateExpr() got None for sub-expression")
-        return UnaryOp('NOT', sub) # or NEGATE if added to gate types
+        return UnaryOp("NOT", sub)  # or NEGATE if added to gate types
 
     def visitEqExpr(self, ctx):
         log.debug(" visitEqExpr with", ctx.getText())
@@ -328,9 +347,9 @@ class ASTBuilder(SystemVerilogSubsetVisitor):
         log.debug(" visitEqExpr raw expr0", expr0)
         log.debug(" visitEqExpr raw expr1", expr1)
 
-        #simp_expr0 = simplify_xnor(expr0)
-        #simp_expr1 = simplify_xnor(expr1)
-        
+        # simp_expr0 = simplify_xnor(expr0)
+        # simp_expr1 = simplify_xnor(expr1)
+
         simplified = simplify_xnor(expr0, expr1)
 
         log.debug(" simplified XNOR:", simplified)
@@ -347,4 +366,3 @@ class ASTBuilder(SystemVerilogSubsetVisitor):
     def visitIdExpr(self, ctx):
         log.debug(" visitIdExpr with", ctx.getText())
         return hole.LogicHole(ctx.getText())
-

@@ -9,6 +9,7 @@ def balance_logic_tree(tree):
         # Base case: leaf node without .children/.op
         return tree
 
+
 def balanced_tree_reduce(op_name, inputs):
     """Builds a balanced binary tree of LogicOps over the inputs."""
     if len(inputs) == 1:

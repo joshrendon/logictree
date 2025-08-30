@@ -1,25 +1,27 @@
-from logictree.nodes.control.assign import LogicAssign
-from logictree.nodes.control.case import CaseItem, CaseStatement
-from logictree.nodes.control.ifstatement import IfStatement
-from logictree.nodes.ops.comparison import EqOp, NeqOp
-from logictree.nodes.ops.gates import AndOp, NotOp, OrOp, XorOp
-from logictree.nodes.ops.ops import LogicConst, LogicVar
-from logictree.nodes.struct.module import Module
-
-
-def _is_default_item(it: CaseItem) -> bool:
-    # Be liberal: treat “default” if it has no labels, None, or explicit flag
-    return (
-        getattr(it, "is_default", False)
-        or getattr(it, "labels", None) in (None, [], "default")
-    )
+from logictree.nodes import (
+    AndOp,
+    BitSelect,
+    CaseStatement,
+    Concat,
+    EqOp,
+    IfStatement,
+    LogicAssign,
+    LogicConst,
+    LogicVar,
+    Module,
+    NeqOp,
+    NotOp,
+    OrOp,
+    PartSelect,
+    XorOp,
+)
 
 
 def evaluate(n, env):
     # High-level / structural nodes
     if isinstance(n, Module):
-       # raise TypeError("evaluate() should not be called on Module; pass one of its output expressions instead.")
-       return
+        # raise TypeError("evaluate() should not be called on Module; pass one of its output expressions instead.")
+        return
     if isinstance(n, LogicAssign):
         return evaluate(n.rhs, env)
     if isinstance(n, IfStatement):
@@ -36,7 +38,7 @@ def evaluate(n, env):
                 labels = [labels]
             if evaluate(n.selector, env) in labels:
                 return evaluate(it.body, env)
-        
+
         # default arm
         for it in n.items:
             if getattr(it, "labels", None) == "default":
@@ -45,9 +47,31 @@ def evaluate(n, env):
 
     # Leaves
     if isinstance(n, LogicConst):
-        return int(n.value) & 1
+        return int(n.value) & ((1 << n.width) - 1)
+
     if isinstance(n, LogicVar):
         return int(env[n.name]) & 1
+
+    if isinstance(n, BitSelect):
+        base_name = n.base.name
+        return int(env[f"{base_name}[{n.index}]"]) & 1
+
+    if isinstance(n, PartSelect):
+        base_name = n.base.name
+        bits = []
+        rng = range(n.lsb, n.msb + 1) if n.lsb <= n.msb else range(n.lsb, n.msb - 1, -1)
+        for i in rng:
+            bits.append(int(env[f"{base_name}[{i}]"]) & 1)
+        # msb is highest index; fold down into an int
+        return sum(b << idx for idx, b in enumerate(bits))
+
+    if isinstance(n, Concat):
+        val = 0
+        for p in n.parts:  # MSB-first
+            part_val = evaluate(p, env)
+            part_width = getattr(p, "width", 1)
+            val = (val << part_width) | (part_val & ((1 << part_width) - 1))
+        return val
 
     # Eq Op
     if isinstance(n, EqOp):

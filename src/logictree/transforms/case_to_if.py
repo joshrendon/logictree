@@ -12,17 +12,19 @@ Use case_to_if_tree() only when you know you have a CaseStatement.
 Use transform_cases() (or the map/module variants) when you want to sanitize an
 arbitrary node or structure that may contain CaseStatements.
 """
+
 import logging
 
 from logictree.nodes.base.base import LogicTreeNode
 from logictree.nodes.control.assign import LogicAssign
 from logictree.nodes.control.case import CaseStatement  # your actual classes
 from logictree.nodes.control.ifstatement import IfStatement
-from logictree.nodes.ops import LogicConst
+from logictree.nodes.ops import LogicConst, LogicVar
 from logictree.nodes.ops.comparison import EqOp
 from logictree.nodes.struct.module import Module
 
 log = logging.getLogger(__name__)
+
 
 def case_to_if_tree(stmt: CaseStatement) -> IfStatement:
     """
@@ -71,6 +73,10 @@ def transform_cases(node: LogicTreeNode) -> LogicTreeNode:
             lhs=node.lhs,
             rhs=transform_cases(node.rhs),
         )
+
+    # short-circut for atomic leaves
+    if isinstance(node, (LogicConst, LogicVar)):
+        return node
 
     # Generic n-ary operator
     if hasattr(node, "children") and isinstance(node.children, (list, tuple)):

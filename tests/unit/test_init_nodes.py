@@ -15,7 +15,8 @@ def test_logicvar_init():
 @pytest.mark.unit
 def test_logicconst_init_true():
     c = LogicConst(True)
-    assert c.value is True
+    assert c.value == 1
+    assert c.width == 1
 
 @pytest.mark.unit
 def test_notop_init():

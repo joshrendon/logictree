@@ -1,4 +1,8 @@
 # logictree/nodes/ops/__init__.py
+"""
+Ops package: logical primitives and gates.
+Dynamic runtime loader + static re-exports for type checkers.
+"""
 import importlib
 import pkgutil
 
@@ -11,7 +15,7 @@ if hasattr(_ops, "__all__"):
         globals()[_name] = getattr(_ops, _name)
     __all__.extend(_ops.__all__)
 
-# Now import every other submodule (e.g., gates.py)
+# Import all other submodules (like gates, comparison, etc.)
 for _loader, _modname, _is_pkg in pkgutil.iter_modules(__path__):
     if _modname == "ops":
         continue
@@ -20,3 +24,26 @@ for _loader, _modname, _is_pkg in pkgutil.iter_modules(__path__):
         for _name in _mod.__all__:
             globals()[_name] = getattr(_mod, _name)
         __all__.extend(_mod.__all__)
+
+
+# --- Explicit re-exports for static type checkers (mypy, pyright) ---
+from .comparison import EqOp, NeqOp
+from .gates import AndOp, NandOp, NorOp, NotOp, OrOp, XnorOp, XorOp
+from .mux import LogicMux
+from .ops import LogicConst, LogicOp, LogicVar
+
+__all__ += [
+    "LogicConst",
+    "LogicVar",
+    "LogicOp",
+    "AndOp",
+    "OrOp",
+    "NotOp",
+    "XorOp",
+    "NandOp",
+    "NorOp",
+    "XnorOp",
+    "EqOp",
+    "NeqOp",
+    "LogicMux",
+]

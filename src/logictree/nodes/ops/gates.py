@@ -4,15 +4,15 @@ from ..base.base import LogicTreeNode
 from .ops import LogicOp
 
 __all__ = ["NotOp", "AndOp", "OrOp", "XorOp", "XnorOp", "NandOp", "NorOp"]
+
+
 def _commutative_equals(a, b):
     # assumes children = [lhs, rhs]
-    return (
-        a.__class__ is b.__class__ and
-        (
-            (a.children[0].equals(b.children[0]) and a.children[1].equals(b.children[1])) or
-            (a.children[0].equals(b.children[1]) and a.children[1].equals(b.children[0]))
-        )
+    return a.__class__ is b.__class__ and (
+        (a.children[0].equals(b.children[0]) and a.children[1].equals(b.children[1]))
+        or (a.children[0].equals(b.children[1]) and a.children[1].equals(b.children[0]))
     )
+
 
 def _flatten_same(op_cls, ops):
     flat = []
@@ -23,9 +23,11 @@ def _flatten_same(op_cls, ops):
             flat.append(o)
     return flat
 
+
 class NotOp(LogicOp):
     metadata: dict = field(default_factory=dict, compare=False, repr=False)
     operand: LogicTreeNode
+
     def __init__(self, operand):
         super().__init__()
         self._set_inputs([operand])
@@ -62,7 +64,7 @@ class NotOp(LogicOp):
     def equals(self, other):
         return isinstance(other, NotOp) and self.operand.equals(other.operand)
 
-    #def to_json_dict(self):
+    # def to_json_dict(self):
     #    return {
     #        "type": self.__class__.__name__,
     #        "label": self.label(),
@@ -72,15 +74,17 @@ class NotOp(LogicOp):
     #        "children": [ch.to_json_dict() for ch in self.children],
     #    }
 
+
 class AndOp(LogicOp):
     a: LogicTreeNode
     b: LogicTreeNode
     metadata: dict = field(default_factory=dict, compare=False, repr=False)
+
     def __init__(self, a, b):
         super().__init__()
         self._set_inputs([a, b])
         self.a = a
-        self.b = b 
+        self.b = b
 
     def _children(self):
         return (self.a, self.b)
@@ -104,9 +108,12 @@ class AndOp(LogicOp):
         return [self.a, self.b]
 
     @property
-    def left(self):  return self.operands[0]
+    def left(self):
+        return self.operands[0]
+
     @property
-    def right(self): return self.operands[1]
+    def right(self):
+        return self.operands[1]
 
     def __str__(self):
         return f"({self.a} & {self.b})"
@@ -121,7 +128,7 @@ class AndOp(LogicOp):
     def equals(self, other):
         return _commutative_equals(self, other)
 
-    #def to_json_dict(self):
+    # def to_json_dict(self):
     #    return {
     #        "type": self.__class__.__name__,
     #        "op": self.op,
@@ -132,10 +139,12 @@ class AndOp(LogicOp):
     #        "children": [ch.to_json_dict() for ch in self.children],
     #    }
 
+
 class OrOp(LogicOp):
     a: LogicTreeNode
     b: LogicTreeNode
     metadata: dict = field(default_factory=dict, compare=False, repr=False)
+
     def __init__(self, a, b):
         super().__init__()
         self._set_inputs([a, b])
@@ -164,9 +173,12 @@ class OrOp(LogicOp):
         return [self.a, self.b]
 
     @property
-    def left(self):  return self.operands[0]
+    def left(self):
+        return self.operands[0]
+
     @property
-    def right(self): return self.operands[1]
+    def right(self):
+        return self.operands[1]
 
     def __str__(self):
         return f"({self.a} | {self.b})"
@@ -181,7 +193,7 @@ class OrOp(LogicOp):
     def equals(self, other):
         return _commutative_equals(self, other)
 
-    #def to_json_dict(self):
+    # def to_json_dict(self):
     #    return {
     #        "type": self.__class__.__name__,
     #        "label": self.label(),
@@ -191,10 +203,12 @@ class OrOp(LogicOp):
     #        "children": [ch.to_json_dict() for ch in self.children],
     #    }
 
+
 class XorOp(LogicOp):
     a: LogicTreeNode
     b: LogicTreeNode
     metadata: dict = field(default_factory=dict, compare=False, repr=False)
+
     def __init__(self, a, b):
         super().__init__()
         self._set_inputs([a, b])
@@ -218,9 +232,12 @@ class XorOp(LogicOp):
         return "XOR"
 
     @property
-    def left(self):  return self.operands[0]
+    def left(self):
+        return self.operands[0]
+
     @property
-    def right(self): return self.operands[1]
+    def right(self):
+        return self.operands[1]
 
     @property
     def children(self):
@@ -239,7 +256,7 @@ class XorOp(LogicOp):
     def equals(self, other):
         return _commutative_equals(self, other)
 
-    #def to_json_dict(self):
+    # def to_json_dict(self):
     #    return {
     #        "type": self.__class__.__name__,
     #        "label": self.label(),
@@ -249,10 +266,12 @@ class XorOp(LogicOp):
     #        "children": [ch.to_json_dict() for ch in self.children],
     #    }
 
+
 class XnorOp(LogicOp):
     a: LogicTreeNode
     b: LogicTreeNode
     metadata: dict = field(default_factory=dict, compare=False, repr=False)
+
     def __init__(self, a, b):
         super().__init__()
         self._set_inputs([a, b])
@@ -273,9 +292,12 @@ class XnorOp(LogicOp):
         return "XNOR"
 
     @property
-    def left(self):  return self.operands[0]
+    def left(self):
+        return self.operands[0]
+
     @property
-    def right(self): return self.operands[1]
+    def right(self):
+        return self.operands[1]
 
     @property
     def children(self):
@@ -295,7 +317,7 @@ class XnorOp(LogicOp):
     def equals(self, other):
         return _commutative_equals(self, other)
 
-    #def to_json_dict(self):
+    # def to_json_dict(self):
     #    return {
     #        "type": self.__class__.__name__,
     #        "label": self.label(),
@@ -305,10 +327,12 @@ class XnorOp(LogicOp):
     #        "children": [ch.to_json_dict() for ch in self.children],
     #    }
 
+
 class NandOp(LogicOp):
     a: LogicTreeNode
     b: LogicTreeNode
     metadata: dict = field(default_factory=dict, compare=False, repr=False)
+
     def __init__(self, a, b):
         super().__init__()
         self._set_inputs([a, b])
@@ -329,9 +353,12 @@ class NandOp(LogicOp):
         return "NAND"
 
     @property
-    def left(self):  return self.operands[0]
+    def left(self):
+        return self.operands[0]
+
     @property
-    def right(self): return self.operands[1]
+    def right(self):
+        return self.operands[1]
 
     @property
     def children(self):
@@ -350,7 +377,7 @@ class NandOp(LogicOp):
     def equals(self, other):
         return _commutative_equals(self, other)
 
-    #def to_json_dict(self):
+    # def to_json_dict(self):
     #    return {
     #        "type": self.__class__.__name__,
     #        "label": self.label(),
@@ -360,10 +387,12 @@ class NandOp(LogicOp):
     #        "children": [ch.to_json_dict() for ch in self.children],
     #    }
 
+
 class NorOp(LogicOp):
     a: LogicTreeNode
     b: LogicTreeNode
     metadata: dict = field(default_factory=dict, compare=False, repr=False)
+
     def __init__(self, a, b):
         super().__init__()
         self._set_inputs([a, b])
@@ -387,9 +416,12 @@ class NorOp(LogicOp):
         return f"~({self.a} | {self.b})"
 
     @property
-    def left(self):  return self.operands[0]
+    def left(self):
+        return self.operands[0]
+
     @property
-    def right(self): return self.operands[1]
+    def right(self):
+        return self.operands[1]
 
     @property
     def children(self):
@@ -404,5 +436,6 @@ class NorOp(LogicOp):
 
     def equals(self, other):
         return _commutative_equals(self, other)
+
 
 __all__ = ["AndOp", "OrOp", "NotOp", "XorOp", "XnorOp", "NandOp", "NorOp"]

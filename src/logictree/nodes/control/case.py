@@ -1,7 +1,7 @@
 import copy
 import logging
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, FrozenSet, List, Optional, Tuple
+from typing import TYPE_CHECKING, FrozenSet, Iterator, List, Optional
 
 from logictree.nodes.base.base import LogicTreeNode
 from logictree.nodes.ops.ops import LogicConst, LogicVar
@@ -13,32 +13,52 @@ log = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from logictree.nodes.ops import LogicConst, LogicVar
 
+
+def iter_body(body: list[Statement] | None) -> Iterator[Statement]:
+    """Iterate over the statements in a CaseItem/CaseStatement body safely."""
+    if body is None:
+        return iter(())
+    return iter(body)
+
+
 @dataclass(frozen=True)
 class CaseItem(LogicTreeNode):
-    labels: Tuple[LogicConst, ...]
-    body: Statement
+    labels: List[LogicConst]
+    body: List[Statement]
     default: bool = False
     match: Optional[LogicTreeNode] = None
     metadata: dict = field(default_factory=dict, compare=False, repr=False)
 
-    _free_cache: Optional[FrozenSet[LogicVar]] = field(default=None, init=False, repr=False, compare=False)
-    _writes_cache: Optional[FrozenSet[LogicVar]] = field(default=None, init=False, repr=False, compare=False)
-    _writes_must_cache: Optional[FrozenSet[LogicVar]] = field(default=None, init=False, repr=False, compare=False)
+    _free_cache: Optional[FrozenSet[LogicVar]] = field(
+        default=None, init=False, repr=False, compare=False
+    )
+    _writes_cache: Optional[FrozenSet[LogicVar]] = field(
+        default=None, init=False, repr=False, compare=False
+    )
+    _writes_must_cache: Optional[FrozenSet[LogicVar]] = field(
+        default=None, init=False, repr=False, compare=False
+    )
 
     def __post_init__(self):
+        LogicTreeNode.__init__(self)
+        # When the body is a plan Statement, force it to a List[Statement]
+        if isinstance(self.body, Statement):
+            object.__setattr__(self, "body", [self.body])
+        # if self.default:
+        #    object.__setattr__(self, "labels", ["default"])
+        # Validate default + labels
         if self.default:
-            assert len(self.labels) == 1 and self.labels[0].value == "default"
-        if self.default or (self.labels and self.labels[0].value == "default"):
-            return "case default"
-        if self.default and self.labels:
-            raise ValueError("Default CaseItem cannot have labels")
+            if self.labels:
+                raise ValueError(
+                    f"Default CaseItem cannot have user-defined labels: labels={self.labels}"
+                )
+            object.__setattr__(
+                self, "labels", ["default"]
+            )  # safe to set here after check
+
     @property
     def is_default(self) -> bool:
-        return (
-            len(self.labels) == 1
-            and isinstance(self.labels[0], LogicConst)
-            and self.labels[0].value == "default"
-        )
+        return self.default or any(l == "default" for l in self.labels)
 
     def free_vars(self) -> FrozenSet[LogicVar]:
         """Free vars come from labels (if not default) + match expression."""
@@ -68,9 +88,8 @@ class CaseItem(LogicTreeNode):
 
     def label(self) -> str:
         if self.default:
-            return "case default"
-        label_strs = [str(lbl) for lbl in self.labels]
-        return f"case {', '.join(label_strs)}"
+            return "default"
+        return ", ".join(l.label() for l in self.labels)
 
     def to_json_dict(self) -> dict:
         return {
@@ -90,46 +109,54 @@ class CaseItem(LogicTreeNode):
             inputs.update(self.body.inputs())
         return list(inputs)
 
-    def simplify(self):    
+    def simplify(self):
         import warnings
 
-        from logictree.transforms.simplify import simplify_logic_tree
         warnings.warn(
             ".simplify() is deprecated; use simplify_logic_tree(node) instead.",
             DeprecationWarning,
             stacklevel=2,
         )
-        body = simplify_logic_tree(self.body)
-        return CaseItem(
-            labels=self.labels,
-            match=self.match,
-            body=body,
-            default=self.default,
-            metadata=copy.deepcopy(self.metadata)
-        )
+
+    @property
+    def depth(self) -> int:
+        return self.body.depth if self.body else 0
+
+    @property
+    def delay(self):
+        return self.body.delay if hasattr(self.body, "delay") else 0
 
     def clone(self):
         return CaseItem(
             labels=copy.deepcopy(self.labels),
             match=copy.deepcopy(self.match),
-            body=self.body.clone() if hasattr(self.body, "clone") else copy.deepcopy(self.body),
+            body=(
+                self.body.clone()
+                if hasattr(self.body, "clone")
+                else copy.deepcopy(self.body)
+            ),
             default=self.default,
-            metadata=copy.deepcopy(self.metadata)
+            metadata=copy.deepcopy(self.metadata),
         )
+
 
 @dataclass(frozen=True)
 class CaseStatement(Statement):
     selector: LogicTreeNode
     items: List[CaseItem]
-    default: Optional[Statement] = None
+    default: Optional[List[Statement]] = None
     metadata: dict = field(default_factory=dict, compare=False, repr=False)
 
     def __post_init__(self):
         from logictree.nodes.ops.ops import LogicConst
+
         for it in self.items:
-            if it.labels != "default":
-                if not isinstance(it.labels, list) or not all(isinstance(x, (int, LogicConst)) for x in it.labels):
-                    raise TypeError(f"Bad labels on CaseItem: {it.labels!r}")
+            if it.default:
+                continue  # Skip type check for default case (label = ["default"])
+            if not isinstance(it.labels, list) or not all(
+                isinstance(x, (int, LogicConst)) for x in it.labels
+            ):
+                raise TypeError(f"Bad labels on CaseItem: {it.labels!r}")
 
     def label(self) -> str:
         return f"case({self.selector})"
@@ -145,10 +172,12 @@ class CaseStatement(Statement):
         vars.update(self.selector.free_vars())
 
         for it in self.items:
-            vars.update(it.body.free_vars())
+            for stmt in iter_body(it.body):
+                vars.update(stmt.free_vars())
 
         if self.default:
-            vars.update(self.default.body.free_vars())
+            for stmt in iter_body(self.default):
+                vars.update(stmt.free_vars())
 
         object.__setattr__(self, "_free_cache", frozenset(vars))
         return self._free_cache
@@ -158,31 +187,34 @@ class CaseStatement(Statement):
             return self._w_cache
 
         vars = set()
-        for item in self.items:
-            vars.update(item.body.writes())
-        if self.default is not None:
-            vars.update(self.default.body.writes())
+        for it in self.items:
+            for stmt in iter_body(it.body):
+                vars.update(stmt.writes())
+        if self.default:
+            for stmt in iter_body(self.default):
+                vars.update(stmt.writes())
+
         object.__setattr__(self, "_w_cache", frozenset(vars))
         return self._w_cache
 
     def writes_must(self) -> FrozenSet[LogicVar]:
         """
         Compute the set of variables that are *must-writes* for this case statement.
-    
+
         Semantics:
           - A variable is considered a "must-write" if every possible execution path
             through the case assigns to it.
-    
+
           - With no `default` arm, only variables written in *all* case items qualify
             (pure intersection of branch writes).
-    
+
           - With a `default` arm, coverage is extended: if the default writes a
             variable, then for any selector value not handled by an explicit case,
             that variable is guaranteed to be assigned. In that situation:
               * If a variable is written in every case arm → it's a must-write.
               * If a variable is written in the default AND in at least one case arm,
                 it's also a must-write, since together those cover the entire selector space.
-    
+
         Examples:
           case (s)
             0: y = a;
@@ -190,7 +222,7 @@ class CaseStatement(Statement):
             // no default
           endcase
             → writes_must = {}  (y not guaranteed, selector may be != 0/1)
-    
+
           case (s)
             0: y = a;
             1: z = b;
@@ -198,7 +230,7 @@ class CaseStatement(Statement):
           endcase
             → writes_must = {y}  (y is always assigned: either by case0 or default;
                                   z is conditional, only in one branch)
-    
+
           case (s)
             0: y = a;
             1: y = b;
@@ -208,30 +240,36 @@ class CaseStatement(Statement):
         """
         if self._wm_cache is not None:
             return self._wm_cache
-    
+
         if not self.items:
             object.__setattr__(self, "_wm_cache", frozenset())
             return self._wm_cache
-    
-        branch_writes = [it.body.writes() for it in self.items]
-    
-        # Note: if no default, we cannot guarantee any must-write
+
+        branch_writes = []
+        for it in self.items:
+            w = set()
+            for stmt in iter_body(it.body):
+                w.update(stmt.writes())
+            branch_writes.append(w)
+
         if self.default is None:
             object.__setattr__(self, "_wm_cache", frozenset())
             return self._wm_cache
-    
-        default_writes = self.default.body.writes()
+
+        default_writes = set()
+        for stmt in iter_body(self.default):
+            default_writes.update(stmt.writes())
+
         must = set()
-    
-        # Consider all variables that appear anywhere
         all_written = set().union(*branch_writes, default_writes)
         for v in all_written:
             in_all_cases = all(v in bw for bw in branch_writes)
-            in_default_and_some = (v in default_writes) and any(v in bw for bw in branch_writes)
-    
+            in_default_and_some = (v in default_writes) and any(
+                v in bw for bw in branch_writes
+            )
             if in_all_cases or in_default_and_some:
                 must.add(v)
-    
+
         object.__setattr__(self, "_wm_cache", frozenset(must))
         return self._wm_cache
 
@@ -241,7 +279,7 @@ class CaseStatement(Statement):
     def simplify(self):
         """Node-local simplification only. Use transforms.case_to_if.case_to_if_tree for structural rewrites."""
         import warnings
-        #from logictree.transforms.simplify import simplify_logic_tree
+
         warnings.warn(
             ".simplify() is deprecated; use simplify_logic_tree(node) instead.",
             DeprecationWarning,
@@ -281,7 +319,11 @@ class CaseStatement(Statement):
         return {
             "type": "CaseStatement",
             "label": self.label(),
-            "selector": self.selector.to_ir_dict() if hasattr(self.selector, "to_ir_dict") else self.selector.label(),
+            "selector": (
+                self.selector.to_ir_dict()
+                if hasattr(self.selector, "to_ir_dict")
+                else self.selector.label()
+            ),
             "items": [
                 {
                     "labels": [lbl.label() for lbl in item.labels],
@@ -289,17 +331,17 @@ class CaseStatement(Statement):
                     "body": [
                         stmt.to_ir_dict() if hasattr(stmt, "to_ir_dict") else str(stmt)
                         for stmt in item.body
-                    ]
+                    ],
                 }
                 for item in self.items
-            ]
+            ],
         }
 
     @property
     def depth(self) -> int:
         item_depths = [item.body.depth or 0 for item in self.items if item.body]
         return 1 + max([self.selector.depth or 0] + item_depths)
-    
+
     @property
     def delay(self) -> int:
         item_delays = [item.body.delay or 0 for item in self.items if item.body]
@@ -307,7 +349,10 @@ class CaseStatement(Statement):
 
     def clone(self):
         return CaseStatement(
-            selector=self.selector.clone() if hasattr(self.selector, "clone") else copy.deepcopy(self.selector),
-            items=[item.clone() for item in self.items]
+            selector=(
+                self.selector.clone()
+                if hasattr(self.selector, "clone")
+                else copy.deepcopy(self.selector)
+            ),
+            items=[item.clone() for item in self.items],
         )
-

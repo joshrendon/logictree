@@ -4,6 +4,7 @@ import pytest
 
 from logictree.nodes.base import LogicTreeNode
 from logictree.nodes.ops.ops import LogicConst, LogicVar
+from logictree.nodes.selects import BitSelect, Concat, PartSelect
 
 
 def all_subclasses(cls):
@@ -65,3 +66,15 @@ def test_node_init_autocheck(node_cls):
 
     node = node_cls(**valid_kwargs)
     assert isinstance(node, node_cls)
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("node", [
+    BitSelect(LogicVar("s"), 0),
+    PartSelect(LogicVar("s"), 7, 4),
+    Concat([LogicVar("a"), LogicConst(1)])
+])
+def test_selects_nodes_init(node):
+    """Smoke test: ensure BitSelect, PartSelect, and Concat construct cleanly."""
+    assert node is not None
+    assert "s" in repr(node) or "a" in repr(node)

@@ -16,6 +16,7 @@ from logictree.nodes.struct.module import Module
 ModuleMap = Dict[str, Module]
 log = logging.getLogger(__name__)
 
+
 def _extract_assign(item: Any) -> tuple[str, LogicTreeNode] | None:
     """
     Try to extract (lhs_name, rhs_expr) from an assignment-like thing:
@@ -27,13 +28,18 @@ def _extract_assign(item: Any) -> tuple[str, LogicTreeNode] | None:
         item = getattr(item, "body", item)
 
     lhs = getattr(item, "lhs", None) or getattr(item, "target", None)
-    rhs = getattr(item, "rhs", None) or getattr(item, "value", None) or getattr(item, "expr", None)
+    rhs = (
+        getattr(item, "rhs", None)
+        or getattr(item, "value", None)
+        or getattr(item, "expr", None)
+    )
     if lhs is None or rhs is None:
         return None
 
     # Derive a stable name for the LHS
     key = getattr(lhs, "name", None) or str(lhs)
     return (str(key), rhs)
+
 
 def _normalize_case(stmt: Any) -> Dict[str, LogicTreeNode]:
     """
@@ -48,6 +54,7 @@ def _normalize_case(stmt: Any) -> Dict[str, LogicTreeNode]:
             k, v = pair
             out[k] = v
     return out
+
 
 def _normalize_outputs(selected: Any) -> Dict[str, LogicTreeNode]:
     """
@@ -103,6 +110,7 @@ def _normalize_outputs(selected: Any) -> Dict[str, LogicTreeNode]:
     # Fallback: unknown shape
     return {"out": selected}
 
+
 def _lower_module_and_normalize(parse_tree) -> dict:
     """
     Extracts the first module_declaration from the given parse tree,
@@ -130,6 +138,7 @@ def _lower_module_and_normalize(parse_tree) -> dict:
     log.debug(f"Returning tree of type: {type(selected_tree).__name__}")
     # Normalize to a signal name → tree map
     return _normalize_outputs(selected_tree)
+
 
 def _lower_all_modules(parse_tree) -> ModuleMap:
     """
@@ -160,9 +169,11 @@ def _lower_all_modules(parse_tree) -> ModuleMap:
         raise RuntimeError("No valid module_declaration found in parsed file.")
     return module_map
 
+
 def lower_sv_text_to_logic(src: str) -> ModuleMap:
     parse_tree = parse_sv_text(src)
     return _lower_all_modules(parse_tree)
+
 
 def lower_sv_file_to_logic(path: str) -> ModuleMap:
     parse_tree = parse_sv_file(path)

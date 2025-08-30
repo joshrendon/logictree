@@ -3,7 +3,8 @@ import itertools
 import re
 
 from logictree.nodes.control.assign import LogicAssign
-from logictree.nodes.ops.gates import AndOp, NotOp, OrOp
+from logictree.nodes.ops.comparison import EqOp
+from logictree.nodes.ops.gates import AndOp, NotOp, OrOp, XorOp
 from logictree.nodes.ops.ops import LogicConst, LogicVar
 from logictree.nodes.selects import BitSelect
 
@@ -13,6 +14,17 @@ EXCLUDED_CLASSES = {
     'IfStatement', 'FlattenedIfStatement', 'CaseStatement',
     'CaseItem', 'LogicOp',
 }
+
+def LogicConstSV(literal: str) -> LogicConst:
+    """
+    Shorthand for constructing a LogicConst from a SystemVerilog-style literal.
+
+    Examples:
+        LogicConstSV("3'b101")   -> LogicConst(value=5, width=3, base="b")
+        LogicConstSV("8'd42")    -> LogicConst(value=42, width=8, base="d")
+        LogicConstSV("'0")       -> LogicConst(value=0, width=1, base="b")
+    """
+    return LogicConst.from_sv_literal(literal)
 
 def all_subclasses(cls):
     """Return the transitive closure of subclasses for a class."""
@@ -115,28 +127,103 @@ def _bit_name_index(bs):
                 idx = int(m.group(2))
     return name, idx
 
-#def _literal_sig(n, expected_name=None):
-#    """Return (name, index, positive_polarity_bool) for BitSelect or Not(BitSelect)."""
-#    neg = False
-#    if isinstance(n, NotOp):
-#        n = _unary_operand(n)
-#        neg = True
-#    assert isinstance(n, BitSelect), f"Expected BitSelect or Not(BitSelect), got {type(n).__name__}"
-#    name, idx = _bit_name_index(n)
-#    if name is None:
-#        # Last resort: assume the expected signal name provided by the test
-#        name = expected_name
-#    assert idx is not None, "BitSelect.index not found"
-#    return (name, idx, not neg)
+def _extract_eq_terms(rhs):
+    """
+    Recursively flatten an AND tree of EqOps(BitSelect, LogicConst)
+    into a set of (bit_index, const_value) pairs.
 
-def assert_eq_1001_terms(rhs, sig_name="s"):
-    """Expect exactly { s[3], ~s[2], ~s[1], s[0] } in any association/ordering."""
-    terms = [_literal_sig(t, expected_name=sig_name) for t in _flatten_and(rhs)]
-    want = [(sig_name, 3, True), (sig_name, 2, False), (sig_name, 1, False), (sig_name, 0, True)]
-    assert sorted(terms) == sorted(want), f"\nGot:  {sorted(terms)}\nWant: {sorted(want)}"
+    Example:  (s[0] == 0) & (s[1] == 1)
+    → { (0, 0), (1, 1) }
+    """
+    terms = []
 
-from logictree.nodes.ops.gates import XorOp
+    def walk(node):
+        if isinstance(node, AndOp):
+            walk(node.left)
+            walk(node.right)
+        elif isinstance(node, EqOp):
+            lhs, rhs_const = node.operands
+            assert isinstance(lhs, BitSelect)
+            assert isinstance(lhs.base, LogicVar)
+            assert isinstance(rhs_const, LogicConst)
+            terms.append((lhs.index, rhs_const.value))
+        else:
+            raise AssertionError(f"Unexpected node type in eq expansion: {node}")
 
+    walk(rhs)
+    return set(terms)
+
+def assert_eq_const_terms(rhs, const_value: int, width: int, varname="s"):
+    """
+    Assert that `rhs` encodes the equality check: var == const_value
+    over a bit-vector of given `width`.
+
+    Args:
+        rhs: the lowered LogicTree expression
+        const_value: integer constant (e.g. 9 for 4'b1001)
+        width: number of bits in the vector
+        varname: name of the LogicVar being compared
+
+    Example:
+        assert_eq_const_terms(rhs, 9, 4, "s")
+    """
+    terms = _extract_eq_terms(rhs)
+
+    expected = set()
+    for i in range(width):
+        bit_val = (const_value >> i) & 1
+        expected.add((i, bit_val))
+
+    assert terms == expected, (
+        f"Unexpected terms for {varname} == {width}'b{const_value:0{width}b}: {terms}"
+    )
+
+def assert_neq_const_terms(rhs, const_value: int, width: int, varname="s"):
+    """
+    Assert that `rhs` encodes the inequality check: var != const_value
+    over a bit-vector of given `width`.
+
+    It works by confirming the expression is equivalent to:
+        NOT(AND(s[i] == bit_val for each i in range(width)))
+
+    Args:
+        rhs: the lowered LogicTree expression
+        const_value: integer constant (e.g. 9 for 4'b1001)
+        width: number of bits in the vector
+        varname: name of the LogicVar being compared
+    """
+    # Ensure the top node is a NotOp
+    assert isinstance(rhs, NotOp), (
+        f"Expected NotOp for {varname} != {const_value}, got {type(rhs)}"
+    )
+
+    inner = rhs.child
+
+    # The inner node should expand to AND of equalities
+    terms = []
+    def walk(node):
+        if isinstance(node, AndOp):
+            walk(node.left)
+            walk(node.right)
+        elif isinstance(node, EqOp):
+            lhs, rhs_const = node.operands
+            assert isinstance(lhs, BitSelect)
+            assert lhs.base.name == varname
+            assert isinstance(rhs_const, LogicConst)
+            terms.append((lhs.index, rhs_const.value))
+        else:
+            raise AssertionError(f"Unexpected node in neq expansion: {node}")
+
+    walk(inner)
+
+    expected = set()
+    for i in range(width):
+        bit_val = (const_value >> i) & 1
+        expected.add((i, bit_val))
+
+    assert set(terms) == expected, (
+        f"Unexpected terms for {varname} != {width}'b{const_value:0{width}b}: {terms}"
+    )
 
 def _unary_operand(n):
     # many NotOp nodes store .child or .operand; try both
@@ -160,43 +247,6 @@ def leaves(nodes):
 def _name_of(node):
     # Try node.name, else node.var.name (BitSelect), else None
     return getattr(node, "name", getattr(getattr(node, "var", node), "name", None))
-#
-#def literal_sig_set(n, only_name=None):
-#    """
-#    For AND/OR-of-literals shapes return a set describing the literals.
-#    - For BitSelect / Not(BitSelect): returns {(index, polarity)} when only_name matches, else {(name, polarity)}
-#    - For simple Ids a/b/c: returns {(name, True)}
-#    """
-#    out = set()
-#
-#    def add_term(t):
-#        neg = False
-#        if isinstance(t, NotOp):
-#            t = _unary_operand(t); neg = True
-#
-#        if isinstance(t, BitSelect):
-#            name = _name_of(t)
-#            if only_name is None or name == only_name:
-#                key = (t.index, not neg) if (only_name == name) else (name, not neg)
-#            else:
-#                key = (name, not neg)
-#            out.add(key)
-#            return
-#
-#        # bare identifiers (scalars)
-#        name = _name_of(t)
-#        if name is not None:
-#            out.add((name, not neg))
-#            return
-#
-#    # Walk common topologies
-#    for t in flatten_and(n):
-#        add_term(t)
-#    for t in flatten_or(n):
-#        add_term(t)
-#    add_term(n)  # fallback for single-literal shapes
-#
-#    return out
 
 def gate_count(n):
     """Count gate node types in a binary/unary tree."""
@@ -224,7 +274,6 @@ def gate_count(n):
             pass
     walk(n)
     return counts
-
 
 def _unary_operand(n):
     # Support either .child or .operand
@@ -258,20 +307,24 @@ def _logicvar_name(x):
     return m.group(1) if m else None
 
 def _literal_sig(n, expected_name: str | None = None):
-    """Return (name, index, is_positive) for BitSelect or Not(BitSelect)."""
+    """Return (name, index, is_positive) for LogicVar, BitSelect, or Not(...)."""
     is_pos = True
+    if isinstance(n, LogicVar):
+        return (n.name, None, True)
+
     if isinstance(n, NotOp):
         n = _unary_operand(n)
         is_pos = False
 
-    # Expect a BitSelect; if not, bail out gracefully
-    if not isinstance(n, BitSelect):
-        return (None, None, is_pos)
+    if isinstance(n, BitSelect):
+        base = _bit_base(n)
+        name = _logicvar_name(base)
+        idx = _bit_index(n)
+        return (name, idx, is_pos)
 
-    base = _bit_base(n)
-    name = _logicvar_name(base)
-    idx = _bit_index(n)
-    return (name, idx, is_pos)
+    # Fallback: not a literal signal
+    return (None, None, is_pos)
+
 
 def _flatten_and(n):
     """Flatten a left-nested chain of AndOp into a list of leaf terms."""
@@ -279,11 +332,21 @@ def _flatten_and(n):
         return _flatten_and(n.left) + _flatten_and(n.right)
     return [n]
 
+
 def literal_sig_set(n, only_name=None):
-    """Set of (index, is_positive) for all BitSelect literals on a given signal."""
+    """
+    Collect a set of literal signals seen in a conjunction.
+    Returns {(name, is_positive)} for scalar vars,
+    or {(name[idx], is_positive)} for bit selects.
+    """
     out = set()
     for t in _flatten_and(n):
         name, idx, is_pos = _literal_sig(t)
+        if name is None:
+            continue
         if only_name is None or name == only_name:
-            out.add((idx, is_pos))
+            if idx is None:
+                out.add((name, is_pos))
+            else:
+                out.add((f"{name}[{idx}]", is_pos))
     return out

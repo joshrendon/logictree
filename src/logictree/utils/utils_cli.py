@@ -8,11 +8,11 @@ def write_golden_file(path, name, logic_hash, expr_str, inputs_flat, inputs_decl
         "name": name,
         "hash": logic_hash,
         "expr": expr_str,
-        "inputs": {
-            "flat": sorted(inputs_flat),
-            "decl": inputs_decl or []
-        }
+        "inputs": {"flat": sorted(inputs_flat), "decl": inputs_decl or []},
     }
     with open(path, "w") as f:
         json.dump(data, f, indent=2)
 
+
+def check_against_golden(name, tree):
+    pass

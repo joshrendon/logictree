@@ -95,6 +95,7 @@ expression
     | expression '^' expression                    #XorExpr
     | expression '~^' expression                   #XnorExpr
     | expression '==' expression                   #EqExpr
+    | expression '!=' expression                   #NeqExpr
     | expression '[' expression ']'                #BitSelectExpr
     | expression '[' expression ':' expression ']' #PartSelectExpr
     | '{' expression (',' expression)* '}'         #ConcatExpr

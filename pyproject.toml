@@ -59,8 +59,41 @@ parallel = true
 dynamic_context = "test_function"
 
 [tool.mypy]
-python_version = "3.11"
+mypy_path = ["src"]
+files = ["src", "tests"]
+disallow_untyped_defs = true
+ignore_missing_imports = false
+check_untyped_defs = true
+explicit_package_bases = true
+python_version = "3.13"
+
+# only exclude the auto-generated ANTLR files
+exclude = [
+  "src/sv_parser/SystemVerilogSubsetLexer\\.py$",
+  "src/sv_parser/SystemVerilogSubsetParser\\.py$",
+  "src/sv_parser/SystemVerilogSubsetListener\\.py$",
+  "src/sv_parser/SystemVerilogSubsetVisitor\\.py$"
+]
+
+[[tool.mypy.overrides]]
+module = ["sympy", "sympy.*", "dd.*", "dd", "antlr4", "antlr4.*"]
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
+
+[[tool.mypy.overrides]]
+module = "sv_parser.SystemVerilogSubsetParser"
+ignore_errors = true
+#strict = true
+ignore_missing_imports = true
+#warn_unused_ignores = true
+#warn_return_any = true
+#disallow_untyped_defs = true
+[[tool.mypy.overrides]]
+module = "sv_parser.SystemVerilogSubsetLexer"
+ignore_errors = true
 
 # Centralize tool configs (optional but nice)
 [tool.pytest.ini_options]
@@ -85,7 +118,7 @@ markers = [
 
 [tool.ruff]
 line-length = 100
-target-version = "py311"
+target-version = "py313"
 
 # Skip scripts and other noise dirs
 exclude = [
@@ -110,6 +143,10 @@ ignore = [
 # Per-file ignores for __init__.py (allow re-exports)
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401", "F403"]
+"src/sv_parser/SystemVerilogSubsetLexer.py"    = ["F403", "F405"]
+"src/sv_parser/SystemVerilogSubsetParser.py"   = ["F403", "F405", "E711"]
+"src/sv_parser/SystemVerilogSubsetListener.py" = ["F403", "F405"]
+"src/sv_parser/SystemVerilogSubsetVisitor.py" = ["F403", "F405"]
 
 [tool.setuptools]
 package-dir = {"" = "src"}

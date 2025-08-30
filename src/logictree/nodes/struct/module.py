@@ -1,7 +1,12 @@
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional
+from __future__ import annotations
 
-from logictree.nodes.ops.ops import LogicTreeNode
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Dict, List, Optional
+
+from logictree.nodes.base.base import LogicTreeNode
+
+if TYPE_CHECKING:
+    from logictree.nodes.control.assign import LogicAssign
 
 
 @dataclass
@@ -9,12 +14,9 @@ class Module:
     name: str
     ports: List[str] = field(default_factory=list)
     signal_map: Dict[str, LogicTreeNode] = field(default_factory=dict)
-    #assignments: Dict[str, LogicTreeNode] = field(default_factory=dict)
-    assignments: dict = field(default_factory=dict)
-    #instances: List[str] = field(default_factory=list)
+    assignments: dict[str, "LogicAssign"] = field(default_factory=dict)
     instances: list = field(default_factory=list)
-    vector_widths: dict[str, tuple[int, int]] = field(default=dict)
-    vector_ranges: dict[str, tuple[int, int]] = field(default=dict)
+    vector_widths: dict[str, tuple[int, int]] = field(default_factory=dict)
 
     def free_vars(self) -> set[str]:
         if hasattr(self, "_free_vars"):
@@ -24,7 +26,7 @@ class Module:
             if hasattr(node, "free_vars"):
                 s |= node.free_vars()
         try:
-            #self._free_vars = set(s)
+            # self._free_vars = set(s)
             object.__setattr__(self, "_free_vars", set(s))  # ok with frozen dataclasses
         except Exception:
             pass  # caching is optional; correctness doesn’t depend on it

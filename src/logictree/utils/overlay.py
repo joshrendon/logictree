@@ -1,31 +1,52 @@
-from typing import Optional
-from weakref import WeakKeyDictionary
+# logictree/utils/overlay.py
 
-VIZ_LABEL_KEY = "viz_label"
-EXPR_SOURCE_KEY = "expr_source"
 
-_viz_labels = WeakKeyDictionary()
-_expr_sources = WeakKeyDictionary()
-_metric_cache = WeakKeyDictionary()
+class OverlayRegistry:
+    def __init__(self):
+        self._label_registry = {}
+        self._expr_source_registry = {}
+        self._metric_cache = {}
 
-def set_viz_label(node, text: str):
-    node.metadata[VIZ_LABEL_KEY] = text
-    return node
+    def set_label(self, node, label: str):
+        self._label_registry[id(node)] = label
 
-def get_viz_label(node) -> Optional[str]:
-    return node.metadata.get(VIZ_LABEL_KEY)
+    def get_label(self, node) -> str:
+        if id(node) in self._label_registry:
+            return self._label_registry[id(node)]
 
-def set_expr_source(node, src: str):
-    node.metadata[EXPR_SOURCE_KEY] = src
-    return node
+        # fallback: try introspection
+        if hasattr(node, "name"):
+            return str(getattr(node, "name"))
+        if hasattr(node, "value"):
+            return str(getattr(node, "value"))
+        return type(node).__name__
 
-def get_expr_source(node) -> Optional[str]:
-    return node.metadata.get(EXPR_SOURCE_KEY)
+    def has_label(self, node) -> bool:
+        return id(node) in self._label_registry
 
-def cache_metrics(obj, **kvs):
-    if obj not in _metric_cache:
-        _metric_cache[obj] = {}
-    _metric_cache[obj].update(kvs)
+    def set_expr_source(self, node, text: str):
+        self._expr_source_registry[id(node)] = text
 
-def get_metric(obj, key, default=None):
-    return _metric_cache.get(obj, {}).get(key, default)
+    def get_expr_source(self, node) -> str | None:
+        return self._expr_source_registry.get(id(node), None)
+
+    def cache_metrics(self, node, **metrics):
+        self._metric_cache.setdefault(id(node), {}).update(metrics)
+
+    def get_metric(self, node, key, default=None):
+        return self._metric_cache.get(id(node), {}).get(key, default)
+
+    def clear_all(self):
+        self._label_registry.clear()
+        self._expr_source_registry.clear()
+        self._metric_cache.clear()
+
+
+# Export a singleton instance
+overlay = OverlayRegistry()
+
+# Expose methods from the singleton overlay registry
+get_label = overlay.get_label
+set_label = overlay.set_label
+has_label = overlay.has_label
+clear_all = overlay.clear_all

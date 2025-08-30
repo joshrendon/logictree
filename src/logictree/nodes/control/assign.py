@@ -10,69 +10,53 @@ from logictree.nodes.struct.statement import Statement
 
 log = logging.getLogger(__name__)
 
-@dataclass
+
+@dataclass(frozen=True)
 class LogicAssign(Statement):
     lhs: LogicVar
     rhs: LogicTreeNode
-    metadata: dict = field(default_factory=dict, compare=False, repr=False)
     annotated_delay: Optional[int] = None
+    metadata: Optional[dict] = field(default=None, compare=False, repr=False)
 
-    def __init__(self, lhs: LogicTreeNode, rhs: LogicTreeNode):
-        super().__init__()
-        self.lhs = lhs
-        self.rhs = rhs
-
-    # -- Variable Analysis -----------------------------------------------------
     def free_vars(self) -> FrozenSet[LogicVar]:
-        """Variables used in RHS; LHS is not free."""
-        if self._free_cache is None:
-            self._free_cache = frozenset(self.rhs.free_vars())
-        return self._free_cache
+        return frozenset(self.rhs.free_vars())
 
     def writes(self) -> FrozenSet[LogicVar]:
-        """LHS is always written."""
-        if self._w_cache is None:
-            base_lhs = self.lhs.base() if hasattr(self.lhs, "base") else self.lhs
-            self._w_cache = frozenset({base_lhs})
-        return self._w_cache
+        base_lhs = self.lhs.base() if hasattr(self.lhs, "base") else self.lhs
+        return frozenset({base_lhs})
 
     def writes_must(self) -> FrozenSet[LogicVar]:
-        """Assign always writes (unconditional)."""
-        if self._wm_cache is None:
-            self._wm_cache = self.writes()
-        return self._wm_cache
+        return self.writes()
 
-    # -- Labeling and Stringification -----------------------------------------
+    def target_name(self) -> str:
+        return self.lhs.name
+
     def default_label(self) -> str:
-        return f"{self.lhs} = {self.rhs}"
+        return f"{str(self.lhs)} = {str(self.rhs)}"
 
     def __str__(self) -> str:
         return self.default_label()
 
-    # -- Analysis Properties ---------------------------------------------------
     @property
     def depth(self) -> int:
-        return getattr(self.rhs, "depth", 0)
+        return self.rhs.depth if hasattr(self.rhs, "depth") else 0
 
     @property
     def delay(self) -> int:
-        return self.annotated_delay if self.annotated_delay is not None else getattr(self.rhs, "delay", 0)
+        return (
+            self.annotated_delay
+            if self.annotated_delay is not None
+            else getattr(self.rhs, "delay", 0)
+        )
 
     def inputs(self) -> Set[str]:
         return self.rhs.inputs()
 
-    # -- JSON / Visualization Support ------------------------------------------
     def to_json_dict(self) -> dict:
         return {
             "type": self.__class__.__name__,
-            "label": self.label(),
             "expr_source": str(self.lhs),
             "children": [self.rhs.to_json_dict()],
             "depth": self.depth,
-            "delay": self.delay
+            "delay": self.delay,
         }
-
-    # -- Simplification --------------------------------------------------------
-    def simplify(self) -> LogicAssign:
-        return self
-

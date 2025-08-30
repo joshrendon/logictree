@@ -5,6 +5,7 @@ from logictree.nodes.base import LogicTreeNode
 
 log = logging.getLogger(__name__)
 
+
 def resolve_signal_vars(tree: LogicTreeNode, signal_map: dict) -> LogicTreeNode:
     """
     Recursively replaces LogicVar nodes with their corresponding tree in signal_map.
@@ -16,8 +17,12 @@ def resolve_signal_vars(tree: LogicTreeNode, signal_map: dict) -> LogicTreeNode:
             return resolved
         return tree
     elif isinstance(tree, ops.LogicOp):
-        new_children = [resolve_signal_vars(child, signal_map) for child in tree.children]
+        new_children = [
+            resolve_signal_vars(child, signal_map) for child in tree.children
+        ]
         return tree.__class__(*new_children)
     else:
         return tree
+
+
 __all__ = ["resolve_signal_vars"]

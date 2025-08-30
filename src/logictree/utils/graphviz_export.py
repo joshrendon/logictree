@@ -14,7 +14,7 @@ def logic_tree_to_dot(logic_tree, signal_name="logic", gate_colors=None):
             "XNOR": "plum",
             "XOR": "yellow",
             "NAND": "red",
-            "NOR": "purple"
+            "NOR": "purple",
         }
 
     lines = [f'digraph "{signal_name}_tree" {{']
@@ -33,10 +33,10 @@ def logic_tree_to_dot(logic_tree, signal_name="logic", gate_colors=None):
         id_map[node] = curr_id
         node_id += 1
 
-        if hasattr(node, 'name'):
+        if hasattr(node, "name"):
             label = node.name
             color = gate_colors.get(label, "gray")
-        elif hasattr(node, 'value'):
+        elif hasattr(node, "value"):
             label = str(node.value)
             color = "white"
         else:
@@ -45,12 +45,12 @@ def logic_tree_to_dot(logic_tree, signal_name="logic", gate_colors=None):
 
         lines.append(f'  {curr_id} [label="{label}", fillcolor="{color}"];')
 
-        if hasattr(node, 'inputs'):
+        if hasattr(node, "inputs"):
             for child in node.inputs():
                 if child is not None:
                     child_id = visit(child)
                     lines.append(f"  {child_id} -> {curr_id};")
-        elif hasattr(node, 'children'):
+        elif hasattr(node, "children"):
             for child in node.children:
                 if child is not None:
                     child_id = visit(child)
@@ -76,4 +76,3 @@ def save_dot_svg_png(dot_str, basename):
     subprocess.run(["dot", "-Tpng", str(dot_file), "-o", str(png_file)], check=True)
 
     return dot_file, svg_file, png_file
-

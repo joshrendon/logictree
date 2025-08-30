@@ -22,6 +22,11 @@ class EqOp(LogicOp):
 
     _free_cache: Optional[FrozenSet[LogicVar]] = None
 
+    @property
+    def operands(self):
+        # Satisfy LogicOp’s abstract API and __repr__
+        return (self.lhs, self.rhs)
+
     def __init__(self, lhs: LogicTreeNode, rhs: LogicTreeNode):
         super().__init__(lhs, rhs)
         self.lhs = lhs
@@ -58,6 +63,10 @@ class NeqOp(LogicOp):
 
     _free_cache: Optional[FrozenSet[LogicVar]] = None
 
+    @property
+    def operands(self):
+        return (self.lhs, self.rhs)
+
     def __init__(self, lhs: LogicTreeNode, rhs: LogicTreeNode):
         super().__init__(lhs, rhs)
         self.lhs = lhs
@@ -85,5 +94,6 @@ class NeqOp(LogicOp):
     @property
     def op(self) -> str:
         return "!="
+
 
 __all__ = ["EqOp", "NeqOp"]
