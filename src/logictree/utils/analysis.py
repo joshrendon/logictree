@@ -4,8 +4,9 @@ from typing import Dict
 
 from dd.autoref import BDD
 
+from logictree.nodes.base.base import LogicTreeNode
 from logictree.nodes.types import GATE_TYPES
-from logictree.utils.build import _build_bdd
+from logictree.utils.build import build_bdd
 from logictree.utils.display import _pretty_print_expr, to_symbolic_expr_str
 
 log = logging.getLogger(__name__)
@@ -39,11 +40,11 @@ def gate_summary(tree):
     counts = gate_breakdown(tree)
     return ", ".join(f"{k}:{v}" for k, v in counts.items() if v > 0)
 
-
 def _as_var_name(v) -> str:
     # Make sure BDD gets string variable names
-    return getattr(v, "name", str(v))
-
+    if isinstance(v, LogicTreeNode):
+        return v.name
+    raise TypeError(f"Expected LogicTreeNode, got {type(v).__name__}: {v}")
 
 def get_logic_hash(tree, ordering=None, return_expr=False):
     bdd = BDD()
@@ -51,17 +52,22 @@ def get_logic_hash(tree, ordering=None, return_expr=False):
 
     # Collect inputs (prefer an explicit API if your nodes provide it)
     # inputs = tree.inputs() if hasattr(tree, "inputs") else (tree.children if hasattr(tree, "children") else [])
+    log.debug(f"Building BDD for: {tree}")
 
     from logictree.utils.traverse import collect_logic_vars
 
-    vars_ = sorted({v.name for v in collect_logic_vars(tree)})
+    #vars_ = sorted({v.name for v in collect_logic_vars(tree)})
+    vars_ = sorted(collect_logic_vars(tree), key=lambda v: v.name)
+    assert len(vars_) != 0, f"Error, couldn't collect_logic_vars(tree) vars_ for BDD"
     log.info("Collected inputs: %s", vars_)
 
     # Declare BDD vars as strings
     for var in vars_:
+        log.debug(f"var: {var}")
+        assert isinstance(var, LogicTreeNode), f"Expected LogicTreeNode got a {type(var).__name__}"
         bdd.declare(_as_var_name(var))
 
-    node = _build_bdd(tree, bdd, var_map)
+    node = build_bdd(tree, bdd, var_map)
     expr = str(bdd.to_expr(node))
     logic_hash = hashlib.sha256(expr.encode("utf-8")).hexdigest()
     expr_str = to_symbolic_expr_str(tree)
@@ -77,8 +83,9 @@ def explain_logic_hash(tree, ordering=None):
     bdd = BDD()
     var_map = {}
 
+    from logictree.utils.traverse import collect_logic_vars
     inputs = tree.inputs() if hasattr(tree, "inputs") else []
-    # vars_ = sorted({v.name for v in collect_logic_vars(tree)})
+    vars_ = sorted(collect_logic_vars(tree), key=lambda v: v.name)
     if ordering is not None:
         inputs = ordering
     else:
@@ -88,7 +95,7 @@ def explain_logic_hash(tree, ordering=None):
     for var in inputs:
         bdd.declare(_as_var_name(var))
 
-    node = _build_bdd(tree, bdd, var_map)
+    node = build_bdd(tree, bdd, var_map)
     expr_str = str(bdd.to_expr(node))
     hash_str = hashlib.sha256(expr_str.encode("utf-8")).hexdigest()
     _pretty_print_expr(expr_str)

@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import logging
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from dataclasses import dataclass, field, replace
 from typing import FrozenSet, Optional, Union
+from functools import total_ordering
 
 from logictree.nodes.base import LogicTreeNode
 from logictree.nodes.types import COMMUTATIVE_OPS
@@ -19,6 +20,9 @@ class LogicVar(LogicTreeNode):
     width: Optional[int] = None  # default = scalar
     is_signed: Optional[bool] = False
     metadata: dict = field(default_factory=dict, compare=False, repr=False)
+
+    def label(self) -> str:
+        return self.name
 
     def __lt__(self, other):
         if not isinstance(other, LogicVar):
@@ -90,6 +94,7 @@ class LogicVar(LogicTreeNode):
         return f"LogicVar({self.name})"
 
 
+@total_ordering
 @dataclass(frozen=True)
 class LogicConst(LogicTreeNode):
     """
@@ -124,20 +129,62 @@ class LogicConst(LogicTreeNode):
                 )  # handles binary/hex/dec
             except ValueError:
                 pass  # leave string as-is
+    @property
+    def name(self) -> str:
+        return self.label()
 
-    def __repr__(self):
-        return f"{self.width}'d{self.value}"
+    def label(self) -> str:
+        bin_str = format(self.value, f"0{self.width}b")
+        return f"{self.width}'b{bin_str}"
+
+    def __eq__(self, other):
+        if isinstance(other, LogicConst):
+            return self.value == other.value
+        if isinstance(other, int):
+            return self.value == other
+        return NotImplemented
+
+    def __lt__(self, other):
+        if isinstance(other, LogicConst):
+            return self.value < other.value
+        if isinstance(other, int):
+            return self.value < other
+        return NotImplemented
+
+    def __hash__(self):
+        return hash((self.value, self.width))
+
+    def __add__(self, other):
+        if isinstance(other, (LogicConst, int)):
+            return self.value + (other.value if isinstance(other, LogicConst) else other)
+        return NotImplemented
+
+    def __radd__(self, other):
+        return self.__add__(other)
+
+    def __sub__(self, other):
+        if isinstance(other, (LogicConst, int)):
+            return self.value - (other.value if isinstance(other, LogicConst) else other)
+        return NotImplemented
+
+    def __rsub__(self, other):
+        if isinstance(other, int):
+            return other - self.value
+        if isinstance(other, LogicConst):
+            return other.value - self.value
+        return NotImplemented
+
+    def __int__(self):
+        return self.value
+
+    __repr__ = label # domain-style
+    default_label = label
 
     def __str__(self) -> str:
         return self.to_verilog()
 
     def to_ir_dict(self):
         return {"type": "LogicConst", "value": self.value}
-
-    # def label(self) -> str:
-    #    from logictree.utils import overlay
-    #    viz = overlay.get_viz_label(self)
-    #    return viz if viz is not None else str(self.value)
 
     def free_vars(self) -> FrozenSet[LogicVar]:
         return frozenset()
@@ -276,20 +323,15 @@ class LogicConst(LogicTreeNode):
         return my_id
 
 
-class LogicOp(LogicTreeNode):
-    """Base for operator nodes (AND/OR/NOT/etc.)."""
+@dataclass(frozen=True)
+class LogicOp(LogicTreeNode, ABC):
+    """Abstract base class for operator nodes (AND/OR/NOT/etc.)."""
 
-    def __init__(self, *inputs):
-        self.metadata = {}
+    __slots__ = ("metadata",)
+
+    def __init__(self, metadata=None):
         super().__init__()
-        if type(self) is LogicOp:
-            raise TypeError(
-                "LogicOp is an abstract base class and cannot be instantiated"
-            )
-        self._inputs: list[LogicTreeNode] = []
-
-    def _set_inputs(self, seq):
-        self._inputs = list(seq)
+        object.__setattr__(self, "metadata", metadata or {})
 
     @property
     def name(self):
@@ -298,14 +340,14 @@ class LogicOp(LogicTreeNode):
 
     @property
     @abstractmethod
-    def op(self):
+    def op(self) -> str:
         raise NotImplementedError(
             "Subclasses must implemnt the 'op' property"
         )  # subclasses: "AND"/"OR"/"XOR"/...
 
     @property
     @abstractmethod
-    def operands(self):
+    def operands(self) -> tuple["LogicTreeNode", ...]:
         raise NotImplementedError("Subclasses must implement the 'operands' property")
 
     def inputs(self):

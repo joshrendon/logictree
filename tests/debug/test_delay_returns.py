@@ -12,6 +12,8 @@ from logictree.nodes.ops.ops import LogicConst, LogicOp, LogicVar
 from logictree.nodes.registry import all_node_classes
 from logictree.nodes.selects import BitSelect, Concat, PartSelect
 from logictree.nodes.struct.module import Module
+import logging
+log = logging.getLogger(__name__)
 
 
 def test_all_nodes_delay_returns_number():
@@ -46,9 +48,9 @@ def test_all_nodes_delay_returns_number():
                     if_false=LogicConst(3),
                 )
             elif cls is BitSelect:
-                node = BitSelect(base=LogicVar("v"), index=0)
+                node = BitSelect(base=LogicVar("d"), index=0)
             elif cls is PartSelect:
-                node = PartSelect(base=LogicVar("v"), msb=3, lsb=0)
+                node = PartSelect(base=LogicVar("d"), msb=3, lsb=0)
             elif cls is Concat:
                 node = Concat(parts=[LogicConst(0), LogicConst(1)])
             elif cls is LogicConst:
@@ -61,6 +63,11 @@ def test_all_nodes_delay_returns_number():
                     if v.default is inspect.Parameter.empty and k != "self"
                 }
                 node = cls(**kwargs) if kwargs else cls()
+
+            if cls is PartSelect:
+                log.debug(f"PartSelect.children = {node.children}")
+                #log.debug(f"PartSelect.delay = {n.delay for n in node.children}")
+
 
             if hasattr(node, "delay"):
                 value = node.delay

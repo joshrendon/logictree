@@ -2,6 +2,7 @@ from dataclasses import field
 
 from ..base.base import LogicTreeNode
 from .ops import LogicOp
+from dataclasses import dataclass
 
 __all__ = ["NotOp", "AndOp", "OrOp", "XorOp", "XnorOp", "NandOp", "NorOp"]
 
@@ -24,18 +25,13 @@ def _flatten_same(op_cls, ops):
     return flat
 
 
+@dataclass(frozen=True)
 class NotOp(LogicOp):
-    metadata: dict = field(default_factory=dict, compare=False, repr=False)
     operand: LogicTreeNode
+    metadata: dict = field(default_factory=dict, compare=False, repr=False)
 
-    def __init__(self, operand):
-        super().__init__()
-        self._set_inputs([operand])
-        self.operand = operand
-        self.child = operand
-
-    def _children(self):
-        return (self.operand,)
+    def __post_init__(self):
+        object.__setattr__(self, "operand", self._normalize(self.operand))
 
     @property
     def op(self):
@@ -46,6 +42,10 @@ class NotOp(LogicOp):
 
     def default_label(self):
         return "NOT"
+
+    @property
+    def child(self):
+        return [self.operand]
 
     @property
     def children(self):
@@ -64,30 +64,16 @@ class NotOp(LogicOp):
     def equals(self, other):
         return isinstance(other, NotOp) and self.operand.equals(other.operand)
 
-    # def to_json_dict(self):
-    #    return {
-    #        "type": self.__class__.__name__,
-    #        "label": self.label(),
-    #        "depth": self.depth,
-    #        "delay": self.delay,
-    #        "expr_source": self.expr_source,
-    #        "children": [ch.to_json_dict() for ch in self.children],
-    #    }
 
-
+@dataclass(frozen=True)
 class AndOp(LogicOp):
     a: LogicTreeNode
     b: LogicTreeNode
     metadata: dict = field(default_factory=dict, compare=False, repr=False)
 
-    def __init__(self, a, b):
-        super().__init__()
-        self._set_inputs([a, b])
-        self.a = a
-        self.b = b
-
-    def _children(self):
-        return (self.a, self.b)
+    def __post_init__(self):
+        object.__setattr__(self, "a", self._normalize(self.a))
+        object.__setattr__(self, "b", self._normalize(self.b))
 
     @property
     def op(self) -> str:
@@ -123,36 +109,21 @@ class AndOp(LogicOp):
 
     def to_primitives(self):
         # already primitive
-        return AndOp(self.lhs, self.rhs)
+        return AndOp(self.a, self.b)
 
     def equals(self, other):
         return _commutative_equals(self, other)
 
-    # def to_json_dict(self):
-    #    return {
-    #        "type": self.__class__.__name__,
-    #        "op": self.op,
-    #        "label": self.label(),
-    #        "depth": self.depth,
-    #        "delay": self.delay,
-    #        "expr_source": self.expr_source,
-    #        "children": [ch.to_json_dict() for ch in self.children],
-    #    }
 
-
+@dataclass(frozen=True)
 class OrOp(LogicOp):
     a: LogicTreeNode
     b: LogicTreeNode
     metadata: dict = field(default_factory=dict, compare=False, repr=False)
 
-    def __init__(self, a, b):
-        super().__init__()
-        self._set_inputs([a, b])
-        self.a = a
-        self.b = b
-
-    def _children(self):
-        return (self.a, self.b)
+    def __post_init__(self):
+        object.__setattr__(self, "a", self._normalize(self.a))
+        object.__setattr__(self, "b", self._normalize(self.b))
 
     @property
     def op(self) -> str:
@@ -188,35 +159,21 @@ class OrOp(LogicOp):
 
     def to_primitives(self):
         # already primitive
-        return OrOp(self.lhs, self.rhs)
+        return OrOp(self.a, self.b)
 
     def equals(self, other):
         return _commutative_equals(self, other)
 
-    # def to_json_dict(self):
-    #    return {
-    #        "type": self.__class__.__name__,
-    #        "label": self.label(),
-    #        "depth": self.depth,
-    #        "delay": self.delay,
-    #        "expr_source": self.expr_source,
-    #        "children": [ch.to_json_dict() for ch in self.children],
-    #    }
 
-
+@dataclass(frozen=True)
 class XorOp(LogicOp):
     a: LogicTreeNode
     b: LogicTreeNode
     metadata: dict = field(default_factory=dict, compare=False, repr=False)
 
-    def __init__(self, a, b):
-        super().__init__()
-        self._set_inputs([a, b])
-        self.a = a
-        self.b = b
-
-    def _children(self):
-        return (self.a, self.b)
+    def __post_init__(self):
+        object.__setattr__(self, "a", self._normalize(self.a))
+        object.__setattr__(self, "b", self._normalize(self.b))
 
     @property
     def op(self) -> str:
@@ -249,37 +206,23 @@ class XorOp(LogicOp):
 
     def to_primitives(self):
         # (a & ~b) | (~a & b)
-        na = NotOp(self.lhs)
-        nb = NotOp(self.rhs)
-        return OrOp(AndOp(self.lhs, nb), AndOp(na, self.rhs))
+        na = NotOp(self.a)
+        nb = NotOp(self.b)
+        return OrOp(AndOp(self.a, nb), AndOp(na, self.b))
 
     def equals(self, other):
         return _commutative_equals(self, other)
 
-    # def to_json_dict(self):
-    #    return {
-    #        "type": self.__class__.__name__,
-    #        "label": self.label(),
-    #        "depth": self.depth,
-    #        "delay": self.delay,
-    #        "expr_source": self.expr_source,
-    #        "children": [ch.to_json_dict() for ch in self.children],
-    #    }
 
-
+@dataclass(frozen=True)
 class XnorOp(LogicOp):
     a: LogicTreeNode
     b: LogicTreeNode
     metadata: dict = field(default_factory=dict, compare=False, repr=False)
 
-    def __init__(self, a, b):
-        super().__init__()
-        self._set_inputs([a, b])
-        self.a = a
-        self.b = b
-
-    def _children(self):
-        return (self.a, self.b)
+    def __post_init__(self):
+        object.__setattr__(self, "a", self._normalize(self.a))
+        object.__setattr__(self, "b", self._normalize(self.b))
 
     @property
     def op(self) -> str:
@@ -312,35 +255,21 @@ class XnorOp(LogicOp):
 
     def to_primitives(self):
         # ~(a ^ b)
-        return NotOp(XorOp(self.lhs, self.rhs))
+        return NotOp(XorOp(self.a, self.b))
 
     def equals(self, other):
         return _commutative_equals(self, other)
 
-    # def to_json_dict(self):
-    #    return {
-    #        "type": self.__class__.__name__,
-    #        "label": self.label(),
-    #        "depth": self.depth,
-    #        "delay": self.delay,
-    #        "expr_source": self.expr_source,
-    #        "children": [ch.to_json_dict() for ch in self.children],
-    #    }
 
-
+@dataclass(frozen=True)
 class NandOp(LogicOp):
     a: LogicTreeNode
     b: LogicTreeNode
     metadata: dict = field(default_factory=dict, compare=False, repr=False)
 
-    def __init__(self, a, b):
-        super().__init__()
-        self._set_inputs([a, b])
-        self.a = a
-        self.b = b
-
-    def _children(self):
-        return (self.a, self.b)
+    def __post_init__(self):
+        object.__setattr__(self, "a", self._normalize(self.a))
+        object.__setattr__(self, "b", self._normalize(self.b))
 
     @property
     def op(self) -> str:
@@ -372,35 +301,21 @@ class NandOp(LogicOp):
         return f"~({self.a} & {self.b})"
 
     def to_primitives(self):
-        return NotOp(AndOp(self.lhs, self.rhs))
+        return NotOp(AndOp(self.a, self.b))
 
     def equals(self, other):
         return _commutative_equals(self, other)
 
-    # def to_json_dict(self):
-    #    return {
-    #        "type": self.__class__.__name__,
-    #        "label": self.label(),
-    #        "depth": self.depth,
-    #        "delay": self.delay,
-    #        "expr_source": self.expr_source,
-    #        "children": [ch.to_json_dict() for ch in self.children],
-    #    }
 
-
+@dataclass(frozen=True)
 class NorOp(LogicOp):
     a: LogicTreeNode
     b: LogicTreeNode
     metadata: dict = field(default_factory=dict, compare=False, repr=False)
 
-    def __init__(self, a, b):
-        super().__init__()
-        self._set_inputs([a, b])
-        self.a = a
-        self.b = b
-
-    def _children(self):
-        return (self.a, self.b)
+    def __post_init__(self):
+        object.__setattr__(self, "a", self._normalize(self.a))
+        object.__setattr__(self, "b", self._normalize(self.b))
 
     @property
     def op(self) -> str:
@@ -432,7 +347,7 @@ class NorOp(LogicOp):
         return [self.a, self.b]
 
     def to_primitives(self):
-        return NotOp(OrOp(self.lhs, self.rhs))
+        return NotOp(OrOp(self.a, self.b))
 
     def equals(self, other):
         return _commutative_equals(self, other)

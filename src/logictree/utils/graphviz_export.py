@@ -1,7 +1,8 @@
 # logictree.utils/graphviz_export.py
-
+from .visual import get_visual_edges
 import subprocess
 from pathlib import Path
+from logictree.nodes.control.ifstatement import IfStatement
 
 
 def logic_tree_to_dot(logic_tree, signal_name="logic", gate_colors=None):
@@ -28,11 +29,12 @@ def logic_tree_to_dot(logic_tree, signal_name="logic", gate_colors=None):
         nonlocal node_id
         if node in id_map:
             return id_map[node]
-
+    
         curr_id = f"n{node_id}"
         id_map[node] = curr_id
         node_id += 1
-
+    
+        # Set label and color
         if hasattr(node, "name"):
             label = node.name
             color = gate_colors.get(label, "gray")
@@ -42,22 +44,31 @@ def logic_tree_to_dot(logic_tree, signal_name="logic", gate_colors=None):
         else:
             label = str(node)
             color = "lightgray"
-
+    
         lines.append(f'  {curr_id} [label="{label}", fillcolor="{color}"];')
+    
+        # NEW: Get visual attributes
+        from logictree.utils.visual import get_visual_attributes  # Add this import at top of file
+        
+        label = node.label() if hasattr(node, "label") else str(node)
+        shape, color, tooltip, href = get_visual_attributes(node)
+        
+        # Build DOT node string
+        node_line = f'  {curr_id} [label="{label}", fillcolor="{color}", shape="{shape}", tooltip="{tooltip}"'
+        if href:
+            node_line += f', href="{href}"'
+        node_line += "];"
+        lines.append(node_line)
 
-        if hasattr(node, "inputs"):
-            for child in node.inputs():
-                if child is not None:
-                    child_id = visit(child)
-                    lines.append(f"  {child_id} -> {curr_id};")
-        elif hasattr(node, "children"):
-            for child in node.children:
-                if child is not None:
-                    child_id = visit(child)
+        for label, child in get_visual_edges(node):
+            if child is not None:
+                child_id = visit(child)
+                if label:
+                    lines.append(f'  {child_id} -> {curr_id} [label="{label}"];')
+                else:
                     lines.append(f"  {child_id} -> {curr_id};")
 
         return curr_id
-
     visit(logic_tree)
     lines.append("}")
     return "\n".join(lines)

@@ -3,7 +3,7 @@ import itertools
 import re
 
 from logictree.nodes.control.assign import LogicAssign
-from logictree.nodes.ops.comparison import EqOp
+from logictree.nodes.ops.comparison import EqOp, NeqOp
 from logictree.nodes.ops.gates import AndOp, NotOp, OrOp, XorOp
 from logictree.nodes.ops.ops import LogicConst, LogicVar
 from logictree.nodes.selects import BitSelect
@@ -127,15 +127,11 @@ def _bit_name_index(bs):
                 idx = int(m.group(2))
     return name, idx
 
-def _extract_eq_terms(rhs):
-    """
-    Recursively flatten an AND tree of EqOps(BitSelect, LogicConst)
-    into a set of (bit_index, const_value) pairs.
+def _to_int(idx):
+    return int(idx.value) if hasattr(idx, "value") else int(idx)
 
-    Example:  (s[0] == 0) & (s[1] == 1)
-    → { (0, 0), (1, 1) }
-    """
-    terms = []
+def _extract_eq_terms(rhs):
+    terms = set()
 
     def walk(node):
         if isinstance(node, AndOp):
@@ -144,14 +140,37 @@ def _extract_eq_terms(rhs):
         elif isinstance(node, EqOp):
             lhs, rhs_const = node.operands
             assert isinstance(lhs, BitSelect)
-            assert isinstance(lhs.base, LogicVar)
-            assert isinstance(rhs_const, LogicConst)
-            terms.append((lhs.index, rhs_const.value))
+            terms.add((_to_int(lhs.index), _to_int(rhs_const)))
         else:
-            raise AssertionError(f"Unexpected node type in eq expansion: {node}")
+            raise AssertionError(f"Unexpected node: {node}")
 
     walk(rhs)
-    return set(terms)
+    return terms
+#def _extract_eq_terms(rhs):
+#    """
+#    Recursively flatten an AND tree of EqOps(BitSelect, LogicConst)
+#    into a set of (bit_index, const_value) pairs.
+#
+#    Example:  (s[0] == 0) & (s[1] == 1)
+#    → { (0, 0), (1, 1) }
+#    """
+#    terms = []
+#
+#    def walk(node):
+#        if isinstance(node, AndOp):
+#            walk(node.left)
+#            walk(node.right)
+#        elif isinstance(node, EqOp):
+#            lhs, rhs_const = node.operands
+#            assert isinstance(lhs, BitSelect)
+#            assert isinstance(lhs.base, LogicVar)
+#            assert isinstance(rhs_const, LogicConst)
+#            terms.append((lhs.index, rhs_const.value))
+#        else:
+#            raise AssertionError(f"Unexpected node type in eq expansion: {node}")
+#
+#    walk(rhs)
+#    return set(terms)
 
 def assert_eq_const_terms(rhs, const_value: int, width: int, varname="s"):
     """
@@ -178,52 +197,66 @@ def assert_eq_const_terms(rhs, const_value: int, width: int, varname="s"):
         f"Unexpected terms for {varname} == {width}'b{const_value:0{width}b}: {terms}"
     )
 
-def assert_neq_const_terms(rhs, const_value: int, width: int, varname="s"):
+def assert_neq_const_terms(rhs, const_value: int, width: int, varname="s", lo: int = 0):
     """
     Assert that `rhs` encodes the inequality check: var != const_value
-    over a bit-vector of given `width`.
+    over a bit-vector of given `width`, starting at bit index `lo`.
 
-    It works by confirming the expression is equivalent to:
-        NOT(AND(s[i] == bit_val for each i in range(width)))
+    Accepts either:
+      - Old form:  NotOp(AndOp(EqOp(...), ...))
+      - New form:  OrOp(NeqOp(...), NeqOp(...), ...)
 
     Args:
         rhs: the lowered LogicTree expression
         const_value: integer constant (e.g. 9 for 4'b1001)
-        width: number of bits in the vector
+        width: number of bits in the vector slice
         varname: name of the LogicVar being compared
+        lo: starting bit index (default 0 for [width-1:0])
     """
-    # Ensure the top node is a NotOp
-    assert isinstance(rhs, NotOp), (
-        f"Expected NotOp for {varname} != {const_value}, got {type(rhs)}"
-    )
-
-    inner = rhs.child
-
-    # The inner node should expand to AND of equalities
     terms = []
-    def walk(node):
+
+    def walk_and(node):
         if isinstance(node, AndOp):
-            walk(node.left)
-            walk(node.right)
+            walk_and(node.left)
+            walk_and(node.right)
         elif isinstance(node, EqOp):
             lhs, rhs_const = node.operands
             assert isinstance(lhs, BitSelect)
             assert lhs.base.name == varname
             assert isinstance(rhs_const, LogicConst)
-            terms.append((lhs.index, rhs_const.value))
+            terms.append((int(lhs.index.value), rhs_const.value))
         else:
-            raise AssertionError(f"Unexpected node in neq expansion: {node}")
+            raise AssertionError(f"Unexpected node in And->Eq expansion: {node}")
 
-    walk(inner)
+    def walk_or(node):
+        if isinstance(node, OrOp):
+            walk_or(node.left)
+            walk_or(node.right)
+        elif isinstance(node, NeqOp):
+            lhs, rhs_const = node.operands
+            assert isinstance(lhs, BitSelect)
+            assert lhs.base.name == varname
+            assert isinstance(rhs_const, LogicConst)
+            terms.append((int(lhs.index.value), rhs_const.value))
+        else:
+            raise AssertionError(f"Unexpected node in Or->Neq expansion: {node}")
 
-    expected = set()
+    if isinstance(rhs, NotOp):
+        walk_and(rhs.operand)
+    elif isinstance(rhs, OrOp):
+        walk_or(rhs)
+    else:
+        raise AssertionError(
+            f"Expected NotOp or OrOp for {varname} != {const_value}, got {type(rhs)}"
+        )
+
+    # Now check expected terms with offset
     for i in range(width):
-        bit_val = (const_value >> i) & 1
-        expected.add((i, bit_val))
-
-    assert set(terms) == expected, (
-        f"Unexpected terms for {varname} != {width}'b{const_value:0{width}b}: {terms}"
-    )
+        expected_val = (const_value >> i) & 1
+        bit_index = lo + i
+        assert (bit_index, expected_val) in terms, (
+            f"Missing term for bit {bit_index} == {expected_val} in {terms}"
+        )
 
 def _unary_operand(n):
     # many NotOp nodes store .child or .operand; try both

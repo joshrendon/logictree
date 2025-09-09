@@ -12,14 +12,14 @@ from logictree.nodes.selects import BitSelect, Concat, PartSelect
 @pytest.mark.parametrize(
     "value, expected_width, expected_repr",
     [
-        (0, 1, "1'd0"),   # special-case: zero always 1 bit
-        (1, 1, "1'd1"),
-        (2, 2, "2'd2"),
-        (3, 2, "2'd3"),
-        (4, 3, "3'd4"),
-        (7, 3, "3'd7"),
-        (8, 4, "4'd8"),
-        (15, 4, "4'd15"),
+        (0, 1, "1'b0"),   # special-case: zero always 1 bit
+        (1, 1, "1'b1"),
+        (2, 2, "2'b10"),
+        (3, 2, "2'b11"),
+        (4, 3, "3'b100"),
+        (7, 3, "3'b111"),
+        (8, 4, "4'b1000"),
+        (15, 4, "4'b1111"),
     ],
 )
 def test_logicconst_width_inference(value, expected_width, expected_repr):

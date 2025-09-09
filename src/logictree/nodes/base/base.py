@@ -1,3 +1,4 @@
+from __future__ import annotations
 import copy
 import logging
 from dataclasses import dataclass
@@ -7,6 +8,32 @@ log = logging.getLogger(__name__)
 
 @dataclass(frozen=True)
 class LogicTreeNode:
+
+    @staticmethod
+    def _normalize(x: object) -> "LogicTreeNode":
+        """Normalize inputs into LogicTreeNode instances.
+
+        - str → LogicVar
+        - int → LogicConst
+        - LogicTreeNode → pass through
+        """
+        from logictree.nodes.ops.ops import LogicVar, LogicConst  # local import avoids cycles
+
+        if isinstance(x, LogicTreeNode):
+            return x
+        elif isinstance(x, str):
+            return LogicVar(x)
+        elif isinstance(x, int):
+            return LogicConst(x)
+        else:
+            raise TypeError(f"Unsupported operand type: {type(x)}")
+
+    def as_int(self) -> int:
+        from logictree.nodes.ops.ops import LogicConst
+        """Return underlying integer value if this is a LogicConst, else raise."""
+        if isinstance(self, LogicConst):
+            return self.value
+        raise TypeError(f"Cannot coerce {type(self)} to int")
 
     @property
     def depth(self) -> int:

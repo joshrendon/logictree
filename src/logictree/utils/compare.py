@@ -6,7 +6,7 @@ from dd.autoref import BDD
 
 from logictree.nodes import base
 from logictree.utils.analysis import get_logic_hash
-from logictree.utils.build import _build_bdd
+from logictree.utils.build import build_bdd
 
 
 # === LOGICTREE COMPARISON ===
@@ -64,5 +64,5 @@ def to_bdd(tree: base.LogicTreeNode, ordering=None) -> int:
     inputs = sorted(tree.operands) if ordering is None else ordering
     for var in inputs:
         bdd.declare(var)
-    root = _build_bdd(tree, bdd, var_map)
+    root = build_bdd(tree, bdd, var_map)
     return bdd, root

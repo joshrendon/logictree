@@ -53,8 +53,8 @@ def evaluate(n, env):
         return int(env[n.name]) & 1
 
     if isinstance(n, BitSelect):
-        base_name = n.base.name
-        return int(env[f"{base_name}[{n.index}]"]) & 1
+        idx = n.index.value if isinstance(n.index, LogicConst) else n.index
+        return int(env[f"{n.base.name}[{idx}]"]) & 1
 
     if isinstance(n, PartSelect):
         base_name = n.base.name

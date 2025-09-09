@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, FrozenSet, Iterator, List, Optional
 from logictree.nodes.base.base import LogicTreeNode
 from logictree.nodes.ops.ops import LogicConst, LogicVar
 from logictree.nodes.struct.statement import Statement
-from logictree.utils.formating import indent
 
 log = logging.getLogger(__name__)
 
@@ -20,6 +19,9 @@ def iter_body(body: list[Statement] | None) -> Iterator[Statement]:
         return iter(())
     return iter(body)
 
+def indent(text, spaces):
+    pad = " " * spaces
+    return "\n".join(pad + line for line in text.splitlines())
 
 @dataclass(frozen=True)
 class CaseItem(LogicTreeNode):
@@ -141,7 +143,7 @@ class CaseItem(LogicTreeNode):
 
 
 @dataclass(frozen=True)
-class CaseStatement(Statement):
+class CaseStatement(LogicTreeNode, Statement):
     selector: LogicTreeNode
     items: List[CaseItem]
     default: Optional[List[Statement]] = None

@@ -47,6 +47,13 @@ def test_bitselect_in_eq_const():
     # Extract (bit_index, const_value) pairs for easy semantic check
     terms = [(eq.operands[0].index, eq.operands[1].value) for eq in eqs]
 
+    # Extract (bit_index, const_value) pairs for easy semantic check
+    def _idx_to_int(idx):
+        # idx may be LogicConst or already an int
+        return int(getattr(idx, "value", idx))
+    
+    terms = [(_idx_to_int(eq.operands[0].index), int(eq.operands[1].value)) for eq in eqs]
+    
     # Expect s[0] == 0 and s[1] == 1, regardless of order
     assert set(terms) == {(0, 0), (1, 1)}, f"Unexpected terms: {terms}"
 
