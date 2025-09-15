@@ -1,67 +1,125 @@
-from dd.autoref import BDD
+from __future__ import annotations
 
-from logictree.nodes.base.base import LogicTreeNode
-from logictree.nodes.hole.hole import LogicHole
+import logging
 
+from dd.autoref import BDD, Function
 
-def _build_bdd(tree: LogicTreeNode, bdd: BDD, var_map: dict) -> int:
-    from logictree.nodes.ops.ops import LogicConst, LogicOp, LogicVar
+from logictree.nodes.control.assign import LogicAssign
+from logictree.nodes.ops.comparison import EqOp, NeqOp
+from logictree.nodes.ops.gates import AndOp, NotOp, OrOp
+from logictree.nodes.ops.mux import LogicMux
+from logictree.nodes.ops.ops import LogicConst, LogicVar
+from logictree.nodes.selects import BitSelect, Concat, PartSelect
+
+log = logging.getLogger(__name__)
+
+def build_bdd(tree, bdd, var_map):
 
     if isinstance(tree, LogicConst):
         return bdd.true if tree.value else bdd.false
 
     elif isinstance(tree, LogicVar):
-        # return bdd.var(tree.name)
-        name = tree.name
-        if name not in var_map:
-            var_map[name] = bdd.var(name)
-        return var_map[name]
+        if tree.name not in var_map:
+            var_map[tree.name] = bdd.var(tree.name)
+        return var_map[tree.name]
 
-    elif isinstance(tree, LogicHole):
-        # Treat symbolic holes as unique BDD variables
-        return bdd.var(tree.name)
+    elif isinstance(tree, NotOp):
+        return bdd.apply('not', build_bdd(tree.operand, bdd, var_map))
 
-    elif isinstance(tree, LogicOp):
-        if tree.op == "NOT":
-            assert len(tree.children) == 1
-            return ~_build_bdd(tree.children[0], bdd, var_map)
-        elif tree.op == "AND":
-            return bdd.apply(
-                "and", *[_build_bdd(c, bdd, var_map) for c in tree.children]
-            )
-        elif tree.op == "OR":
-            return bdd.apply(
-                "or", *[_build_bdd(c, bdd, var_map) for c in tree.children]
-            )
-        elif tree.op == "XOR":
-            return bdd.apply(
-                "xor", *[_build_bdd(c, bdd, var_map) for c in tree.children]
-            )
-        elif tree.op == "XNOR":
-            a, b = tree.children
-            return ~bdd.apply(
-                "xor", _build_bdd(a, bdd, var_map), _build_bdd(b, bdd, var_map)
-            )
-        elif tree.op == "MUX":
-            # Mux(cond, a, b) = (cond & a) | (~cond & b)
-            cond, a, b = (_build_bdd(c, bdd, var_map) for c in tree.children)
-            return bdd.apply(
-                "or",
-                bdd.apply("and", cond, a),
-                bdd.apply("and", bdd.apply("not", cond), b),
-            )
-        elif tree.op == "IF":
-            cond = _build_bdd(tree.children[0], bdd, var_map)
-            t_branch = _build_bdd(tree.children[1], bdd, var_map)
-            e_branch = _build_bdd(tree.children[2], bdd, var_map)
-            return (cond & t_branch) | (~cond & e_branch)
-        elif tree.op == "EQ":
-            a = _build_bdd(tree.children[0], bdd, var_map)
-            b = _build_bdd(tree.children[1], bdd, var_map)
-            return (a & b) | (~a & ~b)
-            # Or: return ~(a ^ b)
-        else:
-            raise ValueError(f"Unknown logic operator: {tree.op}")
+    elif isinstance(tree, AndOp):
+        return bdd.apply('and', *[build_bdd(c, bdd, var_map) for c in tree.children])
 
-    else:
-        raise TypeError(f"Unsupported node type: {type(tree)}")
+    elif isinstance(tree, OrOp):
+        return bdd.apply('or', *[build_bdd(c, bdd, var_map) for c in tree.children])
+
+    elif isinstance(tree, EqOp):
+        lhs = build_bdd(tree.operands[0], bdd, var_map)
+        rhs = build_bdd(tree.operands[1], bdd, var_map)
+        return _eq_bdd(lhs, rhs, bdd)
+
+    elif isinstance(tree, NeqOp):
+        lhs = build_bdd(tree.operands[0], bdd, var_map)
+        rhs = build_bdd(tree.operands[1], bdd, var_map)
+        return _neq_bdd(lhs, rhs, bdd)
+
+    elif isinstance(tree, LogicMux):
+        sel = build_bdd(tree.selector, bdd, var_map)
+        t = build_bdd(tree.if_true, bdd, var_map)
+        f = build_bdd(tree.if_false, bdd, var_map)
+
+        assert hasattr(sel, 'bdd'), f"sel is not a BDD node: {sel}"
+        assert hasattr(t, 'bdd'), f"if_true is not a BDD node: {t}"
+        assert hasattr(f, 'bdd'), f"if_false is not a BDD node: {f}"
+        return bdd.ite(sel, t, f)
+
+    elif isinstance(tree, LogicAssign):
+        log.debug("LogicAssign")
+
+    elif isinstance(tree, BitSelect):
+        log.debug("BitSelect")
+        assert isinstance(tree.base, LogicVar), "Only LogicVar base supported for BitSelect"
+        assert isinstance(tree.index, LogicConst), "BitSelect index must be constant"
+        base_var = tree.base.name
+    
+        # If the signal is scalar, just use the base_var directly
+        if base_var not in var_map:
+            var_map[base_var] = bdd.var(base_var)
+        return var_map[base_var]
+
+    ##elif isinstance(tree, BitSelect):
+    ##    log.debug("BitSelect")
+    ##    base = build_bdd(tree.base, bdd, var_map)
+    ##    idx = tree.index
+    ##    if isinstance(idx, LogicConst):
+    ##        # BDD variable name for sel[0] → maybe encode as "sel[0]"
+    ##        base_var = f"{tree.base.name}[{idx.value}]"
+    ##        if base_var not in var_map:
+    ##            var_map[base_var] = bdd.var(base_var)
+    ##        return var_map[base_var]
+    ##    else:
+    ##        raise TypeError(f"Dynamic bit-select not supported in BDDs: {tree}")
+    elif isinstance(tree, PartSelect):
+        log.debug("PartSelect")
+    elif isinstance(tree, Concat):
+        log.debug("Concat")
+
+    raise TypeError(f"Unsupported node: {tree}")
+
+
+
+def _eq_bdd(lhs, rhs, bdd: BDD) -> Function:
+    log.debug(f"_eq_bdd types: lhs={type(lhs)}, rhs={type(rhs)}")
+    if isinstance(lhs, tuple) and isinstance(rhs, tuple):
+        if len(lhs) != len(rhs):
+            raise ValueError("Mismatched vector lengths in EqOp")
+        bits = [bdd.apply("xnor", l, r) for l, r in zip(lhs, rhs)]
+        return _reduce_and(bits, bdd)
+    elif isinstance(lhs, Function) and isinstance(rhs, Function):
+        return ~bdd.apply("xor", lhs, rhs)
+    raise TypeError("Unsupported EqOp operand types")
+
+
+def _neq_bdd(lhs, rhs, bdd: BDD) -> Function:
+    if isinstance(lhs, tuple) and isinstance(rhs, tuple):
+        if len(lhs) != len(rhs):
+            raise ValueError("Mismatched vector lengths in NeqOp")
+        bits = [bdd.apply("xor", l, r) for l, r in zip(lhs, rhs)]
+        return _reduce_or(bits, bdd)
+    elif isinstance(lhs, Function) and isinstance(rhs, Function):
+        return bdd.apply("xor", lhs, rhs)
+    raise TypeError("Unsupported NeqOp operand types")
+
+
+def _reduce_and(bits: list[Function], bdd: BDD) -> Function:
+    result = bits[0]
+    for bit in bits[1:]:
+        result = bdd.apply("and", result, bit)
+    return result
+
+
+def _reduce_or(bits: list[Function], bdd: BDD) -> Function:
+    result = bits[0]
+    for bit in bits[1:]:
+        result = bdd.apply("or", result, bit)
+    return result
+

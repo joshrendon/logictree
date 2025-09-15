@@ -24,5 +24,5 @@ def test_mux_tree_outputs_mux():
     y = mod.signal_map["y"]
     #print("mod.signal_map:\n")
     #pprint(mod.signal_map)
-    assert y.op == "mux"
+    assert "case" in y.label()
 

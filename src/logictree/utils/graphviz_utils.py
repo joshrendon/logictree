@@ -2,8 +2,8 @@ import os
 import subprocess
 from typing import Optional
 
-from logictree.utils.paths import OUTPUT_DIR
 from logictree.utils.graphviz_export import logic_tree_to_dot
+from logictree.utils.paths import OUTPUT_DIR
 
 
 def _run_dot(dot_path: str, fmt: str = "png", output_path: Optional[str] = None):
@@ -28,6 +28,7 @@ def _run_dot(dot_path: str, fmt: str = "png", output_path: Optional[str] = None)
 
     try:
         print(f"DEBUG: _run_dot() dot -T{fmt} {dot_path} -o {output_path}")
+        print(f"DEBUG: dot_path: {dot_path}")
         cmd = ["dot", f"-T{fmt}", dot_path, "-o", output_path]
         subprocess.run(cmd, check=True)
 
@@ -40,7 +41,7 @@ def _run_dot(dot_path: str, fmt: str = "png", output_path: Optional[str] = None)
 
 def to_svg(tree, name="logic_tree") -> str:
     dot = logic_tree_to_dot(tree)
-    dot_path = os.path.join(OUTPUT_DIR, f"output_sig_{name}.dot")
+    dot_path = os.path.join(OUTPUT_DIR, f"{name}.dot")
     with open(dot_path, "w") as f:
         f.write(dot.source if hasattr(dot, "source") else str(dot))
     print(f"[DEBUG] Writing DOT file to {dot_path}")
@@ -49,7 +50,7 @@ def to_svg(tree, name="logic_tree") -> str:
 
 def to_png(tree, name="logic_tree") -> str:
     dot = logic_tree_to_dot(tree)
-    dot_path = os.path.join(OUTPUT_DIR, f"output_sig_{name}.dot")
+    dot_path = os.path.join(OUTPUT_DIR, f"{name}.dot")
     with open(dot_path, "w") as f:
         f.write(dot.source if hasattr(dot, "source") else str(dot))
     print(f"[DEBUG] Writing DOT file to {dot_path}")

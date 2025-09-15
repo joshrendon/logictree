@@ -6,7 +6,6 @@ from logictree.nodes.control.assign import LogicAssign
 from logictree.nodes.control.case import CaseStatement
 from logictree.nodes.control.ifstatement import IfStatement
 from logictree.pipeline import lower_sv_file_to_logic
-from logictree.SVToLogicTreeLowerer import SVToLogicTreeLowerer
 from logictree.transforms.case_to_if import case_to_if_tree
 from logictree.transforms.if_to_mux import if_to_mux_tree
 from logictree.transforms.signal_resolution import resolve_signal_vars
@@ -15,10 +14,9 @@ from logictree.utils.ascii_tree import logic_tree_to_ascii, to_ascii
 from logictree.utils.display import (
     explain_expr_tree,
     pretty_print,
-    to_dot,
     to_sympy_expr,
 )
-from logictree.utils.graphviz_utils import to_svg, to_png
+from logictree.utils.graphviz_utils import to_png, to_svg
 from logictree.utils.reduce import balanced_tree_reduce
 from logictree.utils.utils_cli import check_against_golden, write_golden_file
 
@@ -36,6 +34,7 @@ def handle_output(signal_map, args):
 
         if args.hash_tree or args.dump_all:
             print(f"DEBUG: name: {name}")
+            print(f"expr: {expr}")
             print(f"Hash for {name}: {get_logic_hash(expr)}")
 
         if args.explain_hash or args.dump_all:
@@ -52,8 +51,8 @@ def handle_output(signal_map, args):
                 if isinstance(expr, LogicOp)
                 else expr
             )
-            dot = to_dot(balanced_tree)
-            dot.render("./output/dotpath.dot", format="png", cleanup=True)
+            #dot = to_dot(balanced_tree)
+            #dot.render("./output/dotpath.dot", format="png", cleanup=True)
 
         if args.to_sympy or args.dump_all:
             print(f"Sympy expression for {name}: {to_sympy_expr(expr)}")
@@ -76,7 +75,7 @@ def handle_output(signal_map, args):
             print(to_ascii(expr))
 
         if args.to_svg:
-            to_svg(expr, name=name)
+            to_svg(expr, name=MODULE_NAME)
 
         if args.to_png:
             balanced_tree = (
@@ -84,7 +83,7 @@ def handle_output(signal_map, args):
                 if isinstance(expr, LogicOp)
                 else expr
             )
-            to_png(balanced_tree, name=name)
+            to_png(balanced_tree, name=MODULE_NAME)
 
         if args.save_golden:
             write_golden_file(name, expr)
@@ -143,6 +142,9 @@ def build_parser():
         action="store_true",
         help="Lower to primitive gates {AND, OR, NOT}",
     )
+    parser.add_argument(
+        "--lowering_trace", action="store_true", help="Print lowering path diagnostics"
+    )
 
     # Logging
     parser.add_argument(
@@ -158,29 +160,45 @@ def build_parser():
 def apply_lowering(assignments, args):
     lowered = {}
     for name, assign in assignments.items():
-        # always work on RHS
         tree = assign.rhs
 
-        # Apply lowering passes
-        if args.case_to_if and isinstance(tree, CaseStatement):
-            tree = case_to_if_tree(tree)
-        if args.if_to_mux and isinstance(tree, IfStatement):
-            tree = if_to_mux_tree(tree)
-        if args.to_primitives and hasattr(tree, "to_primitives"):
-            tree = tree.to_primitives()
+        if args.lowering_trace:
+            log.debug(f"[{name}] Lowering path: {type(assign.rhs).__name__} → {type(tree).__name__}")
 
-        # Rewrap into a LogicAssign so structure is preserved
-        lowered[name] = LogicAssign(lhs=name, rhs=tree)
+        if args.to_primitives:
+            # Full cascade
+            if isinstance(tree, CaseStatement):
+                tree = case_to_if_tree(tree)
+                tree = if_to_mux_tree(tree)
+            elif isinstance(tree, IfStatement):
+                tree = if_to_mux_tree(tree)
+
+            if hasattr(tree, "to_primitives"):
+                from logictree.transforms.to_primitives import to_primitives
+                tree = to_primitives(tree)
+
+        elif args.if_to_mux:
+            # Mid-level cascade
+            if isinstance(tree, CaseStatement):
+                tree = case_to_if_tree(tree)
+            if isinstance(tree, IfStatement):
+                tree = if_to_mux_tree(tree)
+
+        elif args.case_to_if:
+            # Lowest level
+            if isinstance(tree, CaseStatement):
+                tree = case_to_if_tree(tree)
+
+        lowered[name] = LogicAssign(assign.lhs, tree)
 
     return lowered
-
 
 def main():
     parser = build_parser()
     args = parser.parse_args()
+    args.lowering_path = []
     logging.basicConfig(level=getattr(logging, args.loglevel.upper()))
 
-    lowerer = SVToLogicTreeLowerer()
     module_map = lower_sv_file_to_logic(args.filename)
 
     # pick top module (for now until multiple module support is added)
@@ -193,7 +211,7 @@ def main():
     }
 
     global MODULE_NAME
-    MODULE_NAME = lowerer.module_name
+    MODULE_NAME = mod.name
 
     if args.explore:
         from gui.explorer_server import launch_explorer

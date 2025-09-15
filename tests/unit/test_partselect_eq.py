@@ -32,7 +32,8 @@ def test_eq_partselect_high_bits():
     rhs = module.assignments["y"].rhs
 
     # Case: s[7:4] = 0b1010 → expect y=1
-    env = {f"s[{i}]": (val >> i) & 1 for i, val in [(4, 0b1010), (5, 0), (6, 1), (7, 1)]}
+    #env = {f"s[{i}]": (val >> i) & 1 for i, val in [(4, 0b1010), (5, 0), (6, 1), (7, 1)]}
+    env = {f"s[{i}]": ((0b1010 >> (i-4)) & 1) for i in range(4, 8)}
     env.update({f"s[{i}]": 0 for i in range(4)})  # low bits irrelevant
     env["s"] = 0  # placeholder to satisfy LogicVar lookups
     assert evaluate(rhs, env) == 1
@@ -61,7 +62,7 @@ def test_neq_partselect_high_bits():
     module = lower_sv_to_logic(sv)["m"]
     rhs = module.assignments["y"].rhs
 
-    assert_neq_const_terms(rhs, 0b1010, 4, "s")
+    assert_neq_const_terms(rhs, 0b1010, 4, "s", lo=4)
 
     # Case: s[7:4] == 1010 → expect y=0 (equal, so != is false)
     env_equal = {f"s[{i}]": (0b1010 >> (i - 4)) & 1 for i in range(4, 8)}

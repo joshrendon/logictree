@@ -72,8 +72,10 @@ def test_node_init_autocheck(node_cls):
 @pytest.mark.parametrize("node", [
     BitSelect(LogicVar("s"), 0),
     PartSelect(LogicVar("s"), 7, 4),
-    Concat([LogicVar("a"), LogicConst(1)])
+    Concat([BitSelect(LogicVar("a"), LogicConst(1),
+            LogicConst(0, width=1))])
 ])
+
 def test_selects_nodes_init(node):
     """Smoke test: ensure BitSelect, PartSelect, and Concat construct cleanly."""
     assert node is not None

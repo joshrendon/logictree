@@ -2,21 +2,51 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from typing import FrozenSet, Optional, Set
+from typing import FrozenSet, Optional, Set, Union
 
 from logictree.nodes.base.base import LogicTreeNode
-from logictree.nodes.ops.ops import LogicVar
+from logictree.nodes.control.case import CaseItem, CaseStatement
+from logictree.nodes.control.ifstatement import IfStatement
+from logictree.nodes.ops.comparison import EqOp, NeqOp
+from logictree.nodes.ops.gates import AndOp, NotOp, OrOp
+from logictree.nodes.ops.mux import LogicMux
+from logictree.nodes.ops.ops import LogicConst, LogicOp, LogicVar
+from logictree.nodes.selects import BitSelect, Concat, PartSelect
 from logictree.nodes.struct.statement import Statement
 
 log = logging.getLogger(__name__)
+
+ALLOWED_RHS_TYPES = (
+    EqOp, NeqOp,
+    AndOp, OrOp, NotOp,
+    LogicVar, LogicConst, LogicOp,
+    LogicMux, IfStatement, CaseStatement, CaseItem,
+    BitSelect, PartSelect, Concat,
+)
 
 
 @dataclass(frozen=True)
 class LogicAssign(Statement):
     lhs: LogicVar
-    rhs: LogicTreeNode
+    rhs: Union[LogicTreeNode, IfStatement]
     annotated_delay: Optional[int] = None
     metadata: Optional[dict] = field(default=None, compare=False, repr=False)
+
+    def __post_init__(self):
+        object.__setattr__(self, "lhs", self._normalize_lhs(self.lhs))
+        object.__setattr__(self, "rhs", self._normalize_rhs(self.rhs))
+
+    def _normalize_lhs(self, lhs_node):
+        if isinstance(lhs_node, LogicTreeNode):
+            return lhs_node 
+        if isinstance(lhs_node, str):
+            return LogicVar(lhs_node)
+        raise TypeError(f"LogicAssign _normalize_lhs() Unsupported lhs type: {type(lhs_node)}")
+
+    def _normalize_rhs(self, rhs_node: LogicTreeNode) -> LogicTreeNode:
+        if isinstance(rhs_node, ALLOWED_RHS_TYPES):
+            return rhs_node 
+        raise TypeError(f"LogicAssign _normalize_rhs() Unsupported rhs type: {type(rhs_node)}")
 
     def free_vars(self) -> FrozenSet[LogicVar]:
         return frozenset(self.rhs.free_vars())
@@ -37,26 +67,5 @@ class LogicAssign(Statement):
     def __str__(self) -> str:
         return self.default_label()
 
-    @property
-    def depth(self) -> int:
-        return self.rhs.depth if hasattr(self.rhs, "depth") else 0
-
-    @property
-    def delay(self) -> int:
-        return (
-            self.annotated_delay
-            if self.annotated_delay is not None
-            else getattr(self.rhs, "delay", 0)
-        )
-
     def inputs(self) -> Set[str]:
         return self.rhs.inputs()
-
-    def to_json_dict(self) -> dict:
-        return {
-            "type": self.__class__.__name__,
-            "expr_source": str(self.lhs),
-            "children": [self.rhs.to_json_dict()],
-            "depth": self.depth,
-            "delay": self.delay,
-        }

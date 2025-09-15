@@ -3,24 +3,24 @@ import re
 import sympy as sympy
 from rich.console import Console
 from rich.text import Text
-from sympy.logic.boolalg import And, Not, Or
+from sympy import Piecewise, S, symbols
 
 import graphviz
+from logictree.nodes.control.assign import LogicAssign
+from logictree.nodes.control.case import CaseItem, CaseStatement
+from logictree.nodes.control.ifstatement import IfStatement
+from logictree.nodes.hole.hole import LogicHole
+from logictree.nodes.ops.comparison import EqOp, NeqOp
+from logictree.nodes.ops.empty import EmptyBranch
+from logictree.nodes.ops.gates import AndOp, NotOp, OrOp
+from logictree.nodes.ops.mux import LogicMux
+from logictree.nodes.ops.ops import LogicConst, LogicOp, LogicVar
+from logictree.nodes.selects import BitSelect, Concat, PartSelect
 
 
 def pretty_print(tree, indent=0):
     spacer = "  " * indent
     label = tree.__class__.__name__
-
-    from logictree.nodes.control import (
-        CaseItem,
-        CaseStatement,
-        IfStatement,
-        LogicAssign,
-    )
-    from logictree.nodes.hole.hole import LogicHole
-    from logictree.nodes.ops.gates import NotOp
-    from logictree.nodes.ops.ops import LogicConst, LogicOp, LogicVar
 
     if isinstance(tree, NotOp):
         op_str = f"{spacer}NOT"
@@ -32,6 +32,10 @@ def pretty_print(tree, indent=0):
             pretty_print(child, indent + 1) for child in tree.children
         )
         return f"{op_str}\n{children_str}"
+    elif isinstance(tree, EqOp):
+        return f"{spacer} {tree.pretty_label()}"
+    elif isinstance(tree, NeqOp):
+        return f"{spacer} {tree.pretty_label()}"
     elif isinstance(tree, CaseStatement):
         lines = [f"{spacer}CASE("]
         lines.append(pretty_print(tree.selector, indent + 1))
@@ -49,17 +53,36 @@ def pretty_print(tree, indent=0):
     elif isinstance(tree, IfStatement):
         lines = [f"{spacer}IF:"]
         lines.append(f"{spacer} condition:")
-        lines.append(pretty_print(tree.condition, indent + 1))
-        lines.append(f"{spacer} then_body:")
-        lines.append(pretty_print(tree.then_body, indent + 2))
-        lines.append(f"{spacer} else_body:")
-        lines.append(pretty_print(tree.else_body, indent + 2))
+        #lines.append(pretty_print(tree.cond, indent + 1))
+        label = tree.cond.pretty_label() if hasattr(tree.cond, 'pretty_label') else tree.cond.label()
+        space = " " * 3
+        lines.append(f"{space} {label}")
+        #lines.append(pretty_print(label, indent+ 2))
+        lines.append(f"{spacer} then_branch:")
+        lines.append(pretty_print(tree.then_branch, indent + 2))
+        lines.append(f"{spacer} else_branch")
+        lines.append(pretty_print(tree.else_branch, indent + 2))
+        return "\n".join(lines)
+    elif isinstance(tree, LogicMux):
+        lines = [f"{spacer}LogicMux:"]
+        lines.append(f"{spacer} selector:")
+        #label = tree.selector.pretty_label() if hasattr(tree.selector, 'pretty_label') else tree.selector.label()
+        #lines.append(f"{spacer} {label}")
+        lines.append(pretty_print(tree.selector, indent + 2))
+        lines.append(f"{spacer} if_true:")
+        lines.append(pretty_print(tree.if_true, indent + 2))
+        lines.append(f"{spacer} if_false:")
+        lines.append(pretty_print(tree.if_false, indent + 2))
         return "\n".join(lines)
     elif isinstance(tree, LogicAssign):
         return f"{spacer}ASSIGN:\n{spacer}  {tree.lhs} = {pretty_print(tree.rhs, indent + 2)}"
     elif isinstance(tree, LogicVar):
         # return f"{spacer}VAR({tree.name})"
         return f"{spacer}{tree.name}"
+    elif isinstance(tree, BitSelect):
+        lines = [f"{spacer}BitSelect:"]
+        lines.append(f"{spacer} {tree.label()}")
+        return "\n".join(lines)
     elif isinstance(tree, LogicConst):
         # logic_val = "TRUE" if tree.value == 1 else "FALSE"
         logic_val = "FALSE"
@@ -69,6 +92,8 @@ def pretty_print(tree, indent=0):
         return f"{spacer}{logic_val}"
     elif isinstance(tree, LogicHole):
         return f"{spacer}HOLE({tree.name})"
+    elif isinstance(tree, EmptyBranch):
+        return f"{spacer}EmptyBranch"
     else:
         return f"{spacer}UNKNOWN<{type(tree).__name__}>: {str(tree)}"
 
@@ -91,8 +116,6 @@ def _pretty_print_expr(expr_str):
 
 
 def pretty_inline(tree):
-    from logictree.nodes.ops.ops import LogicConst, LogicOp, LogicVar
-
     """
     Compact single-line representation: OP{child1, child2, ...}
     """
@@ -107,11 +130,7 @@ def pretty_inline(tree):
     else:
         return tree.default_label()
 
-
 def to_dot(tree, g=None, parent=None, node_id_gen=[0]):
-    from logictree.nodes.hole.hole import LogicHole
-    from logictree.nodes.ops.ops import LogicConst, LogicOp, LogicVar
-
     if g is None:
         g = graphviz.Digraph()
 
@@ -142,11 +161,7 @@ def to_dot(tree, g=None, parent=None, node_id_gen=[0]):
 
     return g
 
-
 def to_symbolic_expr_str(node):
-    from logictree.nodes.hole.hole import LogicHole
-    from logictree.nodes.ops.ops import LogicConst, LogicOp, LogicVar
-
     if isinstance(node, LogicVar) or isinstance(node, LogicHole):
         return node.name
     elif isinstance(node, LogicConst):
@@ -164,60 +179,49 @@ def to_symbolic_expr_str(node):
     else:
         return "<?>"
 
-
-from sympy.logic.boolalg import BooleanFalse, BooleanTrue
-
-
 def to_sympy_expr(tree):
-    from logictree.nodes.hole.hole import LogicHole
-    from logictree.nodes.ops.ops import LogicConst, LogicOp, LogicVar
-
-    if isinstance(tree, LogicConst):
-        val = int(tree.value)
-        if val == 0:
-            return BooleanFalse()
-        elif val == 1:
-            return BooleanTrue()
-    elif isinstance(tree, LogicVar):
-        return sympy.Symbol(tree.name)
-
-    elif isinstance(tree, LogicHole):
-        return sympy.Symbol(tree.name)  # treat holes as symbolic vars too
-
-    elif isinstance(tree, LogicOp):
-        # Recursively convert children
-        children = [to_sympy_expr(c) for c in tree.children]
-
-        if tree.op == "AND":
-            return And(*children)
-        elif tree.op == "OR":
-            return Or(*children)
-        elif tree.op == "NOT":
-            return Not(children[0])
-        elif tree.op == "IF":
-            cond, then_branch, else_branch = children
-            return sympy.Piecewise((then_branch, cond), (else_branch, True))
-        elif tree.op == "MUX":
-            # MUX(cond, a, b) → (cond & a) | (~cond & b)
-            cond_expr, a_expr, b_expr = children
-            return Or(And(cond_expr, a_expr), And(Not(cond_expr), b_expr))
-        elif tree.op == "EQ":
-            assert len(children) == 2
-            return sympy.Eq(children[0], children[1])
-        elif tree.op == "XNOR":
-            a, b = children
-            return a == b
-        elif tree.op == "XOR":
-            return sympy.Xor(*children)
-        elif tree.op == "NAND":
-            return Not(And(*children))
-        elif tree.op == "NOR":
-            return Not(Or(*children))
-        else:
-            raise NotImplementedError(f"Unsupported op: {tree.op}")
+    if isinstance(tree, LogicVar):
+        return symbols(tree.name)
+    elif isinstance(tree, LogicConst):
+        return int(tree.value)
+    elif isinstance(tree, EmptyBranch):
+        # Treat as 0 (False) for equivalence checking
+        return S.false
+    elif isinstance(tree, AndOp):
+        return to_sympy_expr(tree.operands[0]) & to_sympy_expr(tree.operands[1])
+    elif isinstance(tree, OrOp):
+        return to_sympy_expr(tree.operands[0]) | to_sympy_expr(tree.operands[1])
+    elif isinstance(tree, NotOp):
+        return not(to_sympy_expr(tree.operand))
+    elif isinstance(tree, EqOp):
+        return to_sympy_expr(tree.lhs) == to_sympy_expr(tree.rhs)
+    elif isinstance(tree, IfStatement):
+        return Piecewise(
+            (to_sympy_expr(tree.then_branch), to_sympy_expr(tree.cond)),
+            (to_sympy_expr(tree.else_branch), True)
+        )
+    elif isinstance(tree, LogicMux):
+        sel = to_sympy_expr(tree.selector)
+        if_true = to_sympy_expr(tree.if_true)
+        if_false = to_sympy_expr(tree.if_false)
+        return Piecewise((if_true, sel), (if_false, True))
+    elif isinstance(tree, BitSelect):
+        # Treat like a variable with subscript notation: sel[0] becomes Symbol("sel_0")
+        var = to_sympy_expr(tree.base)
+        idx = to_sympy_expr(tree.index)
+        return symbols(f"{var}_{idx}")
+    elif isinstance(tree, PartSelect):
+        var = to_sympy_expr(tree.base)
+        msb = to_sympy_expr(tree.msb)
+        lsb = to_sympy_expr(tree.lsb)
+        return symbols(f"{var}_{msb}_{lsb}")
+    elif isinstance(tree, Concat):
+        parts = [to_sympy_expr(p) for p in tree.parts]
+        return sum(p << (i * len(bin(p))-2) for i, p in enumerate(reversed(parts)))
+    elif isinstance(tree, LogicAssign):
+        return to_sympy_expr(tree.rhs)
     else:
         raise TypeError(f"Unsupported node type: {type(tree)}")
-
 
 def explain_expr_tree(tree):
     from logictree.nodes.ops.ops import LogicConst, LogicOp, LogicVar
@@ -245,3 +249,37 @@ def explain_expr_tree(tree):
         return "1" if tree.value else "0"
     else:
         return f"{tree}"
+
+def multi_branch_mux_pretty_print(node: LogicMux, indent: int = 2) -> str:
+    """
+    Flatten a nested LogicMux chain into a human-readable switch-like table.
+    Assumes the tree is structurally valid and was lowered from a case/if chain.
+    """
+    if not isinstance(node, LogicMux):
+        raise TypeError(f"Expected LogicMux node, got {type(node)}")
+
+    entries = []
+
+    def walk_mux(n):
+        if not isinstance(n, LogicMux):
+            entries.append(("default", n))
+            return
+
+        cond = n.selector
+        true_branch = n.if_true
+        false_branch = n.if_false
+
+        entries.append((cond, true_branch))
+        walk_mux(false_branch)
+
+    walk_mux(node)
+
+    # Build formatted table
+    pad = " " * indent
+    lines = ["MUX Table:", f"{pad}Condition     | Output", f"{pad}{'-'*14}-+-{'-'*20}"]
+    for cond, out in entries:
+        cond_str = str(cond) if cond != "default" else "default"
+        out_str = str(out) if not isinstance(out, EmptyBranch) else "<empty>"
+        lines.append(f"{pad}{cond_str:<14} | {out_str}")
+
+    return "\n".join(lines)

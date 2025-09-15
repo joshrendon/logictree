@@ -1,9 +1,7 @@
-# tests/test_sv_to_logic_tree_fields.py
 import dataclasses
 
 from logictree.nodes import AndOp, BitSelect, LogicVar, NotOp
 from logictree.pipeline import lower_sv_text_to_logic
-from logictree.SVToLogicTreeLowerer import SVToLogicTreeLowerer
 from logictree.utils.debug import assert_no_fields
 
 
@@ -30,8 +28,6 @@ def test_lowerer_current_module_has_no_field_objects():
       assign y = (s == 2'b10);
     endmodule
     """
-    lowerer = SVToLogicTreeLowerer()
-    #module_map = lowerer.lower_sv_text(sv)  # or however you use the lowerer
     module_map = lower_sv_text_to_logic(sv)
     mod = module_map["m"]
 
@@ -48,8 +44,6 @@ def test_basic_lowering():
       assign y = (s == 2'b10);
     endmodule
     """
-    lowerer = SVToLogicTreeLowerer()
-    #module_map = lowerer.lower_sv_text(sv)  # or however you use the lowerer
     module_map = lower_sv_text_to_logic(sv)
     
     for tree in module_map.values():

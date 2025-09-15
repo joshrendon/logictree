@@ -1,6 +1,8 @@
 import json
 import logging
 
+from logictree.analysis.delay import delay
+from logictree.analysis.depth import depth
 from logictree.nodes.control.assign import LogicAssign
 from logictree.utils.overlay import get_label
 
@@ -41,8 +43,8 @@ def logic_tree_to_json(tree):
             return {
                 "type": node_type,
                 "label": safe_label(node),
-                "depth": getattr(node, "depth", None),
-                "delay": getattr(node, "delay", None),
+                "depth": depth(node),
+                "delay": delay(node),
                 "expr_source": getattr(node, "expr_source", None),
                 "children": children,
             }
@@ -76,8 +78,8 @@ def logic_tree_to_json(tree):
             return {
                 "type": node_type,
                 "label": safe_label(node),
-                "depth": getattr(node, "depth", None),
-                "delay": getattr(node, "delay", None),
+                "depth": depth(node),
+                "delay": delay(node),
                 "expr_source": getattr(node, "expr_source", None),
                 "children": children,
             }
@@ -106,8 +108,8 @@ def logic_tree_to_json(tree):
             return {
                 "type": node_type,
                 "label": safe_label(node),
-                "depth": getattr(node, "depth", None),
-                "delay": getattr(node, "delay", None),
+                "depth": depth(node),
+                "delay": delay(node),
                 "expr_source": getattr(node, "expr_source", None),
                 "children": children,
             }
@@ -117,8 +119,8 @@ def logic_tree_to_json(tree):
             return {
                 "type": "LogicAssign",
                 "label": f"{node.lhs} = {safe_label(node.rhs)}",
-                "depth": getattr(node, "depth", None),
-                "delay": getattr(node, "delay", None),
+                "depth": depth(node),
+                "delay": delay(node),
                 "expr_source": getattr(node, "expr_source", None),
                 "children": [serialize_node(node.rhs)] if node.rhs else [],
             }
@@ -127,8 +129,8 @@ def logic_tree_to_json(tree):
         return {
             "type": node_type,
             "label": safe_label(node),
-            "depth": getattr(node, "depth", None),
-            "delay": getattr(node, "delay", None),
+            "depth": depth(node),
+            "delay": delay(node),
             "expr_source": getattr(node, "expr_source", None),
             "children": [
                 serialize_node(child)

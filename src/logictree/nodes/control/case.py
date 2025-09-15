@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, FrozenSet, Iterator, List, Optional
 from logictree.nodes.base.base import LogicTreeNode
 from logictree.nodes.ops.ops import LogicConst, LogicVar
 from logictree.nodes.struct.statement import Statement
-from logictree.utils.formating import indent
 
 log = logging.getLogger(__name__)
 
@@ -20,6 +19,9 @@ def iter_body(body: list[Statement] | None) -> Iterator[Statement]:
         return iter(())
     return iter(body)
 
+def indent(text, spaces):
+    pad = " " * spaces
+    return "\n".join(pad + line for line in text.splitlines())
 
 @dataclass(frozen=True)
 class CaseItem(LogicTreeNode):
@@ -91,16 +93,6 @@ class CaseItem(LogicTreeNode):
             return "default"
         return ", ".join(str(l) for l in self.labels)
 
-    def to_json_dict(self) -> dict:
-        return {
-            "type": self.__class__.__name__,
-            "label": self.label(),
-            "children": [self.body.to_json_dict()],
-            "delay": getattr(self.body, "delay", 0),
-            "depth": getattr(self.body, "depth", 0),
-            "expr_source": None,
-        }
-
     def inputs(self):
         inputs = set()
         if self.match:
@@ -118,14 +110,6 @@ class CaseItem(LogicTreeNode):
             stacklevel=2,
         )
 
-    @property
-    def depth(self) -> int:
-        return self.body.depth if self.body else 0
-
-    @property
-    def delay(self):
-        return self.body.delay if hasattr(self.body, "delay") else 0
-
     def clone(self):
         return CaseItem(
             labels=copy.deepcopy(self.labels),
@@ -141,7 +125,7 @@ class CaseItem(LogicTreeNode):
 
 
 @dataclass(frozen=True)
-class CaseStatement(Statement):
+class CaseStatement(LogicTreeNode, Statement):
     selector: LogicTreeNode
     items: List[CaseItem]
     default: Optional[List[Statement]] = None
@@ -305,16 +289,6 @@ class CaseStatement(Statement):
     def default_label(self):
         return f"case({self.selector})"
 
-    def to_json_dict(self):
-        return {
-            "type": self.__class__.__name__,
-            "label": self.label(),
-            "selector": self.selector.to_json_dict(),
-            "children": [item.to_json_dict() for item in self.items],
-            "depth": self.depth,
-            "delay": self.delay,
-        }
-
     def to_ir_dict(self):
         return {
             "type": "CaseStatement",
@@ -336,16 +310,6 @@ class CaseStatement(Statement):
                 for item in self.items
             ],
         }
-
-    @property
-    def depth(self) -> int:
-        item_depths = [item.body.depth or 0 for item in self.items if item.body]
-        return 1 + max([self.selector.depth or 0] + item_depths)
-
-    @property
-    def delay(self) -> int:
-        item_delays = [item.body.delay or 0 for item in self.items if item.body]
-        return 1 + max([self.selector.delay or 0] + item_delays)
 
     def clone(self):
         return CaseStatement(

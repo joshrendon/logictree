@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING, List
 
 from logictree.nodes.base.base import LogicTreeNode
 
@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 class Module:
     name: str
     ports: List[str] = field(default_factory=list)
-    signal_map: Dict[str, LogicTreeNode] = field(default_factory=dict)
+    signal_map: dict[str, LogicTreeNode] = field(default_factory=dict)
     assignments: dict[str, "LogicAssign"] = field(default_factory=dict)
     instances: list = field(default_factory=list)
     vector_widths: dict[str, tuple[int, int]] = field(default_factory=dict)
@@ -32,5 +32,7 @@ class Module:
             pass  # caching is optional; correctness doesn’t depend on it
         return set(s)
 
-    def get_output(self, signal_name: str) -> Optional[LogicTreeNode]:
-        return self.signal_map.get(signal_name)
+    def get_signal(self, name: str) -> LogicTreeNode | None:
+        if not isinstance(name, str):
+            raise TypeError(f"[BUG] get_signal() called with non-str key: {type(name).__name__}: {name!r}")
+        return self.signal_map.get(name)

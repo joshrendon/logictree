@@ -34,7 +34,6 @@ def test_dataclass_default_factories(cls):
 
     for field in dataclasses.fields(cls):
         default = field.default
-        default_factory = field.default_factory
 
         # If the default is a dataclasses.Field, something's wrong
         assert not isinstance(default, dataclasses.Field), (
