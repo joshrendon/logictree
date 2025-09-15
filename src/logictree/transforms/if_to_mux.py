@@ -1,12 +1,10 @@
 import logging
 
-from logictree.nodes.base.base import LogicTreeNode
-from logictree.nodes.control.ifstatement import IfStatement
-from logictree.nodes.control.assign import LogicAssign
-
 from logictree.nodes import (
     LogicMux,
 )
+from logictree.nodes.base.base import LogicTreeNode
+from logictree.nodes.control.ifstatement import IfStatement
 
 log = logging.getLogger(__name__)
 

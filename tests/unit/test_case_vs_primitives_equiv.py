@@ -1,12 +1,10 @@
-from logictree.pipeline import lower_sv_text_to_logic
 from logictree.nodes.control.assign import LogicAssign
-from logictree.nodes.ops.mux import LogicMux
-from logictree.nodes.ops.ops import LogicVar
+from logictree.pipeline import lower_sv_text_to_logic
 from logictree.transforms.case_to_if import case_to_if_tree
 from logictree.transforms.if_to_mux import if_to_mux_tree
-from logictree.nodes.control.assign import LogicAssign
+from logictree.transforms.to_primitives import to_primitives_logic_tree
 from logictree.utils.assertion import assert_logic_equiv, exhaustive_input_equiv
-from logictree.transforms.to_primitives import to_primitives_logic_tree 
+
 
 def test_case_vs_primitives_equiv():
     verilog_text = """

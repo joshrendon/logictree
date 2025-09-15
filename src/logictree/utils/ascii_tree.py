@@ -1,9 +1,10 @@
 
-from logictree.nodes.ops.mux import LogicMux
 from logictree.nodes.control.assign import LogicAssign
 from logictree.nodes.control.ifstatement import IfStatement
-from logictree.nodes.selects import BitSelect, PartSelect, Concat
-from logictree.nodes.ops.ops import LogicConst, LogicVar, LogicOp
+from logictree.nodes.ops.mux import LogicMux
+from logictree.nodes.ops.ops import LogicConst, LogicOp, LogicVar
+from logictree.nodes.selects import BitSelect, Concat, PartSelect
+
 
 def logic_tree_to_ascii(tree, indent: int = 0) -> str:
     ind = ' ' * indent

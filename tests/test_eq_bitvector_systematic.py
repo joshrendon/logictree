@@ -1,9 +1,12 @@
+import logging
+
 import pytest
 
 pytestmark = [pytest.mark.unit]
 from logictree.pipeline import lower_sv_text_to_logic
-from tests.utils_bitselect import gate_count, literal_sig_set
+from tests.utils_bitselect import gate_count, literal_bit_comparisons, literal_sig_set
 
+log = logging.getLogger(__name__)
 
 @pytest.mark.parametrize("rng", sorted([(3,0), (0,3), (7,0), (0,7), (15,0)]))
 @pytest.mark.parametrize("kvals_base", sorted([
@@ -30,7 +33,7 @@ def test_eq_bitvector_systematic(rng, kvals_base):
         rhs = lower_sv_text_to_logic(sv)["m"].assignments["y"].rhs
 
         # check exact literal terms (index, polarity)
-        got = literal_sig_set(rhs, only_name="s")
+        got = literal_bit_comparisons(rhs, "s")
         expect = {(i, bool((k >> i) & 1)) for i in range(width)}
         assert got == expect
 
@@ -51,7 +54,8 @@ def test_partselect_eq():
     endmodule
     """
     rhs = lower_sv_text_to_logic(sv)["m"].assignments["y"].rhs
-    assert literal_sig_set(rhs, only_name="s") == {(7, True), (6, False), (5, True), (4, False)}
+    assert literal_sig_set(rhs, "s") == {'s[4]', 's[5]', 's[6]', 's[7]'}
+    assert literal_bit_comparisons(rhs, "s") == {(7, True), (6, False), (5, True), (4, False)}
 
 
 def test_concat_eq():
@@ -62,4 +66,6 @@ def test_concat_eq():
     """
     rhs = lower_sv_text_to_logic(sv)["m"].assignments["y"].rhs
     # Using names instead of indices because signals are scalars
-    assert literal_sig_set(rhs) == {("a", True), ("b", False), ("c", False), ("d", True)}
+    log.info(f"circuit: {rhs}")
+    log.info(f"literal_bit_comparisons(rhs): {literal_bit_comparisons(rhs)}")
+    assert literal_bit_comparisons(rhs) == {("a", True), ("b", False), ("c", False), ("d", True)}

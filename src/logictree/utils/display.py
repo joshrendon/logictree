@@ -1,21 +1,21 @@
-from sympy import symbols, Piecewise, S
-import sympy as sympy
-import graphviz
 import re
-from sympy.logic.boolalg import BooleanFalse, BooleanTrue
+
+import sympy as sympy
 from rich.console import Console
 from rich.text import Text
-from sympy.logic.boolalg import And, Not, Or
-from logictree.nodes.ops.empty import EmptyBranch
-from logictree.nodes.ops.comparison import EqOp, NeqOp
-from logictree.nodes.control.case import CaseStatement, CaseItem
-from logictree.nodes.control.ifstatement import IfStatement
+from sympy import Piecewise, S, symbols
+
+import graphviz
 from logictree.nodes.control.assign import LogicAssign
+from logictree.nodes.control.case import CaseItem, CaseStatement
+from logictree.nodes.control.ifstatement import IfStatement
 from logictree.nodes.hole.hole import LogicHole
-from logictree.nodes.ops.gates import AndOp, OrOp, NotOp, XorOp, XnorOp, NandOp
-from logictree.nodes.ops.ops import LogicConst, LogicOp, LogicVar
+from logictree.nodes.ops.comparison import EqOp, NeqOp
+from logictree.nodes.ops.empty import EmptyBranch
+from logictree.nodes.ops.gates import AndOp, NotOp, OrOp
 from logictree.nodes.ops.mux import LogicMux
-from logictree.nodes.selects import BitSelect, PartSelect, Concat
+from logictree.nodes.ops.ops import LogicConst, LogicOp, LogicVar
+from logictree.nodes.selects import BitSelect, Concat, PartSelect
 
 
 def pretty_print(tree, indent=0):

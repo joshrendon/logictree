@@ -29,21 +29,33 @@ def evaluate(n, env):
         branch = n.then_branch if cond_val else n.else_branch
         return evaluate(branch, env)
     if isinstance(n, CaseStatement):
+        #for it in n.items:
+        #    print("LABEL:", it.labels)
+        #    print("BODY TYPE:", type(it.body))
+
         for it in n.items:
             labels = getattr(it, "labels", None)
+            body = it.body
+            if isinstance(body, list):
+                if len(body) != 1:
+                    raise ValueError(f"Cannot evaluate CaseItem with multi-statement body: {body}")
+                body = body[0]  # unwrap singleton list
             if labels in (None, [], "default"):
                 continue
-            # tolerate accidental ints to avoid type errors during bring-up
             if isinstance(labels, int):
                 labels = [labels]
             if evaluate(n.selector, env) in labels:
-                return evaluate(it.body, env)
-
+                return evaluate(body, env)
         # default arm
         for it in n.items:
             if getattr(it, "labels", None) == "default":
-                return evaluate(it.body, env)
-        return 0  # no matching arm
+                body = it.body
+                if isinstance(body, list):
+                    if len(body) != 1:
+                        raise ValueError(f"Cannot evaluate CaseItem with multi-statement body: {body}")
+                    body = body[0]
+                return evaluate(body, env)
+        return 0
 
     # Leaves
     if isinstance(n, LogicConst):

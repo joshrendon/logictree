@@ -1,5 +1,6 @@
 from logictree.constants import EMPTY_BRANCH
 
+
 def test_empty_branch_singleton():
     a = EMPTY_BRANCH
     b = EMPTY_BRANCH

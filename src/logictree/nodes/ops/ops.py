@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import logging
+import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field, replace
-from typing import FrozenSet, Optional, Union
 from functools import total_ordering
+from typing import FrozenSet, Optional, Union
 
 from logictree.nodes.base import LogicTreeNode
 from logictree.nodes.types import COMMUTATIVE_OPS
@@ -48,10 +49,6 @@ class LogicVar(LogicTreeNode):
         return frozenset({self})
 
     @property
-    def delay(self):
-        return 0
-
-    @property
     def op(self) -> str:
         return "VAR"
 
@@ -59,25 +56,11 @@ class LogicVar(LogicTreeNode):
     def children(self):
         return []
 
-    def to_json_dict(self):
-        return {
-            "type": self.__class__.__name__,
-            "name": self.name,
-            # "label": self.label(),
-            "depth": self.depth,
-            "delay": self.delay,
-            "children": [child.to_json_dict() for child in self.children],
-        }
-
     def equals(self, other):
         return isinstance(other, LogicVar) and self.name == other.name
 
     def __str__(self) -> str:
         return self.name
-
-    @property
-    def depth(self):
-        return 0
 
     def to_verilog(self):
         return self.name
@@ -107,7 +90,6 @@ class LogicConst(LogicTreeNode):
             If None, choose a sensible default based on original literal or width.
     - raw: optional raw literal text as parsed (e.g. "3'b101"). Kept for round-trip fidelity.
     """
-
     value: Union[int, bool, str]
     base: str = "d"
     width: Optional[int] = None
@@ -117,23 +99,43 @@ class LogicConst(LogicTreeNode):
 
     def __post_init__(self):
         LogicTreeNode.__init__(self)
-        object.__setattr__(self, "value", int(self.value))
-        # Infer width if not explicitly provided
-        if self.width is None:
-            inferred = 1 if self.value == 0 else self.value.bit_length()
-            object.__setattr__(self, "width", inferred)
+
+        # Parse Verilog-style string constants like "4'b1010"
         if isinstance(self.value, str):
-            try:
-                object.__setattr__(
-                    self, "value", int(self.value, 0)
-                )  # handles binary/hex/dec
-            except ValueError:
-                pass  # leave string as-is
+            match = re.fullmatch(r"(\d+)'([bdho])([0-9a-fA-F_]+)", self.value)
+            if match:
+                width_str, base_str, digits = match.groups()
+                #self.width = int(width_str)
+                object.__setattr__(self, "width", int(width_str))
+                base_map = {'b': 2, 'd': 10, 'h': 16, 'o': 8}
+                base = base_map[base_str.lower()]
+                clean_digits = digits.replace("_", "")
+                self.value = int(clean_digits, base)
+                self.base = base_str.lower()
+            else:
+                raise ValueError(f"Invalid Verilog-style constant string: {self.value}")
+
+        # Validate int/bool types now
+        if isinstance(self.value, bool):
+            object.__setattr__(self, "width", 1)
+        elif isinstance(self.value, int):
+            # If width still None, infer from value
+            if self.width is None:
+                if self.value == 0:
+                    object.__setattr__(self, "width", 1)
+                else:
+                    object.__setattr__(self, "width", self.value.bit_length())
+        else:
+            raise TypeError(f"Unsupported LogicConst value: {self.value} (type {type(self.value)})")
+
     @property
     def name(self) -> str:
         return self.label()
 
     def label(self) -> str:
+        if self.width is None:
+            return str(self.value)
+        #bin_str = format(self.value, f"0{self.width}b") if self.width is not None else 1
         bin_str = format(self.value, f"0{self.width}b")
         return f"{self.width}'b{bin_str}"
 
@@ -190,10 +192,6 @@ class LogicConst(LogicTreeNode):
         return frozenset()
 
     @property
-    def delay(self):
-        return 0
-
-    @property
     def op(self):
         return "CONST"
 
@@ -203,10 +201,6 @@ class LogicConst(LogicTreeNode):
 
     def equals(self, other):
         return isinstance(other, LogicConst) and self.value == other.value
-
-    @property
-    def depth(self):
-        return 0
 
     @staticmethod
     def from_sv_literal(text: str) -> "LogicConst":
@@ -304,15 +298,6 @@ class LogicConst(LogicTreeNode):
             digits(val, base) if base == "d" else f"'{sflag}{base}{digits(val, base)}"
         )
 
-    def to_json_dict(self):
-        return {
-            "type": self.__class__.__name__,
-            "value": self.value,
-            # "label": self.label(),
-            "depth": self.depth,
-            "delay": self.delay,
-            "children": [child.to_json_dict() for child in self.children],
-        }
 
     def to_dot(self, graph, parent_id=None, next_id=[0]):
         my_id = next_id[0]
@@ -378,26 +363,9 @@ class LogicOp(LogicTreeNode, ABC):
             pass  # caching is optional; correctness doesn’t depend on it
         return s
 
-    def to_json_dict(self) -> dict:
-        return {
-            "type": type(self).__name__,
-            "children": [c.to_json_dict() for c in self.inputs()],
-        }
-
     @property
     def children(self):
         return tuple(self.operands)
-
-    @property
-    def depth(self) -> int:
-        if not self.children:
-            return 0
-        return 1 + max(ch.depth for ch in self.children)
-
-    @property
-    def delay(self) -> int:
-        # Naively: 1 unit per level
-        return self.depth
 
     def __str__(self):
         raise NotImplementedError("Subclasses must implement __str__()")

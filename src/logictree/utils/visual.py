@@ -1,10 +1,12 @@
 # logictree/utils/visual.py
-from .overlay import set_label
-from logictree.nodes.control.ifstatement import IfStatement
-from logictree.nodes.control.case import CaseStatement
 from logictree.nodes.control.assign import LogicAssign
-from logictree.nodes.ops.mux import LogicMux
+from logictree.nodes.control.case import CaseStatement
+from logictree.nodes.control.ifstatement import IfStatement
 from logictree.nodes.ops.empty import EmptyBranch
+from logictree.nodes.ops.mux import LogicMux
+
+from .overlay import set_label
+
 
 def annotate_mux_node(node):
     sel = node.selector.label() if hasattr(node, "selector") else "?"

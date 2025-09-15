@@ -1,12 +1,15 @@
 # from logictree.nodes import LogicOp, LogicVar, LogicConst, LogicHole, LogicNode, CaseStatement, CaseItem, IfStatement, LogicAssign
 # import hashlib
 import itertools
+import logging
 
 from dd.autoref import BDD
 
 from logictree.nodes import base
 from logictree.utils.analysis import get_logic_hash
 from logictree.utils.build import build_bdd
+
+log = logging.getLogger(__name__)
 
 
 # === LOGICTREE COMPARISON ===
@@ -22,15 +25,15 @@ def compare_logic_trees(tree1, tree2, method="auto", debug=False):
     elif method == "auto":
         if _compare_structure(tree1, tree2):
             if debug:
-                print("Structure matched.")
+                log.debug("Structure matched.")
             return True
         if get_logic_hash(tree1) == get_logic_hash(tree2):
             if debug:
-                print("Hash matched.")
+                log.debug("Hash matched.")
             return True
         if _compare_bdd(tree1, tree2):
             if debug:
-                print("BDD matched.")
+                log.debug("BDD matched.")
             return True
         return False
     else:

@@ -28,11 +28,8 @@ class LogicMux(LogicTreeNode):
         return [self.selector, self.if_true, self.if_false]
 
     @property
-    def depth(self) -> int:
-        inputs = [self.if_true, self.if_false]
-        input_depths = [inp.depth for inp in inputs if inp]
-        sel_depth = self.selector.depth if self.selector else 0
-        return 1 + max(input_depths + [sel_depth], default=0)
+    def operands(self):
+        return [self.selector, self.if_true, self.if_false]
 
     def __iter__(self):
         yield from self.children
@@ -52,10 +49,6 @@ class LogicMux(LogicTreeNode):
     def __str__(self):
         return f"mux({self.selector}, {self.if_true}, {self.if_false})"
 
-    @property
-    def delay(self):
-        return max(self.if_true.delay, self.if_false.delay, self.selector.delay) + 1
-
     def label(self) -> str:
         return "MUX"
 
@@ -66,18 +59,18 @@ class LogicMux(LogicTreeNode):
             | self.if_false.free_vars()
         )
 
-    def to_primitives(self) -> LogicTreeNode:
-        """
-        Lower to AOI form:
-          mux(sel, a, b) = (sel AND a) OR (~sel AND b)
-        """
-        from logictree.nodes.ops.gates import AndOp, NotOp, OrOp
+    #def to_primitives(self) -> LogicTreeNode:
+    #    """
+    #    Lower to AOI form:
+    #      mux(sel, a, b) = (sel AND a) OR (~sel AND b)
+    #    """
+    #    from logictree.nodes.ops.gates import AndOp, NotOp, OrOp
 
-        sel = self.selector
-        return OrOp(
-            AndOp(sel, self.if_true),
-            AndOp(NotOp(sel), self.if_false),
-        )
+    #    sel = self.selector
+    #    return OrOp(
+    #        AndOp(sel, self.if_true),
+    #        AndOp(NotOp(sel), self.if_false),
+    #    )
 
     def writes(self) -> set[str]:
         return set()
@@ -86,7 +79,7 @@ class LogicMux(LogicTreeNode):
         return set()
 
     def to_sympy_expr(self, var_map=None):
-        from sympy import And, Or, Not
+        from sympy import And, Not, Or
         sel = self.selector.to_sympy_expr(var_map)
         t_branch = self.if_true.to_sympy_expr(var_map)
         f_branch = self.if_false.to_sympy_expr(var_map)

@@ -2,6 +2,9 @@ import pytest
 
 pytestmark = [pytest.mark.unit]
 
+from logictree.analysis.delay import delay
+from logictree.analysis.depth import depth
+from logictree.analysis.to_json_dict import to_json_dict
 from logictree.nodes.ops.ops import LogicTreeNode
 from tests.utils_bitselect import EXCLUDED_CLASSES, all_subclasses, safe_instantiate
 
@@ -68,7 +71,7 @@ def test_all_gates_implement_to_json_dict():
         if instance is None:
             continue
         try:
-            d = instance.to_json_dict()
+            d = to_json_dict(instance)
             assert isinstance(d, dict)
         except Exception:
             bad_classes.append(cls.__name__)
@@ -86,13 +89,13 @@ def test_all_gates_implement_depth_and_delay():
         if instance is None:
             continue
         try:
-            d = instance.depth
+            d = depth(instance)
             assert isinstance(d, int)
         except Exception:
             bad_depth.append(cls.__name__)
 
         try:
-            t = instance.delay
+            t = delay(instance)
             assert isinstance(t, int)
         except Exception:
             bad_delay.append(cls.__name__)
@@ -117,20 +120,30 @@ def test_label_method(cls):
 # Properties like these are NOT callable
 PROPERTY_METHODS = {"depth", "delay"}
 
+ANALYSIS_METHODS = {
+        "depth": depth,
+        "delay": delay,
+        "to_json_dict": to_json_dict,
+}
+
 @pytest.mark.parametrize("method_name", sorted(["label", "depth", "delay", "to_json_dict"]))
 @pytest.mark.parametrize("cls", subclasses, ids=lambda c: c.__name__)
 def test_method_implementation(cls, method_name):
     instance = safe_instantiate(cls)
     assert instance is not None, f"Could not instantiate {cls.__name__}"
     
-    attr = getattr(instance, method_name, None)
-    assert attr is not None, f"{cls.__name__} is missing `{method_name}`"
+    #attr = getattr(instance, method_name, None)
+    #assert attr is not None, f"{cls.__name__} is missing `{method_name}`"
 
-    if method_name in PROPERTY_METHODS:
+    if method_name in ANALYSIS_METHODS:
+        func = ANALYSIS_METHODS[method_name]
         try:
-            val = attr  # Don't call it
+            val = func(instance)
             assert val is not None or val == 0
         except Exception as e:
-            pytest.fail(f"{cls.__name__}.{method_name} raised: {e}")
+            pytest.fail(f"{cls.__name__}.{method_name} via analysis layer raised: {e}")
     else:
+        # Node-native methods (like .label)
+        attr = getattr(instance, method_name, None)
+        assert attr is not None, f"{cls.__name__} is missing `{method_name}`"
         assert callable(attr), f"{cls.__name__}.{method_name} is not callable"

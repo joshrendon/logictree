@@ -9,11 +9,12 @@ to support repeated free_vars() calls.
 
 from __future__ import annotations
 
-from typing import FrozenSet, Optional
 from dataclasses import dataclass
+from typing import FrozenSet, Optional
 
 from logictree.nodes.base import LogicTreeNode
-from logictree.nodes.ops.ops import LogicOp, LogicVar, LogicConst
+from logictree.nodes.ops.ops import LogicOp, LogicVar
+
 
 @dataclass(frozen=True)
 class EqOp(LogicOp):

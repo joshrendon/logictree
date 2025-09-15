@@ -58,7 +58,7 @@ def get_logic_hash(tree, ordering=None, return_expr=False):
 
     #vars_ = sorted({v.name for v in collect_logic_vars(tree)})
     vars_ = sorted(collect_logic_vars(tree), key=lambda v: v.name)
-    assert len(vars_) != 0, f"Error, couldn't collect_logic_vars(tree) vars_ for BDD"
+    assert len(vars_) != 0, "Error, couldn't collect_logic_vars(tree) vars_ for BDD"
     log.info("Collected inputs: %s", vars_)
 
     # Declare BDD vars as strings
@@ -78,7 +78,6 @@ def get_logic_hash(tree, ordering=None, return_expr=False):
         return logic_hash
 
 
-# TODO: Update explain_logic_hash to use collect_logic_vars helper method to initialize inputs in BDD
 def explain_logic_hash(tree, ordering=None):
     bdd = BDD()
     var_map = {}
@@ -86,11 +85,12 @@ def explain_logic_hash(tree, ordering=None):
     from logictree.utils.traverse import collect_logic_vars
     inputs = tree.inputs() if hasattr(tree, "inputs") else []
     vars_ = sorted(collect_logic_vars(tree), key=lambda v: v.name)
+
     if ordering is not None:
         inputs = ordering
     else:
-        # Best‐effort stable order by var name
-        inputs = sorted(inputs, key=_as_var_name)
+        # Default: stable order by var name
+        inputs = vars_
 
     for var in inputs:
         bdd.declare(_as_var_name(var))

@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import copy
 import logging
 from dataclasses import dataclass
@@ -17,7 +18,7 @@ class LogicTreeNode:
         - int → LogicConst
         - LogicTreeNode → pass through
         """
-        from logictree.nodes.ops.ops import LogicVar, LogicConst  # local import avoids cycles
+        from logictree.nodes.ops.ops import LogicConst, LogicVar  # local import avoids cycles
 
         if isinstance(x, LogicTreeNode):
             return x

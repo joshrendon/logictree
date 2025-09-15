@@ -2,8 +2,8 @@ import os
 import subprocess
 from typing import Optional
 
-from logictree.utils.paths import OUTPUT_DIR
 from logictree.utils.graphviz_export import logic_tree_to_dot
+from logictree.utils.paths import OUTPUT_DIR
 
 
 def _run_dot(dot_path: str, fmt: str = "png", output_path: Optional[str] = None):

@@ -1,15 +1,16 @@
 from __future__ import annotations
-from dd.autoref import BDD, Function
+
 import logging
 
-from logictree.nodes.base.base import LogicTreeNode
-from logictree.nodes.ops.ops import LogicVar, LogicConst
-from logictree.nodes.ops.gates import AndOp, OrOp, NotOp, XorOp, XnorOp, NandOp, NorOp
-from logictree.nodes.control.ifstatement import IfStatement
+from dd.autoref import BDD, Function
+
 from logictree.nodes.control.assign import LogicAssign
-from logictree.nodes.selects import BitSelect, PartSelect, Concat
-from logictree.nodes.ops.mux import LogicMux
 from logictree.nodes.ops.comparison import EqOp, NeqOp
+from logictree.nodes.ops.gates import AndOp, NotOp, OrOp
+from logictree.nodes.ops.mux import LogicMux
+from logictree.nodes.ops.ops import LogicConst, LogicVar
+from logictree.nodes.selects import BitSelect, Concat, PartSelect
+
 log = logging.getLogger(__name__)
 
 def build_bdd(tree, bdd, var_map):

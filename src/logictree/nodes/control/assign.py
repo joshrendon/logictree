@@ -5,14 +5,14 @@ from dataclasses import dataclass, field
 from typing import FrozenSet, Optional, Set, Union
 
 from logictree.nodes.base.base import LogicTreeNode
-from logictree.nodes.ops.ops import LogicVar, LogicConst, LogicOp
-from logictree.nodes.ops.gates import AndOp, OrOp, NotOp
-from logictree.nodes.ops.comparison import EqOp, NeqOp
-from logictree.nodes.struct.statement import Statement
-from logictree.nodes.ops.mux import LogicMux
+from logictree.nodes.control.case import CaseItem, CaseStatement
 from logictree.nodes.control.ifstatement import IfStatement
-from logictree.nodes.control.case import CaseStatement, CaseItem
+from logictree.nodes.ops.comparison import EqOp, NeqOp
+from logictree.nodes.ops.gates import AndOp, NotOp, OrOp
+from logictree.nodes.ops.mux import LogicMux
+from logictree.nodes.ops.ops import LogicConst, LogicOp, LogicVar
 from logictree.nodes.selects import BitSelect, Concat, PartSelect
+from logictree.nodes.struct.statement import Statement
 
 log = logging.getLogger(__name__)
 
@@ -67,26 +67,5 @@ class LogicAssign(Statement):
     def __str__(self) -> str:
         return self.default_label()
 
-    @property
-    def depth(self) -> int:
-        return self.rhs.depth if hasattr(self.rhs, "depth") else 0
-
-    @property
-    def delay(self) -> int:
-        return (
-            self.annotated_delay
-            if self.annotated_delay is not None
-            else getattr(self.rhs, "delay", 0)
-        )
-
     def inputs(self) -> Set[str]:
         return self.rhs.inputs()
-
-    def to_json_dict(self) -> dict:
-        return {
-            "type": self.__class__.__name__,
-            "expr_source": str(self.lhs),
-            "children": [self.rhs.to_json_dict()],
-            "depth": self.depth,
-            "delay": self.delay,
-        }

@@ -28,6 +28,7 @@ log = logging.getLogger(__name__)
 
 from logictree.nodes.ops.empty import EmptyBranch
 
+
 def case_to_if_tree(case_node: CaseStatement) -> IfStatement:
     """Lower a CaseStatement into nested IfStatements."""
     items = case_node.items

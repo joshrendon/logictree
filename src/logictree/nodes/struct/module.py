@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING, List
 
 from logictree.nodes.base.base import LogicTreeNode
-from logictree.nodes.ops.ops import LogicVar
 
 if TYPE_CHECKING:
     from logictree.nodes.control.assign import LogicAssign

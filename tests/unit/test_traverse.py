@@ -1,10 +1,12 @@
 from dd.autoref import BDD, Function
-from logictree.nodes.ops.mux import LogicMux
-from logictree.utils.build import build_bdd
-from logictree.nodes.ops.ops import LogicVar, LogicConst
-from logictree.nodes.selects import BitSelect
+
 from logictree.nodes.ops.comparison import EqOp
+from logictree.nodes.ops.mux import LogicMux
+from logictree.nodes.ops.ops import LogicConst, LogicVar
+from logictree.nodes.selects import BitSelect
+from logictree.utils.build import build_bdd
 from logictree.utils.traverse import collect_logic_vars
+
 
 def test_collect_logic_vars_bitselect_eqop():
     s = LogicVar("s")

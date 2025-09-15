@@ -6,14 +6,15 @@ from dataclasses import Field
 from pprint import pformat
 from typing import List, Tuple
 
+from logictree.constants import EMPTY_BRANCH
+from logictree.nodes import control, ops
 from logictree.nodes.base.base import LogicTreeNode
-from logictree.nodes import LogicMux, control, ops
 from logictree.nodes.control.assign import LogicAssign
+from logictree.nodes.control.ifstatement import IfStatement
 from logictree.nodes.ops import LogicConst, LogicVar
 from logictree.nodes.ops.comparison import EqOp, NeqOp
-from logictree.nodes.ops.gates import AndOp, OrOp, NotOp
+from logictree.nodes.ops.gates import AndOp, OrOp
 from logictree.nodes.selects import BitSelect, Concat, PartSelect
-from logictree.nodes.control.ifstatement import IfStatement
 from logictree.nodes.struct.module import Module
 from logictree.utils.display import pretty_print
 from sv_parser.SystemVerilogSubsetParser import SystemVerilogSubsetParser
@@ -516,6 +517,12 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
 
             rhs_tree = self.visit(rhs_ctx)  # must dispatch visitor!
             log.debug(f"assign LHS = {lhs}, RHS tree = {rhs_tree}")
+            log.debug(f"RHS tree = {repr(rhs_tree)}")
+            log.debug(f"RHS.right probe: {rhs_tree.right}")
+            rhs_right = rhs_tree.right
+            log.debug(f"right.rhs: {rhs_right.rhs}")
+            log.debug(f"right.rhs.value: {rhs_right.rhs.value}")
+            log.debug(f"right.rhs: type {type(rhs_right.rhs).__name__}")
 
             from logictree.utils.debug import assert_no_fields
 
@@ -539,7 +546,7 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
                         f" assign_node.{attr_name} is a dataclasses.Field: {attr_val}"
                     )
                 else:
-                    log.debug(f" assign_node.{attr_name} = {attr_val}")
+                    log.info(f" assign_node.{attr_name} = {attr_val}")
 
             # optional viz label
             try:
@@ -584,7 +591,6 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
         
             raise  # re-raise so your test still fails
 
-    from logictree.constants import EMPTY_BRANCH
     
     def visitCase_statement(self, ctx):
         selector_node = self.visit(ctx.expression())
@@ -838,6 +844,7 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
                 raise ValueError(f"Unsupported literal base: {base}")
 
             log.debug(f"value: {value}")
+            log.debug(f"text: {text}")
             const = LogicConst.from_sv_literal(text)
             #const = LogicConst(value=value, width=width, base=base)
             log.debug("Const constructed: %r type(const.value): (type=%s)", const, type(const.value))

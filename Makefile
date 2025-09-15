@@ -35,6 +35,7 @@ help:
 	@echo "Common targets:"
 	@echo "  make install      - editable install (no dev extras)"
 	@echo "  make dev          - editable install with [dev] extras"
+	@echo "  make report-full  - run tests FULL with coverage"
 	@echo "  make test-fast    - pytest with FAST markers ($(FAST_MARK))"
 	@echo "  make test         - alias for test-fast"
 	@echo "  make test-full    - pytest with FULL markers ($(FULL_MARK))"
@@ -102,6 +103,9 @@ test: test-fast
 
 test-full:  ## full suite (nightly / local deep run)
 	pytest -q -m $(FULL_MARK) --durations=25
+
+report-full:
+	pytest -q --tb=short --cov=src/logictree --cov-report=term-missing --cov-report=html
 
 # --- Coverage -----------------------------------------------------------------
 # Strict: fails if tests fail, but still writes htmlcov/

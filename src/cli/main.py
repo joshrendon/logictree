@@ -6,7 +6,6 @@ from logictree.nodes.control.assign import LogicAssign
 from logictree.nodes.control.case import CaseStatement
 from logictree.nodes.control.ifstatement import IfStatement
 from logictree.pipeline import lower_sv_file_to_logic
-from logictree.SVToLogicTreeLowerer import SVToLogicTreeLowerer
 from logictree.transforms.case_to_if import case_to_if_tree
 from logictree.transforms.if_to_mux import if_to_mux_tree
 from logictree.transforms.signal_resolution import resolve_signal_vars
@@ -15,10 +14,9 @@ from logictree.utils.ascii_tree import logic_tree_to_ascii, to_ascii
 from logictree.utils.display import (
     explain_expr_tree,
     pretty_print,
-    to_dot,
     to_sympy_expr,
 )
-from logictree.utils.graphviz_utils import to_svg, to_png
+from logictree.utils.graphviz_utils import to_png, to_svg
 from logictree.utils.reduce import balanced_tree_reduce
 from logictree.utils.utils_cli import check_against_golden, write_golden_file
 
@@ -201,7 +199,6 @@ def main():
     args.lowering_path = []
     logging.basicConfig(level=getattr(logging, args.loglevel.upper()))
 
-    lowerer = SVToLogicTreeLowerer()
     module_map = lower_sv_file_to_logic(args.filename)
 
     # pick top module (for now until multiple module support is added)

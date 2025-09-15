@@ -1,8 +1,8 @@
 # logictree.utils/graphviz_export.py
-from .visual import get_visual_edges
 import subprocess
 from pathlib import Path
-from logictree.nodes.control.ifstatement import IfStatement
+
+from .visual import get_visual_edges
 
 
 def logic_tree_to_dot(logic_tree, signal_name="logic", gate_colors=None):

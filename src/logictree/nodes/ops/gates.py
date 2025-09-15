@@ -1,8 +1,7 @@
-from dataclasses import field
+from dataclasses import dataclass, field
 
 from ..base.base import LogicTreeNode
 from .ops import LogicOp
-from dataclasses import dataclass
 
 __all__ = ["NotOp", "AndOp", "OrOp", "XorOp", "XnorOp", "NandOp", "NorOp"]
 
@@ -31,7 +30,8 @@ class NotOp(LogicOp):
     metadata: dict = field(default_factory=dict, compare=False, repr=False)
 
     def __post_init__(self):
-        object.__setattr__(self, "operand", self._normalize(self.operand))
+        assert not isinstance(self.operand, list), "NotOp operand should be a single LogicTreeNode"
+        object.__setattr__(self, "operand", LogicTreeNode._normalize(self.operand))
 
     @property
     def op(self):
@@ -45,7 +45,7 @@ class NotOp(LogicOp):
 
     @property
     def child(self):
-        return [self.operand]
+        return self.operand
 
     @property
     def children(self):
@@ -107,10 +107,6 @@ class AndOp(LogicOp):
     def __repr__(self):
         return f"AndOp({repr(self.a)}, {repr(self.b)})"
 
-    def to_primitives(self):
-        # already primitive
-        return AndOp(self.a, self.b)
-
     def equals(self, other):
         return _commutative_equals(self, other)
 
@@ -157,10 +153,6 @@ class OrOp(LogicOp):
     def __repr__(self):
         return f"OrOp({repr(self.a)}, {repr(self.b)})"
 
-    def to_primitives(self):
-        # already primitive
-        return OrOp(self.a, self.b)
-
     def equals(self, other):
         return _commutative_equals(self, other)
 
@@ -172,8 +164,8 @@ class XorOp(LogicOp):
     metadata: dict = field(default_factory=dict, compare=False, repr=False)
 
     def __post_init__(self):
-        object.__setattr__(self, "a", self._normalize(self.a))
-        object.__setattr__(self, "b", self._normalize(self.b))
+        object.__setattr__(self, "a", LogicTreeNode._normalize(self.a))
+        object.__setattr__(self, "b", LogicTreeNode._normalize(self.b))
 
     @property
     def op(self) -> str:
@@ -189,14 +181,6 @@ class XorOp(LogicOp):
         return "XOR"
 
     @property
-    def left(self):
-        return self.operands[0]
-
-    @property
-    def right(self):
-        return self.operands[1]
-
-    @property
     def children(self):
         return [self.a, self.b]
 
@@ -204,11 +188,13 @@ class XorOp(LogicOp):
     def operands(self):
         return [self.a, self.b]
 
-    def to_primitives(self):
-        # (a & ~b) | (~a & b)
-        na = NotOp(self.a)
-        nb = NotOp(self.b)
-        return OrOp(AndOp(self.a, nb), AndOp(na, self.b))
+    @property
+    def left(self):
+        return self.operands[0]
+
+    @property
+    def right(self):
+        return self.operands[1]
 
     def equals(self, other):
         return _commutative_equals(self, other)
@@ -253,10 +239,6 @@ class XnorOp(LogicOp):
     def __str__(self):
         return f"~({self.a} ^ {self.b})"
 
-    def to_primitives(self):
-        # ~(a ^ b)
-        return NotOp(XorOp(self.a, self.b))
-
     def equals(self, other):
         return _commutative_equals(self, other)
 
@@ -299,9 +281,6 @@ class NandOp(LogicOp):
 
     def __str__(self):
         return f"~({self.a} & {self.b})"
-
-    def to_primitives(self):
-        return NotOp(AndOp(self.a, self.b))
 
     def equals(self, other):
         return _commutative_equals(self, other)
@@ -346,11 +325,7 @@ class NorOp(LogicOp):
     def operands(self):
         return [self.a, self.b]
 
-    def to_primitives(self):
-        return NotOp(OrOp(self.a, self.b))
-
     def equals(self, other):
         return _commutative_equals(self, other)
-
 
 __all__ = ["AndOp", "OrOp", "NotOp", "XorOp", "XnorOp", "NandOp", "NorOp"]

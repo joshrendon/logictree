@@ -1,7 +1,6 @@
 from logictree.pipeline import lower_sv_text_to_logic
-from logictree.nodes.control.assign import LogicAssign
-from logictree.nodes.ops.ops import LogicVar
 from logictree.utils.assertion import assert_case_equivalence
+
 
 def test_case_equivalence_sympy():
     verilog_text = """

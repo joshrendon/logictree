@@ -1,11 +1,11 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass, field
 from typing import FrozenSet, List
 
 from logictree.nodes.base.base import LogicTreeNode
-from logictree.nodes.ops import LogicVar, LogicConst
-import logging
+from logictree.nodes.ops import LogicConst, LogicVar
 
 log = logging.getLogger(__name__)
 
@@ -40,15 +40,8 @@ class BitSelect(LogicTreeNode):
         return [self.base, self.index]
 
     @property
-    def depth(self) -> int:
-        return 1 + max((c.depth for ci in self. children), default=0)
-
-    @property
-    def delay(self):
-        return 1 + max((c.delay for c in self.children), default=0)
-        #if hasattr(self.base, "delay"):
-        #    return self.base.delay + 1  # one extra step for indexing
-        #return 1  # minimum delay
+    def operands(self):
+        return [self.base, self.index]
 
     def equals(self, other: "LogicTreeNode") -> bool:
         return (
@@ -73,13 +66,6 @@ class BitSelect(LogicTreeNode):
 
     def __hash__(self) -> int:
         return hash((self.base, self.index))
-
-    def to_json_dict(self) -> dict:
-        return {
-            "type": "BitSelect",
-            "base": self.base.to_json_dict(),
-            "index": self.index.to_json_dict(),
-        }
 
 
 @dataclass(frozen=True)
@@ -118,9 +104,6 @@ class PartSelect(LogicTreeNode):
         base = LogicTreeNode._normalize(self.base)
         msb = LogicTreeNode._normalize(self.msb)
         lsb = LogicTreeNode._normalize(self.lsb)
-        #base = self._normalize(self.base)
-        #msb = self._normalize(self.msb)
-        #lsb = self._normalize(self.lsb)
         log.debug("__post_init__")
     
         def describe(name, val):
@@ -149,38 +132,6 @@ class PartSelect(LogicTreeNode):
         object.__setattr__(self, "msb", msb)
         object.__setattr__(self, "lsb", lsb)
         object.__setattr__(self, "width", width)
-    #def __post_init__(self):
-    #    base = LogicTreeNode._normalize(self.base)
-    #    msb = LogicTreeNode._normalize(self.msb)
-    #    lsb = LogicTreeNode._normalize(self.lsb)
-
-    #    def unwrap(val):
-    #        while isinstance(val, LogicConst):
-    #            val = val.value
-    #        return val
-    #    msb_val = unwrap(msb)
-    #    lsb_val = unwrap(lsb)
-
-    #    if not isinstance(msb_val, int) or not isinstance(lsb_val, int):
-    #        raise TypeError(f"msb/lsb must be integers after unwrapping: got {msb_val}, {lsb_val}")
-    #    width = abs(msb_val - lsb_val) + 1
-    #    object.__setattr__(self, "base", base)
-    #    object.__setattr__(self, "msb", msb)
-    #    object.__setattr__(self, "lsb", lsb)
-    #    #msb_val = msb.value if isinstance(msb, LogicConst) else msb
-    #    #lsb_val = lsb.value if isinstance(lsb, LogicConst) else lsb
-    #    object.__setattr__(self, "width", width)
-
-    @property
-    def depth(self) -> int:
-        return 1 + max((c.depth for c in self.children), default=0)
-
-    @property
-    def delay(self) -> int:
-        return max(
-                getattr(c, "delay", 0) if isinstance(c, LogicTreeNode) else 0
-                for c in self.children
-        )
 
     def equals(self, other: "LogicTreeNode") -> bool:
         return (
@@ -190,9 +141,6 @@ class PartSelect(LogicTreeNode):
             and self.width == other.width
             and self.base.equals(other.base)
         )
-
-    #def __repr__(self) -> str:
-    #    return f"{self.base}[{self.msb}:{self.lsb}]"
 
     def set_viz_label(self, label: str) -> None:
         object.__setattr__(self, "_viz_label", label)
@@ -226,14 +174,9 @@ class PartSelect(LogicTreeNode):
     def children(self):
         return [self.base, self.msb, self.lsb]
 
-
-    def to_json_dict(self) -> dict:
-        return {
-            "type": "PartSelect",
-            "base": self.base.to_json_dict(),
-            "msb": self.msb.to_json_dict(),
-            "lsb": self.lsb.to_json_dict(),
-        }
+    @property
+    def operands(self):
+        return [self.base, self.msb, self.lsb]
 
 
 @dataclass(frozen=True)
@@ -266,21 +209,11 @@ class Concat(LogicTreeNode):
 
     @property
     def children(self):
-        return self.parts
+        return [self.parts]
 
     @property
-    def depth(self) -> int:
-        return 1 + max((p.depth for p in self.parts), default=0)
-
-    @property
-    def delay(self) -> int:
-        return max((p.delay for p in self.parts), default=0)
-
-    def to_json_dict(self) -> dict:
-        return {
-            "type": "Concat",
-            "parts": [p.to_json_dict() for p in self.parts],
-        }
+    def operands(self):
+        return tuple(self.parts)
 
     def equals(self, other: "LogicTreeNode") -> bool:
         if not isinstance(other, Concat):
