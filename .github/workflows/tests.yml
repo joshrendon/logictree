@@ -52,6 +52,6 @@ jobs:
               pytest -m "slow or mutation or props" || true
               ;;
             release)
-              pytest -m "not flaky" --cov=logictree --cov-fail-under=90 || true
+              pytest -q --tb=short --cov=logictree --cov-fail-under=90 || true
               ;;
           esac
