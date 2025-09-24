@@ -19,10 +19,6 @@ class EmptyBranch(LogicTreeNode):
     def children(self):
         return ()
 
-    @property
-    def depth(self):
-        return 0
-
     def label(self) -> str:
         return "<empty>"
 
@@ -40,20 +36,9 @@ class EmptyBranch(LogicTreeNode):
     def to_verilog(self):
         return "1'b0"
 
-    def to_primitives(self):
-        # No need to lower further
-        return self
-
     def free_vars(self):
         return set()
 
     def writes(self):
         return set()
-
-    #def to_json_dict(self):
-    #    return {
-    #        "type": "EmptyBranch",
-    #        "label": self.label(),
-    #        "operands": []
-    #    }
 

@@ -93,6 +93,18 @@ class CaseItem(LogicTreeNode):
             return "default"
         return ", ".join(str(l) for l in self.labels)
 
+    @property
+    def children(self):
+        kids: List[LogicTreeNode] = []
+        # labels (constants or nodes)
+        kids.extend(self.labels or [])
+        # optional match expression
+        if self.match is not None:
+            kids.append(self.match)
+        # body statements (flatten list)
+        kids.extend(self.body or [])
+        return kids
+
     def inputs(self):
         inputs = set()
         if self.match:
@@ -257,8 +269,18 @@ class CaseStatement(LogicTreeNode, Statement):
         object.__setattr__(self, "_wm_cache", frozenset(must))
         return self._wm_cache
 
+    @property
     def children(self):
-        return [self.selector] + [item.body for item in self.items]
+        kids: List[LogicTreeNode] = []
+        # selector expression
+        if self.selector is not None:
+            kids.append(self.selector)
+        # case items
+        kids.extend(self.items or [])
+        # optional default body statements
+        if self.default:
+            kids.extend(self.default)
+        return kids
 
     def simplify(self):
         """Node-local simplification only. Use transforms.case_to_if.case_to_if_tree for structural rewrites."""

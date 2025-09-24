@@ -10,6 +10,7 @@ from logictree.nodes.ops.gates import AndOp, NotOp, OrOp
 from logictree.nodes.ops.mux import LogicMux
 from logictree.nodes.ops.ops import LogicConst, LogicVar
 from logictree.nodes.selects import BitSelect, Concat, PartSelect
+from logictree.nodes.ops.empty import EmptyBranch
 
 log = logging.getLogger(__name__)
 
@@ -33,16 +34,19 @@ def build_bdd(tree, bdd, var_map):
         return bdd.apply('or', *[build_bdd(c, bdd, var_map) for c in tree.children])
 
     elif isinstance(tree, EqOp):
+        log.debug("EqOp")
         lhs = build_bdd(tree.operands[0], bdd, var_map)
         rhs = build_bdd(tree.operands[1], bdd, var_map)
         return _eq_bdd(lhs, rhs, bdd)
 
     elif isinstance(tree, NeqOp):
+        log.debug("NeqOp")
         lhs = build_bdd(tree.operands[0], bdd, var_map)
         rhs = build_bdd(tree.operands[1], bdd, var_map)
         return _neq_bdd(lhs, rhs, bdd)
 
     elif isinstance(tree, LogicMux):
+        log.debug("LogicMux")
         sel = build_bdd(tree.selector, bdd, var_map)
         t = build_bdd(tree.if_true, bdd, var_map)
         f = build_bdd(tree.if_false, bdd, var_map)
@@ -82,8 +86,12 @@ def build_bdd(tree, bdd, var_map):
         log.debug("PartSelect")
     elif isinstance(tree, Concat):
         log.debug("Concat")
+    elif isinstance(tree, EmptyBranch):
+        log.debug("EmptyBranch")
+        # treat as a constant 0 (logic False)
+        return bdd.false
 
-    raise TypeError(f"Unsupported node: {tree}")
+    raise TypeError(f"Unsupported node: {tree} type: {type(tree).__name__}")
 
 
 

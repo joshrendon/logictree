@@ -97,11 +97,11 @@ def _(node: IfStatement) -> int:
 
 @depth.register
 def _(node: CaseItem) -> int:
-    return depth(node.statement)
+    return 1 + max((depth(ch) for ch in node.children), default=0)
 
 @depth.register
 def _(node: CaseStatement) -> int:
-    return 1 + max((depth(ci) for ci in node.case_items), default=0)
+    return 1 + max((depth(ci) for ci in node.items), default=0)
 
 @depth.register
 def _(node: BlockStatement) -> int:

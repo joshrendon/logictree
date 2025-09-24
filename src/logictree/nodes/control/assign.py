@@ -69,3 +69,12 @@ class LogicAssign(Statement):
 
     def inputs(self) -> Set[str]:
         return self.rhs.inputs()
+
+    @property
+    def children(self):
+        kids: List[LogicTreeNode] = []
+        if self.lhs is not None:
+            kids.append(self.lhs)
+        if self.rhs is not None:
+            kids.append(self.rhs)
+        return kids

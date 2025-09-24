@@ -350,7 +350,7 @@ class LogicOp(LogicTreeNode, ABC):
     # if this is still abstract, you can omit or provide a generic union
     def _children(self):
         # override in concrete ops if needed
-        return getattr(self, "children", ())
+        return self.children
 
     def free_vars(self) -> set[str]:
         if hasattr(self, "_free_vars"):

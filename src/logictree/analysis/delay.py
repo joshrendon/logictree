@@ -73,11 +73,11 @@ def _(node: IfStatement) -> int:
 
 @delay.register
 def _(node: CaseItem) -> int:
-    return delay(node.statement)
+    return 1 + max((delay(ch) for ch in node.children), default=0)
 
 @delay.register
 def _(node: CaseStatement) -> int:
-    return 1 + max((delay(ci) for ci in node.case_items), default=0)
+    return 1 + max((delay(ci) for ci in node.items), default=0)
 
 @delay.register
 def _(node: BlockStatement) -> int:
