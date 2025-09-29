@@ -8,6 +8,7 @@ from logictree.nodes.base.base import LogicTreeNode
 from logictree.nodes.control.case import CaseItem, CaseStatement
 from logictree.nodes.control.ifstatement import IfStatement
 from logictree.nodes.ops.comparison import EqOp, NeqOp
+from logictree.nodes.ops.ite import ITE
 from logictree.nodes.ops.gates import AndOp, NotOp, OrOp
 from logictree.nodes.ops.mux import LogicMux
 from logictree.nodes.ops.ops import LogicConst, LogicOp, LogicVar
@@ -21,7 +22,7 @@ ALLOWED_RHS_TYPES = (
     AndOp, OrOp, NotOp,
     LogicVar, LogicConst, LogicOp,
     LogicMux, IfStatement, CaseStatement, CaseItem,
-    BitSelect, PartSelect, Concat,
+    BitSelect, PartSelect, Concat, ITE
 )
 
 
@@ -29,6 +30,7 @@ ALLOWED_RHS_TYPES = (
 class LogicAssign(Statement):
     lhs: LogicVar
     rhs: Union[LogicTreeNode, IfStatement]
+    blocking: Optional[bool] = None
     annotated_delay: Optional[int] = None
     metadata: Optional[dict] = field(default=None, compare=False, repr=False)
 
@@ -78,3 +80,30 @@ class LogicAssign(Statement):
         if self.rhs is not None:
             kids.append(self.rhs)
         return kids
+
+    def pretty_inline(self) -> str:
+        """Compact string for debugging or single-line dumps."""
+        if self.blocking is None:
+            op = "="    # continuous assign
+            kind = "assign"
+        else:
+            op = "=" if self.blocking else "<="
+            kind = "proc"
+        rhs_str = getattr(self.rhs, "pretty_inline", lambda: str(self.rhs))()
+        return f"{kind}:{self.lhs.name} {op} {rhs_str}"
+
+@dataclass(frozen=True)
+class ContinuousAssign(LogicAssign):
+    """Represents: assign lhs = rhs;"""
+    def __post_init__(self):
+        object.__setattr__(self, "blocking", None) # enforce distinction
+
+
+@dataclass(frozen=True)
+class ProceduralAssign(LogicAssign):
+    """Represents assignments inside always blocks."""
+    blocking: bool = True   # = vs <=
+    def __post_init__(self):
+        # continuous assignments should never sneak in here
+        if self.blocking is None:
+            raise ValueError("ProceduralAssign requires blocking=True/False")

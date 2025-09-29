@@ -4,6 +4,8 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, List
 
 from logictree.nodes.base.base import LogicTreeNode
+from logictree.nodes.control.alwaysblock import AlwaysBlock
+from logictree.nodes.ops.ops import LogicVar
 
 if TYPE_CHECKING:
     from logictree.nodes.control.assign import LogicAssign
@@ -15,6 +17,7 @@ class Module:
     ports: List[str] = field(default_factory=list)
     signal_map: dict[str, LogicTreeNode] = field(default_factory=dict)
     assignments: dict[str, "LogicAssign"] = field(default_factory=dict)
+    always_blocks: List[AlwaysBlock] = field(default_factory=list)
     instances: list = field(default_factory=list)
     vector_widths: dict[str, tuple[int, int]] = field(default_factory=dict)
 
@@ -36,3 +39,16 @@ class Module:
         if not isinstance(name, str):
             raise TypeError(f"[BUG] get_signal() called with non-str key: {type(name).__name__}: {name!r}")
         return self.signal_map.get(name)
+
+    def validate_signal_map(self) -> None:
+        """
+        Enforce invariant: signal_map values must be *signal-like*,
+        never raw operator nodes.
+        """
+        for k, v in self.signal_map.items():
+            if not isinstance(k, str):
+                raise TypeError(f"[BUG] signal_map key must be str, got {type(k).__name__}: {k!r}")
+            if not isinstance(v, LogicVar):
+                raise TypeError(
+                    f"[BUG] signal_map value must be LogicVar, got {type(v).__name__}: {v!r}"
+                )

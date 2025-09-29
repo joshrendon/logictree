@@ -6,7 +6,7 @@ from rich.text import Text
 from sympy import Piecewise, S, symbols
 
 import graphviz
-from logictree.nodes.control.assign import LogicAssign
+from logictree.nodes.control.assign import LogicAssign, ContinuousAssign, ProceduralAssign
 from logictree.nodes.control.case import CaseItem, CaseStatement
 from logictree.nodes.control.ifstatement import IfStatement
 from logictree.nodes.hole.hole import LogicHole
@@ -16,7 +16,9 @@ from logictree.nodes.ops.gates import AndOp, NotOp, OrOp
 from logictree.nodes.ops.mux import LogicMux
 from logictree.nodes.ops.ops import LogicConst, LogicOp, LogicVar
 from logictree.nodes.selects import BitSelect, Concat, PartSelect
-
+from logictree.nodes.struct.module import Module
+from logictree.nodes.struct.statement import BlockStatement
+from logictree.nodes.control.alwaysblock import AlwaysBlock
 
 def pretty_print(tree, indent=0):
     spacer = "  " * indent
@@ -36,6 +38,41 @@ def pretty_print(tree, indent=0):
         return f"{spacer} {tree.pretty_label()}"
     elif isinstance(tree, NeqOp):
         return f"{spacer} {tree.pretty_label()}"
+    elif isinstance(tree, Module):
+        lines = [f"{spacer}Module {tree.name}:"]
+        if tree.ports:
+            lines.append(f"{spacer}  Ports: {', '.join(tree.ports)}")
+
+        if tree.signal_map:
+            lines.append(f"{spacer}  Signals:")
+            for name, sig in tree.signal_map.items():
+                lines.append(f"{spacer}    {name}: {sig}")
+
+        if tree.assignments:
+            lines.append(f"{spacer}  Assignments:")
+            for name, a in tree.assignments.items():
+                lines.append(f"{spacer}    {name} = {pretty_print(a.rhs, indent+2)}")
+
+        if tree.always_blocks:
+            lines.append(f"{spacer}  Always Blocks:")
+            for ab in tree.always_blocks:
+                lines.append(pretty_print(ab, indent+2))
+
+        if tree.instances:
+            lines.append(f"{spacer}  Instances: {tree.instances}")
+
+        return "\n".join(lines)
+    elif isinstance(tree, AlwaysBlock):
+        kind = getattr(tree, "kind", "unknown")
+        label = getattr(tree, "label", None)
+        header = f"{spacer}Always {kind}" + (f" : {label}" if label else "")
+        body = pretty_print(tree.body, indent+1) if tree.body else f"{spacer}  <empty>"
+        return f"{header}\n{body}"
+    elif isinstance(tree, BlockStatement):
+        lines = [f"{spacer}Block:"]
+        for stmt in tree.statements:
+            lines.append(pretty_print(stmt, indent+1))
+        return "\n".join(lines)
     elif isinstance(tree, CaseStatement):
         lines = [f"{spacer}CASE("]
         lines.append(pretty_print(tree.selector, indent + 1))
@@ -76,6 +113,11 @@ def pretty_print(tree, indent=0):
         return "\n".join(lines)
     elif isinstance(tree, LogicAssign):
         return f"{spacer}ASSIGN:\n{spacer}  {tree.lhs} = {pretty_print(tree.rhs, indent + 2)}"
+    elif isinstance(tree, ContinuousAssign):
+        return f"CONT_ASSIGN: {tree.pretty_inline()}"
+    elif isinstance(tree, ProceduralAssign):
+        arrow = "=" if tree.blocking else "<="
+        return f"PROC_ASSIGN: {tree.lhs.pretty_inline()} {arrow} {pretty_print(tree.rhs)}"
     elif isinstance(tree, LogicVar):
         # return f"{spacer}VAR({tree.name})"
         return f"{spacer}{tree.name}"

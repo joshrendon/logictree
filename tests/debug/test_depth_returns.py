@@ -1,5 +1,6 @@
 import inspect
 
+from logictree.analysis.depth import depth
 from logictree.nodes.control.assign import LogicAssign
 from logictree.nodes.control.case import CaseItem, CaseStatement
 from logictree.nodes.control.ifstatement import IfStatement
@@ -26,9 +27,9 @@ def test_all_nodes_depth_returns_int():
             elif cls is LogicAssign:
                 node = LogicAssign(lhs=LogicVar("out"), rhs=LogicConst(1))
             elif cls is CaseStatement:
-                node = CaseStatement(selector=LogicVar("s"), items=[], default=None)
+                node = CaseStatement(selector=LogicVar("s"), items=[CaseItem(labels=[LogicConst(1)],body=[LogicConst(0)], default=False)], default=None)
             elif cls is CaseItem:
-                node = CaseItem(labels=LogicConst(1), body=LogicConst(42), default=False)
+                node = CaseItem(labels=[LogicConst(1)], body=[LogicConst(42)], default=False)
             elif cls is IfStatement:
                 node = IfStatement(
                     cond=LogicConst(1),
@@ -59,12 +60,12 @@ def test_all_nodes_depth_returns_int():
                 }
                 node = cls(**kwargs) if kwargs else cls()
 
-            value = node.depth
+            value = depth(node)
             if callable(value):
-                failed.append(f"{cls.__name__}.depth is a method, not a property")
+                failed.append(f"{cls.__name__} depth is a method, not a property")
             elif not isinstance(value, int):
-                failed.append(f"{cls.__name__}.depth is not int: {type(value)}")
+                failed.append(f"{cls.__name__} depth is not int: {type(value)}")
         except Exception as e:
-            failed.append(f"{cls.__name__}.depth raised: {repr(e)}")
+            failed.append(f"{cls.__name__} depth raised: {repr(e)}")
 
     assert not failed, "\n".join(failed)

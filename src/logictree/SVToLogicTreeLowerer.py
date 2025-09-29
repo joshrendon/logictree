@@ -9,16 +9,25 @@ from typing import List, Tuple
 from logictree.constants import EMPTY_BRANCH
 from logictree.nodes import control, ops
 from logictree.nodes.base.base import LogicTreeNode
-from logictree.nodes.control.assign import LogicAssign
+from logictree.nodes.control.assign import LogicAssign, ContinuousAssign, ProceduralAssign
 from logictree.nodes.control.ifstatement import IfStatement
-from logictree.nodes.ops import LogicConst, LogicVar
+from logictree.nodes.control.case import CaseStatement, CaseItem
+from logictree.nodes.ops import LogicConst, LogicVar, LogicOp
 from logictree.nodes.ops.comparison import EqOp, NeqOp
-from logictree.nodes.ops.gates import AndOp, OrOp
+from logictree.nodes.ops.gates import AndOp, OrOp, NotOp, XorOp, XnorOp
 from logictree.nodes.selects import BitSelect, Concat, PartSelect
 from logictree.nodes.struct.module import Module
+from logictree.nodes.struct.signal import LogicType, DataType
+from logictree.nodes.control.alwaysblock import AlwaysBlock, AlwaysKind
+from logictree.nodes.struct.statement import BlockStatement
 from logictree.utils.display import pretty_print
+from logictree.utils.display import pretty_inline
+from logictree.utils.overlay import set_label
+from logictree.utils.debug import assert_no_fields
 from sv_parser.SystemVerilogSubsetParser import SystemVerilogSubsetParser
 from sv_parser.SystemVerilogSubsetVisitor import SystemVerilogSubsetVisitor
+from sympy import symbols, simplify, Piecewise
+from sympy.logic.boolalg import ITE
 
 log = logging.getLogger(__name__)
 AssignStmtCtxtClass = SystemVerilogSubsetParser.Continuous_assignContext
@@ -75,7 +84,7 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
         for k, v in signal_map.items():
             if not isinstance(k, str):
                 raise TypeError(f"[BUG] Signal map key must be str, got {type(k).__name__}: {k!r}")
-            if not isinstance(v, (LogicTreeNode, IfStatement)):
+            if not isinstance(v, (LogicVar, LogicAssign, CaseStatement, IfStatement)):
                 raise TypeError(f"[BUG] Signal map value must be LogicTreeNode, got {type(v).__name__}: {v!r}")
 
     def _labels_from_case_item(self, ctx) -> Tuple[List[LogicConst], bool]:
@@ -264,6 +273,7 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
 
     def visitModule_item(self, ctx):
         log.debug("visitModule_item")
+
         # log.debug(f"ctx.getChildren(): {ctx.getChildren()}")
         for child in ctx.getChildren():
             log.debug(
@@ -271,8 +281,57 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
             )
             if isinstance(child, SystemVerilogSubsetParser.Continuous_assignContext):
                 log.debug("Detected Continuous_assignContext")
-                return self.visitContinuous_assign(child)
+                #return self.visitContinuous_assign(child)
+        if ctx.net_declaration():
+            return self.visit(ctx.net_declaration())
+        elif ctx.continuous_assign():
+            return self.visit(ctx.continuous_assign())
+        elif ctx.always_construct():
+            ab = self.visit(ctx.always_construct())
+            if ab is not None:
+                self.current_module.always_blocks.append(ab)
+            return abs
         return self.visitChildren(ctx)
+
+    def visitAlways_construct(self, ctx):
+        label = None
+        kind = AlwaysKind.COMB  # default
+    
+        if ctx.event_control():
+            ec = ctx.event_control()
+            # Check which alt we matched
+            if isinstance(ec, SystemVerilogSubsetParser.WildcardSensitivityBareContext):
+                kind = AlwaysKind.COMB
+            elif isinstance(ec, SystemVerilogSubsetParser.WildcardSensitivityParenContext):
+                kind = AlwaysKind.COMB
+            elif isinstance(ec, SystemVerilogSubsetParser.ExplicitSensitivityContext):
+                # Check for posedge/negedge inside event_expression
+                if ec.event_expression().edge_identifier():
+                    kind = AlwaysKind.SEQ
+                else:
+                    kind = AlwaysKind.COMB
+        elif ctx.getText().startswith("always_comb"):
+            kind = AlwaysKind.COMB
+    
+        # Body
+        body_stmt = self.visit(ctx.statement())
+        if not isinstance(body_stmt, BlockStatement):
+            body = BlockStatement(statements=[body_stmt] if body_stmt else [])
+        else:
+            body = body_stmt
+        #if isinstance(body_stmt, list):
+        #    log.debug(f"Wrapped statments in BlockStatement")
+        #    body = BlockStatement(statements=body_stmt)
+        #else:
+        #    body = BlockStatement(statements=[body_stmt])
+    
+        # Label from begin : myblk
+        if ctx.statement().begin_end_block():
+            label_ctx = ctx.statement().begin_end_block().Identifier()
+            if label_ctx:
+                label = label_ctx.getText()
+    
+        return AlwaysBlock(kind=kind, label=label, body=body)
 
     def visitPort_list(self, ctx):
         log.debug("visitPort_list")
@@ -324,10 +383,37 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
             self.logger.debug(f"Port {direction_tok:<6} {name:<10} width={width_str}")
 
     def visitData_type(self, ctx):
-        return self.visitChildren(ctx)
+        log.debug("visitData_type()")
+        if ctx.LOGIC():
+            kind = DataType.LOGIC
+        elif ctx.REG():
+            kind = DataType.REG
+        elif ctx.WIRE():
+            kind = DataType.WIRE
+        else:
+            kind = DataType.LOGIC  # fallback (shouldn't happen)
+        width = 1
+        if ctx.range():
+            msb = int(ctx.range().constant_expression(0).getText())
+            lsb = int(ctx.range().constant_expression(1).getText())
+            width = abs(msb - lsb) + 1
+        return LogicType(kind=kind, width=width)
 
     def visitNet_declaration(self, ctx):
-        return self.visitChildren(ctx)
+        log.debug("visitNet_declaration()")
+
+        if ctx.data_type():
+            dtype = self.visit(ctx.data_type())
+        else:
+            # Default fallback
+            dtype = LogicType(kind=DataType.LOGIC, width=1)
+
+        # Get identifiers
+        for ident_ctx in ctx.list_of_net_identifiers().identifier():
+            name = ident_ctx.getText()
+            self.current_module.signal_map[name] = dtype
+            self.logger.info(f"Signal {name} has no explicit type; defaulting to logic [0:0]" if not ctx.data_type() else f"Declared {dtype} {name}")
+        return None
 
     def visitAlways_comb_block(self, ctx):
         log.debug("vistAlways_comb_block")
@@ -344,9 +430,9 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
         if ctx.if_else_if_chain():
             log.debug("visitStatement_item if_else_if_chain!")
             return self.visit(ctx.if_else_if_chain())
-        if ctx.non_blocking_assignment():
-            log.debug("visitStatement_item non_blocking_assignment")
-            return self.visit(ctx.non_blocking_assignment())
+        if ctx.nonblocking_assignment():
+            log.debug("visitStatement_item nonblocking_assignment")
+            return self.visit(ctx.nonblocking_assignment())
         if ctx.blocking_assignment():
             log.debug("visitStatement_item blocking_assignment")
             return self.visit(ctx.blocking_assignment())
@@ -360,13 +446,27 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
         log.debug(f"visitStatement() - ctx: {ctx.getText()}")
         if ctx.begin_end_block():
             log.debug("visitStatement begin_end_block")
+            #block = ctx.begin_end_block()
+            #results = []
+            #for stmt in block.statement():
+            #    result = self.visit(stmt)
+            #    results.append(result)
+            ## Return last assignment result
+            #return results[-1] if results else (None, None)
+
             block = ctx.begin_end_block()
-            results = []
-            for stmt in block.statement():
-                result = self.visit(stmt)
-                results.append(result)
-            # Return last assignment result
-            return results[-1] if results else (None, None)
+            stmts = []
+            for child in block.statement():
+                stmt_node = self.visit(child)
+                
+                if isinstance(stmt_node, BlockStatement):
+                    # flaten nested block
+                    stmts.extend(stmt_node.statements)
+                elif stmt_node is not None:
+                    log.debug(f"stmt_node.type: {type(stmt_node).__name__}")
+                    stmts.append(stmt_node)
+            log.debug(f"Wrapped statments in BlockStatement")
+            return BlockStatement(statements=stmts)
 
         elif ctx.if_statement():
             log.debug("visitStatement if_statement")
@@ -375,7 +475,7 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
         elif ctx.case_statement():
             log.debug("visitStatement case_statement")
             case_node = self.visit(ctx.case_statement())
-            if isinstance(case_node, control.CaseStatement):
+            if isinstance(case_node, CaseStatement):
                 log.debug("Located a CaseStatement node!")
                 # Extract LHS from the first case item (assumes consistemnt assignment target)
                 if case_node.items and case_node.items[0].body:
@@ -389,7 +489,7 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
                 #    log.debug(f"Registered logic for lhs:\n{pretty_print(self.current_module.get_signal(lhs))}")
 
                 if lhs is not None:
-                    assign = LogicAssign(lhs=LogicVar(lhs.name), rhs=case_node)
+                    assign = LogicAssign(lhs=LogicVar(lhs.name), rhs=case_node, blocking=None)
                     self.current_module.assignments[lhs.name] = assign
 
                 #log.debug("case_node: %s", pretty_print(case_node))
@@ -398,15 +498,47 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
 
         elif ctx.blocking_assignment():
             log.debug("visitStatement blocking_assigment")
+            #assign_ctx = ctx.blocking_assignment()
+            #lhs_name = assign_ctx.variable_lvalue().getText()
+            #lhs = lhs_name
+            #rhs_expr = assign_ctx.expression()
+            #rhs_tree = self.visit(rhs_expr)
+            #assign_node = LogicAssign(lhs=lhs, rhs=rhs_tree, blocking=True)
+            #log.debug(f"assigning LogicAssign(lhs={lhs}, rhs={rhs_tree})")
+            #log.debug(f"!! rhs_tree.name: {rhs_tree.name}")
+            #self.current_module.signal_map[rhs_tree.name] = rhs_tree
+            #log.debug(f"[statement assign] {assign_node}")
+            #return assign_node
             assign_ctx = ctx.blocking_assignment()
             lhs_name = assign_ctx.variable_lvalue().getText()
-            lhs = lhs_name
-            rhs_expr = assign_ctx.expression()
-            rhs_tree = self.visit(rhs_expr)
-            assign_node = control.LogicAssign(lhs=lhs, rhs=rhs_tree)
-            self.current_module.signal_map[rhs_tree.name] = rhs_tree
-            log.debug(f"[statement assign] {assign_node}")
-            return assign_node
+            lhs = LogicVar(lhs_name)  # wrap as LogicVar for consistency
+            rhs_tree = self.visit(assign_ctx.expression())
+
+            #if lhs in self.current_module.signal_map and self.current_module.signal_map[lhs] is not None:
+            #    # Already has an expression, so wrap it into an ITE
+            #    old_expr = self.current_module.signal_map[lhs].expr
+            #    new_expr = ITE(cond, rhs, old_expr)  # or Piecewise if numeric
+            #    log.debug(f"found old lhs in signal_map: lhs: {lhs}")
+            #    log.debug(f"old_expr: {old_expr}")
+            #    log.debug(f"assigning {new_expr}")
+            #    self.current_module.signal_map[lhs] = new_expr
+            #else:
+            # First Assignment
+            assign_node = ProceduralAssign(lhs=lhs, rhs=rhs_tree, blocking=True)
+            log.debug(f"assigning {assign_node}")
+
+            # Put the assignment in the module's assignments
+            self.current_module.assignments[lhs_name] = assign_node
+
+            # Keep signal_map entry as the LHS variable, not the RHS op
+            self.current_module.signal_map[lhs_name] = lhs
+
+            #return assign_node
+
+        elif ctx.nonblocking_assignment():
+            log.debug("visitStatement nonblocking_assigment")
+            #self.visit(ctx.nonblocking_assignment())
+            return self.visitNonblocking_assignment(ctx.nonblocking_assignment())
 
         elif ctx.expression():
             log.debug("visitStatement expression: %s", ctx.expression().getText())
@@ -420,9 +552,23 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
         lhs = ctx.variable_lvalue().getText()
         rhs_tree = self.visit(ctx.expression())
         lhs_var = self.current_module.get_signal(lhs)
-        node = LogicAssign(lhs=lhs_var, rhs=rhs_tree)
+        node = ProceduralAssign(lhs=lhs_var, rhs=rhs_tree, blocking=True)
         log.debug(f"Assigning signal_map.get() to current_module.assignments[{lhs}] = {node}")
         log.debug(f"{node.pretty_inline()}")
+        log.debug(f"node.blocking: {node.blocking}")
+        self.current_module.assignments[lhs_var.name] = node
+        log.debug(f"[statement assign] {node}")
+        return node
+
+    def visitNonblocking_assignment(self, ctx):
+        log.debug("visitNonblocking_assignment")
+        lhs = ctx.variable_lvalue().getText()
+        rhs_tree = self.visit(ctx.expression())
+        lhs_var = self.current_module.get_signal(lhs)
+        node = ProceduralAssign(lhs=lhs_var, rhs=rhs_tree, blocking=False)
+        log.debug(f"Assigning signal_map.get() to current_module.assignments[{lhs}] = {node}")
+        log.debug(f"{node.pretty_inline()}")
+        log.debug(f"node.blocking: {node.blocking}")
         self.current_module.assignments[lhs_var.name] = node
         log.debug(f"[statement assign] {node}")
         return node
@@ -434,8 +580,12 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
         then_stmt_ctx = ctx.statement(0)
         else_stmt_ctx = ctx.statement(1) if ctx.ELSE() else None
 
+        log.debug(f"then_stmt_ctx: {then_stmt_ctx.getText()}")
+        
+        log.debug(f"else_stmt_ctx: {else_stmt_ctx.getText()}") if else_stmt_ctx is not None else ""
+
         then_result = self.visit(then_stmt_ctx)
-        if not isinstance(then_result, LogicAssign):
+        if not isinstance(then_result, (LogicAssign, ProceduralAssign, ContinuousAssign)):
             log.warning("then_branch is not LogicAssign, wrapping in fallback")
 
         if not isinstance(then_result, LogicAssign):
@@ -456,7 +606,7 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
             else_tree = else_result.rhs
         else:
             lhs_else = lhs_then
-            else_tree = ops.LogicConst(0)
+            else_tree = LogicConst(0)
 
         if lhs_then != lhs_else:
             raise NotImplementedError("Mismatched lhs in if/else assignment")
@@ -467,7 +617,7 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
             else_branch=else_tree,
         )
     
-        assign = LogicAssign(lhs=lhs_then, rhs=if_stmt)
+        assign = LogicAssign(lhs=lhs_then, rhs=if_stmt, blocking=None)
 
         # Add a temporary assertion right before return in visitIf_statement
         assert isinstance(assign.rhs, IfStatement), f"Got: {type(assign.rhs)}"
@@ -480,6 +630,16 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
     def visitExpression_list(self, ctx):
         log.debug("visitExpression_list")
         return self.visitChildren(ctx)
+
+    def probe_tree(self, node, depth=0):
+        pad = "  " * depth
+        log.debug(f"{pad}{type(node).__name__}: {node}")
+        for attr in ("left", "right", "rhs", "value"):
+            if hasattr(node, attr):
+                child = getattr(node, attr)
+                log.debug(f"{pad}  .{attr} -> {child}")
+                if isinstance(child, (LogicOp, LogicVar, LogicConst)):  # your node base classes
+                    self.probe_tree(child, depth + 1)
 
     def visitContinuous_assign(self, ctx):
         log.debug("!!visitContinuous_assign")
@@ -518,16 +678,18 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
             rhs_tree = self.visit(rhs_ctx)  # must dispatch visitor!
             log.debug(f"assign LHS = {lhs}, RHS tree = {rhs_tree}")
             log.debug(f"RHS tree = {repr(rhs_tree)}")
-            log.debug(f"RHS.right probe: {rhs_tree.right}")
-            rhs_right = rhs_tree.right
-            log.debug(f"right.rhs: {rhs_right.rhs}")
-            log.debug(f"right.rhs.value: {rhs_right.rhs.value}")
-            log.debug(f"right.rhs: type {type(rhs_right.rhs).__name__}")
-
-            from logictree.utils.debug import assert_no_fields
+            self.probe_tree(rhs_tree)
+            #rhs_right = rhs_tree.right
+            #if hasattr(rhs_right, "rhs"):
+            #    log.debug(f"RHS.right probe: {rhs_tree.right}")
+            #    log.debug(f"right.rhs: {rhs_right.rhs}")
+            #    log.debug(f"right.rhs.value: {rhs_right.rhs.value}")
+            #    log.debug(f"right.rhs: type {type(rhs_right.rhs).__name__}")
+            #else:
+            #    log.debug(f"rhs_right is a leaf: {rhs_tree}")
 
             log.debug(f"Creating assign: {lhs_var} = {rhs_tree.label()}")
-            assign_node = LogicAssign(lhs=lhs_var, rhs=rhs_tree)
+            assign_node = ContinuousAssign(lhs=lhs_var, rhs=rhs_tree, blocking=None)
 
             field_name, field_val = contains_field_object(assign_node)
             if field_name:
@@ -550,9 +712,6 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
 
             # optional viz label
             try:
-                from logictree.utils.display import pretty_inline
-                from logictree.utils.overlay import set_label
-
                 set_label(rhs_tree, f"{lhs} = {pretty_inline(rhs_tree)}")
                 # rhs_tree.set_viz_label(f"{lhs} = {pretty_inline(rhs_tree)}")
             except Exception as e:
@@ -593,21 +752,31 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
 
     
     def visitCase_statement(self, ctx):
+        unique = ctx.UNIQUE() is not None
         selector_node = self.visit(ctx.expression())
         items = []
         for ci in ctx.case_item():
             labels, is_default = self._labels_from_case_item(ci)
-            body = self.visit(ci.statement())
+            stmt_node = self.visit(ci.statement())
+            #body = self.visit(ci.statement())
     
+            if stmt_node is None:
+                body = BlockStatement([])
+            elif isinstance(stmt_node, BlockStatement):
+                body = stmt_node
+            else:
+                body = BlockStatement([stmt_node])
+
             # If default branch is empty/null, use EMPTY_BRANCH node
-            if is_default and (body is None or isinstance(body, str) and body.strip() == ""):
+            #if is_default and (body is None or isinstance(body, str) and body.strip() == ""):
+            if is_default and not body.statements:
                 log.debug("Inserting EMPTY_BRANCH into default case branch")
-                body = EMPTY_BRANCH
+                body = BlockStatement([EMPTY_BRANCH])
     
-            case_item = control.CaseItem(labels=labels, default=is_default, body=body)
+            case_item = CaseItem(labels=labels, default=is_default, body=body)
             items.append(case_item)
     
-        return control.CaseStatement(selector=selector_node, items=items)
+        return CaseStatement(selector=selector_node, items=items, unique=unique)
 
     def visitExpression(self, ctx):
         log.debug("visitExpression fallback hit")
@@ -657,42 +826,42 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
     def visitLogicalNotExpr(self, ctx):
         log.debug("visitLogicalNotExpr")
         expr = self.visit(ctx.expression())
-        return ops.NotOp(expr)
+        return NotOp(expr)
 
     def visitBitwiseNotExpr(self, ctx):
         log.debug("visitBitwiseNotExpr")
         expr = self.visit(ctx.expression())
-        return ops.NotOp(expr)  # or differentiate if needed
+        return NotOp(expr)  # or differentiate if needed
 
     def visitNegateExpr(self, ctx):
         log.debug("visitNegateExpr")
         expr = self.visit(ctx.expression())
         # Treat -a as NOT(a) for logic, or raise NotImplementedError if arithmetic
-        return ops.NotOp(expr)
+        return NotOp(expr)
 
     def visitAndExpr(self, ctx):
         log.debug("visitAndExpr")
         lhs = self.visit(ctx.expression(0))
         rhs = self.visit(ctx.expression(1))
-        return ops.AndOp(lhs, rhs)
+        return AndOp(lhs, rhs)
 
     def visitOrExpr(self, ctx):
         log.debug("visitOrExpr")
         lhs = self.visit(ctx.expression(0))
         rhs = self.visit(ctx.expression(1))
-        return ops.OrOp(lhs, rhs)
+        return OrOp(lhs, rhs)
 
     def visitXorExpr(self, ctx):
         log.debug("visitXorExpr")
         lhs = self.visit(ctx.expression(0))
         rhs = self.visit(ctx.expression(1))
-        return ops.XorOp(lhs, rhs)
+        return XorOp(lhs, rhs)
 
     def visitXnorExpr(self, ctx):
         log.debug("visitXnorExpr")
         lhs = self.visit(ctx.expression(0))
         rhs = self.visit(ctx.expression(1))
-        return ops.XnorOp(lhs, rhs)
+        return XnorOp(lhs, rhs)
 
     def visitEqExpr(self, ctx):
         log.debug("vsitEqExpr")

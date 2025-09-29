@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, FrozenSet, Iterator, List, Optional
 
 from logictree.nodes.base.base import LogicTreeNode
 from logictree.nodes.ops.ops import LogicConst, LogicVar
-from logictree.nodes.struct.statement import Statement
+from logictree.nodes.struct.statement import Statement, BlockStatement
 
 log = logging.getLogger(__name__)
 
@@ -26,7 +26,7 @@ def indent(text, spaces):
 @dataclass(frozen=True)
 class CaseItem(LogicTreeNode):
     labels: List[LogicConst]
-    body: List[Statement]
+    body: BlockStatement
     default: bool = False
     match: Optional[LogicTreeNode] = None
     metadata: dict = field(default_factory=dict, compare=False, repr=False)
@@ -139,7 +139,8 @@ class CaseItem(LogicTreeNode):
 @dataclass(frozen=True)
 class CaseStatement(LogicTreeNode, Statement):
     selector: LogicTreeNode
-    items: List[CaseItem]
+    items: List[CaseItem] = field(default_factory=list)
+    unique: bool = False
     default: Optional[List[Statement]] = None
     metadata: dict = field(default_factory=dict, compare=False, repr=False)
 
