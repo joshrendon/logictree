@@ -32,6 +32,7 @@ class NotOp(LogicOp):
     def __post_init__(self):
         assert not isinstance(self.operand, list), "NotOp operand should be a single LogicTreeNode"
         object.__setattr__(self, "operand", LogicTreeNode._normalize(self.operand))
+        object.__setattr__(self, "width", 1)
 
     @property
     def op(self):
@@ -74,6 +75,7 @@ class AndOp(LogicOp):
     def __post_init__(self):
         object.__setattr__(self, "a", self._normalize(self.a))
         object.__setattr__(self, "b", self._normalize(self.b))
+        object.__setattr__(self, "width", 1)
 
     @property
     def op(self) -> str:
@@ -120,6 +122,7 @@ class OrOp(LogicOp):
     def __post_init__(self):
         object.__setattr__(self, "a", self._normalize(self.a))
         object.__setattr__(self, "b", self._normalize(self.b))
+        object.__setattr__(self, "width", 1)
 
     @property
     def op(self) -> str:
@@ -166,6 +169,7 @@ class XorOp(LogicOp):
     def __post_init__(self):
         object.__setattr__(self, "a", LogicTreeNode._normalize(self.a))
         object.__setattr__(self, "b", LogicTreeNode._normalize(self.b))
+        object.__setattr__(self, "width", 1)
 
     @property
     def op(self) -> str:
@@ -209,6 +213,7 @@ class XnorOp(LogicOp):
     def __post_init__(self):
         object.__setattr__(self, "a", self._normalize(self.a))
         object.__setattr__(self, "b", self._normalize(self.b))
+        object.__setattr__(self, "width", 1)
 
     @property
     def op(self) -> str:
@@ -252,6 +257,7 @@ class NandOp(LogicOp):
     def __post_init__(self):
         object.__setattr__(self, "a", self._normalize(self.a))
         object.__setattr__(self, "b", self._normalize(self.b))
+        object.__setattr__(self, "width", 1)
 
     @property
     def op(self) -> str:
@@ -295,6 +301,7 @@ class NorOp(LogicOp):
     def __post_init__(self):
         object.__setattr__(self, "a", self._normalize(self.a))
         object.__setattr__(self, "b", self._normalize(self.b))
+        object.__setattr__(self, "width", 1)
 
     @property
     def op(self) -> str:

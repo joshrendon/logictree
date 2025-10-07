@@ -8,7 +8,7 @@ from logictree.nodes.base.base import LogicTreeNode
 from logictree.nodes.control.case import CaseItem, CaseStatement
 from logictree.nodes.control.ifstatement import IfStatement
 from logictree.nodes.ops.comparison import EqOp, NeqOp
-from logictree.nodes.ops.ite import ITE
+from logictree.nodes.ops.ite import ITEOp
 from logictree.nodes.ops.gates import AndOp, NotOp, OrOp
 from logictree.nodes.ops.mux import LogicMux
 from logictree.nodes.ops.ops import LogicConst, LogicOp, LogicVar
@@ -22,7 +22,7 @@ ALLOWED_RHS_TYPES = (
     AndOp, OrOp, NotOp,
     LogicVar, LogicConst, LogicOp,
     LogicMux, IfStatement, CaseStatement, CaseItem,
-    BitSelect, PartSelect, Concat, ITE
+    BitSelect, PartSelect, Concat, ITEOp
 )
 
 

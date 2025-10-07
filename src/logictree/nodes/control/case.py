@@ -43,6 +43,8 @@ class CaseItem(LogicTreeNode):
 
     def __post_init__(self):
         LogicTreeNode.__init__(self)
+        if isinstance(self.body, list):
+            raise TypeError("CaseItem.body must be a BlockStatement, not list")
         # When the body is a plan Statement, force it to a List[Statement]
         if isinstance(self.body, Statement):
             object.__setattr__(self, "body", [self.body])

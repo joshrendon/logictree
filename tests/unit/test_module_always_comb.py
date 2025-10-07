@@ -4,7 +4,7 @@ from logictree.nodes.control.alwaysblock import AlwaysKind
 from logictree.nodes.control.assign import LogicAssign, ProceduralAssign
 from logictree.nodes.struct.statement import BlockStatement
 from logictree.nodes.ops.gates import OrOp
-from logictree.utils.display import to_sympy_expr
+from logictree.transforms.to_sympy import to_sympy_expr
 from sympy import symbols, simplify, Piecewise
 from sympy.logic.boolalg import ITE
 
@@ -111,7 +111,7 @@ def test_module_always_multiple_assigns():
     # Expect: y = ite(b, 2, ite(a, 1, 0))
     a, b = symbols("a b")
     #expected = (b & 1) * 2 + (~b & a) * 1 + (~b & ~a) * 0  # one encoding
-    #expected = ITE(b, 2, ITE(a, 1, 0))
+    #expected = ITEOp(b, 2, ITEOp(a, 1, 0))
     expected = Piecewise(
         (2, b),
         (1, a),

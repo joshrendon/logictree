@@ -16,25 +16,29 @@ ELSE: 'else' ;
 UNIQUE: 'unique' ;
 PRIORITY: 'priority' ;
 
-compilation_unit: module_declaration+ ;
+compilation_unit
+    : module_declaration+
+    ;
 
-module_declaration:
-    'module' module_identifier '(' port_list? ')' ';'
+module_declaration
+    : 'module' module_identifier '(' port_list? ')' ';'
     module_item*
     'endmodule'
     ;
 
 module_identifier
-      : Identifier
-      ;
-
-port_list: port (',' port)* ;
-port:
-      ('input' | 'output') (data_type)? (range)? Identifier (',' Identifier)*
+    : Identifier
     ;
 
-module_item:
-      net_declaration
+port_list
+    : port (',' port)*
+    ;
+port
+    : ('input' | 'output') (data_type)? (range)? Identifier (',' Identifier)*
+    ;
+
+module_item
+    : net_declaration
     | continuous_assign
     | always_construct
     ;
@@ -53,8 +57,8 @@ data_type
     | 'reg'   (range)?
     ;
 
-continuous_assign:
-    'assign' variable_lvalue ASSIGN expression SEMICOLON
+continuous_assign
+    : 'assign' variable_lvalue ASSIGN expression SEMICOLON
     ;
 
 always_construct
@@ -110,12 +114,12 @@ case_statement
     ;
 
 case_item
-    : expression_list COLON statement
+    : expression (COLON expression)* COLON statement
     | DEFAULT COLON statement
     ;
-expression_list
-    : expression (COMMA expression)*
-    ;
+//expression_list
+//    : expression (COMMA expression)*
+//    ;
 
 expression
     : '!' expression                               #LogicalNotExpr
@@ -135,8 +139,8 @@ expression
     | Identifier                                   #IdExpr
     ;
 
-literal:
-      DecimalNumber
+literal
+    : DecimalNumber
     | BinaryLiteral
     | HexLiteral
     | DecLiteral

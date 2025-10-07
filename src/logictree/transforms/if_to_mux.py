@@ -1,12 +1,32 @@
 import logging
 
-from logictree.nodes import (
-    LogicMux,
-)
+from logictree.nodes import LogicMux
 from logictree.nodes.base.base import LogicTreeNode
 from logictree.nodes.control.ifstatement import IfStatement
+from logictree.utils.transforms import unwrap_branch
+from logictree.nodes.control.alwaysblock import BlockStatement
+from logictree.nodes.control.assign import ProceduralAssign
 
 log = logging.getLogger(__name__)
+
+#def unwrap_branch(branch):
+#    if isinstance(branch, list) and len(branch) == 1:
+#        return branch[0]
+#    return branch
+
+def unwrap_branch(branch):
+    """Strip away trivial BlockStatement(ProceduralAssign) wrappers.
+
+    If the branch is exactly a BlockStatement containing one ProceduralAssign
+    to the same LHS as the outer assignment, return just the RHS.
+    Otherwise return the branch as-is.
+    """
+
+    if isinstance(branch, BlockStatement):
+        if (len(branch.statements) == 1
+                and isinstance(branch.statements[0], ProceduralAssign)):
+            return branch.statements[0].rhs
+    return branch
 
 def if_to_mux_tree(node: IfStatement) -> LogicTreeNode:
     """
@@ -30,41 +50,8 @@ def if_to_mux_tree(node: IfStatement) -> LogicTreeNode:
         else node.else_branch
     )
 
-    return LogicMux(selector=node.cond, if_true=then_expr, if_false=else_expr)
-#def if_to_mux_tree(node: IfStatement) -> LogicAssign:
-#    """
-#    Lower a simple IfStatement (2-way branch) into a mux tree.
-#    Assumes the body of each branch is a single LogicAssign to the same LHS.
-#    """
-#    log.debug(f"[if_to_mux] node type: {type(node)}")
-#    if not isinstance(node, IfStatement):
-#        raise TypeError(f"Expected IfStatement, got {type(node).__name__}")
-#
-#
-#    if node.then_branch is None or node.else_branch is None:
-#        raise NotImplementedError("Only full if/else supported for now")
-#
-#    log.debug(f"type(then_branch): {type(node.then_branch).__name__}")
-#    log.debug(f"type(else_branch): {type(node.else_branch).__name__}")
-#    then_stmt = (
-#        node.then_branch[0] if isinstance(node.then_branch, list) else node.then_branch
-#    )
-#    else_stmt = (
-#        node.else_branch[0] if isinstance(node.else_branch, list) else node.else_branch
-#    )
-#    log.debug(f"type(then_stmt): {type(then_stmt).__name__}")
-#    log.debug(f"type(else_stmt): {type(else_stmt).__name__}")
-#
-#    if isinstance(then_stmt, IfStatement) or isinstance(else_stmt, IfStatement):
-#        raise NotImplementedError("Nested IfStatements not supported in if_to_mux_tree() yet")
-#
-#    if not isinstance(then_stmt, LogicAssign) or not isinstance(else_stmt, LogicAssign):
-#        raise TypeError(
-#            "if-to-mux lowering only supports LogicAssign branches right now"
-#        )
-#
-#    if then_stmt.lhs != else_stmt.lhs:
-#        raise ValueError("Mismatched LHS in if/else branches")
-#
-#    mux_expr = LogicMux(cond=node.cond, then_branch=then_stmt.rhs, else_branch=else_stmt.rhs)
-#    return LogicAssign(lhs=then_stmt.lhs, rhs=mux_expr)
+    return LogicMux(
+        selector=node.cond,
+        if_true=unwrap_branch(then_expr),
+        if_false=unwrap_branch(else_expr)
+    )

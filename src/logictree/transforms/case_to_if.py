@@ -49,68 +49,11 @@ def case_to_if_tree(case_node: CaseStatement) -> IfStatement:
         if idx + 1 < len(items):
             else_branch = build_if(idx + 1)
         else:
-            else_branch = EmptyBranch()  # ✅ insert default fallback
+            else_branch = EmptyBranch()  # insert default fallback
 
         return IfStatement(cond=cond, then_branch=then_rhs, else_branch=else_branch)
 
     return build_if(0)
-#def case_to_if_tree(stmt: CaseStatement) -> IfStatement:
-#    assert isinstance(stmt, CaseStatement)
-#    selector = stmt.selector
-#    current = None
-#
-#    for item in reversed(stmt.items):
-#        assert isinstance(item.body, list), "CaseItem.body should be a list of LogicAssigns"
-#        assert len(item.body) == 1, "Each case item should have exactly one assignment"
-#
-#        logic_assign = item.body[0]
-#        assert isinstance(logic_assign, LogicAssign)
-#
-#        cond = None
-#        if not item.default:
-#            assert item.labels, "Non-default case must have labels"
-#            cond = EqOp(selector, item.labels[0])  # TODO: handle multi-label later
-#
-#        then_branch = logic_assign.rhs
-#
-#        if cond is None:  # this is the default branch
-#            current = then_branch
-#        else:
-#            current = IfStatement(cond=cond, then_branch=then_branch, else_branch=current)
-#
-#    # Defensive fallback: ensure else_branch is not None
-#    if isinstance(current, IfStatement) and current.else_branch is None:
-#        current.else_branch = LogicConst(0)
-#        log.warning("defensive fallback: defaulting else_branch to LogicConst(0)")
-#
-#    return current
-#def case_to_if_tree(stmt: CaseStatement) -> IfStatement:
-#    """
-#    Lower a single CaseStatement into a nested IfStatement chain.
-#
-#    Each case item is translated into an `if (selector == label)` branch,
-#    chained with `else if` for subsequent items. A default is lowered
-#    into a final unconditional branch.
-#    """
-#    assert isinstance(stmt, CaseStatement)
-#
-#    current = None
-#    # Iterate reversed so the first item ends up outermost
-#    for item in reversed(stmt.items):
-#        #if not item.labels:
-#        #    continue 
-#        cond = EqOp(stmt.selector, item.labels[0])
-#        current = IfStatement(cond=cond, then_branch=item.body, else_branch=current)
-#
-#    # Default case: unconditional if(true)
-#    if stmt.default:
-#        current = IfStatement(
-#            cond=LogicConst(True),
-#            then_branch=stmt.default.body,
-#            else_branch=current,
-#        )
-#
-#    return current
 
 
 def transform_cases(node: LogicTreeNode) -> LogicTreeNode:

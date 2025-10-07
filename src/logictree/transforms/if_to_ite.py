@@ -1,4 +1,4 @@
-from logictree.nodes.ops.ite import ITE
+from logictree.nodes.ops.ite import ITEOp
 from logictree.nodes.control.assign import LogicAssign
 from logictree.nodes.control.ifstatement import IfStatement
 from logictree.nodes.ops.ops import LogicConst
@@ -42,7 +42,7 @@ def reduce_if_to_ite(stmt, default_else=None):
     else:
         return stmt
 
-    ite_expr = ITE(
+    ite_expr = ITEOp(
         cond=stmt.cond,
         if_true=then_expr,
         if_false=else_expr

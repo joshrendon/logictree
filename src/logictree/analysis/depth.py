@@ -13,6 +13,7 @@ from logictree.nodes.ops.ops import LogicConst, LogicVar
 from logictree.nodes.selects import BitSelect, Concat, PartSelect
 from logictree.nodes.struct.module import Module
 from logictree.nodes.struct.statement import BlockStatement
+from logictree.nodes.ops.ite import ITEOp
 
 
 @singledispatch
@@ -107,6 +108,9 @@ def _(node: CaseStatement) -> int:
 def _(node: BlockStatement) -> int:
     return max((depth(s) for s in node.statements), default=0)
 
+@depth.register
+def _(node: ITEOp) -> int:
+    return 1 + max((depth(ch) for ch in node.children), default=0)
 
 # --- Structural Module ---
 @depth.register

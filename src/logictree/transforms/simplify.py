@@ -3,6 +3,7 @@ from functools import singledispatch
 from logictree.nodes.base import LogicTreeNode
 from logictree.nodes.ops import LogicConst, LogicVar
 from logictree.nodes.ops.gates import AndOp, NandOp, NorOp, NotOp, OrOp, XnorOp, XorOp
+from logictree.nodes.ops.ite import ITEOp
 
 
 @singledispatch
@@ -154,5 +155,29 @@ def _(node: LogicVar):
 def _(node: LogicConst):
     return node
 
+
+@simplify.register
+def _(node: ITEOp):
+    cond = simplify(node.cond)
+    t = simplify(node.if_true)
+    f = simplify(node.if_false)
+
+    # Rule: ITE(a, X, ITE(a, Y, Z)) → ITE(a, X, Z)
+    if isinstance(f, ITEOp) and f.cond == cond:
+        return ITEOp(cond, t, f.if_false)
+
+    ## Collapse same branches
+    #if str(t) == str(f):
+    #    return t
+    ## Booleanized identities
+    #if isinstance(t, LogicConst) and isinstance(f, LogicConst):
+    #    if t.value == 1 and f.value == 0:
+    #        return cond
+    #    if t.value == 0 and f.value == 1:
+    #        from logictree.nodes.ops.gates import NotOp
+    #        return NotOp(cond)
+
+
+    return ITEOp(cond, t, f)
 
 simplify_logic_tree = simplify

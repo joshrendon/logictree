@@ -39,9 +39,11 @@ def test_case_to_mux_roundtrip():
     module_map = lower_sv_text_to_logic(verilog_text)
     mod = module_map["mux_case"]
 
+    log.debug(f"module: mux_case: {mod}")
     # Confirm assignment exists
     assert "out" in mod.assignments
     top_assign = mod.assignments["out"]
+    log.debug(f"top_assign: {top_assign}")
     assert isinstance(top_assign, LogicAssign)
 
     # Lower: case → if

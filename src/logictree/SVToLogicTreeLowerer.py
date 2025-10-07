@@ -32,13 +32,18 @@ from sympy.logic.boolalg import ITE
 log = logging.getLogger(__name__)
 AssignStmtCtxtClass = SystemVerilogSubsetParser.Continuous_assignContext
 IfStmtCtxtClass = SystemVerilogSubsetParser.If_statementContext
-Expression_listCtxClass = SystemVerilogSubsetParser.Expression_listContext
+Expression_CtxClass = SystemVerilogSubsetParser.ExpressionContext
 
 _BINARY_RE = re.compile(
     r"^(?P<width>\d+)\s*'\s*(?P<base>[bBoOdDhH])\s*(?P<digits>[_0-9a-fA-FxzXZ]+)$"
 )
 _RANGE_RE = re.compile(r"\[\s*(\d+)\s*:\s*(\d+)\s*\]")
 
+def unwrap_block(node):
+    """Return a list of contained statements if this is a BlockStatement, else wrap it in a list."""
+    if isinstance(node, BlockStatement):
+        return node.statements
+    return [node]
 
 def contains_field_object(obj):
     for name, val in vars(obj).items():
@@ -94,10 +99,10 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
     
         labels: List[LogicConst] = []
     
-        # FIX: pull expressions from inside the expression_list context
-        expr_list_ctx = ctx.expression_list()
+        expr_list_ctx = ctx.expression()
         if expr_list_ctx is not None:
-            for expr_ctx in expr_list_ctx.expression():
+            #for expr_ctx in expr_list_ctx.expression():
+            for expr_ctx in expr_list_ctx:
                 expr_node = self.visit(expr_ctx)
                 if not isinstance(expr_node, LogicConst):
                     raise TypeError(
@@ -244,7 +249,7 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
             self.visitPort_list(port_list_ctx)
 
         #ports = list(self.output_signals)
-        log.debug(f"port_list_ctx: {port_list_ctx}")
+        log.debug(f"port_list_ctx: {port_list_ctx.getText()}")
         #log.debug(f"ports: {ports}")
 
         for item in ctx.module_item():
@@ -252,7 +257,6 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
             self.visitModule_item(item)
 
         mod_obj.signal_map.update(self.current_module.signal_map)
-        #mod_obj.ports.append(ports)
         mod_obj.vector_widths.update(self.current_module.vector_widths)
 
         # Output debug summaries
@@ -285,12 +289,14 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
         if ctx.net_declaration():
             return self.visit(ctx.net_declaration())
         elif ctx.continuous_assign():
-            return self.visit(ctx.continuous_assign())
+            #assign = self.visit(ctx.continuous_assign())
+            assign = self.visit(ctx.continuous_assign())
+            self.current_module.assignments[assign.lhs.name] = assign
         elif ctx.always_construct():
             ab = self.visit(ctx.always_construct())
             if ab is not None:
                 self.current_module.always_blocks.append(ab)
-            return abs
+            return ab
         return self.visitChildren(ctx)
 
     def visitAlways_construct(self, ctx):
@@ -443,61 +449,93 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
         return None
 
     def visitStatement(self, ctx):
-        log.debug(f"visitStatement() - ctx: {ctx.getText()}")
+        log.info(f"visitStatement - ctx: {ctx.getText()}")
         if ctx.begin_end_block():
-            log.debug("visitStatement begin_end_block")
-            #block = ctx.begin_end_block()
-            #results = []
-            #for stmt in block.statement():
-            #    result = self.visit(stmt)
-            #    results.append(result)
-            ## Return last assignment result
-            #return results[-1] if results else (None, None)
-
+            log.info("visitStatement begin_end_block")
             block = ctx.begin_end_block()
             stmts = []
             for child in block.statement():
                 stmt_node = self.visit(child)
                 
                 if isinstance(stmt_node, BlockStatement):
+                    log.debug(f"stmt_node is BlockStatement")
                     # flaten nested block
                     stmts.extend(stmt_node.statements)
                 elif stmt_node is not None:
+                    log.debug(f"stmt_node is not None")
                     log.debug(f"stmt_node.type: {type(stmt_node).__name__}")
                     stmts.append(stmt_node)
             log.debug(f"Wrapped statments in BlockStatement")
             return BlockStatement(statements=stmts)
 
         elif ctx.if_statement():
-            log.debug("visitStatement if_statement")
+            log.info("visitStatement if_statement")
             return self.visit(ctx.if_statement())
 
         elif ctx.case_statement():
-            log.debug("visitStatement case_statement")
+            log.info("visitStatement case_statement")
             case_node = self.visit(ctx.case_statement())
-            if isinstance(case_node, CaseStatement):
-                log.debug("Located a CaseStatement node!")
-                # Extract LHS from the first case item (assumes consistemnt assignment target)
-                if case_node.items and case_node.items[0].body:
-                    lhs = case_node.items[0].body[0].lhs
-                assert not isinstance(lhs, str)
-                self.current_module.signal_map[lhs.name] = case_node
-                log.debug(f"Registered logic for lhs: {lhs}")
-                #if isinstance(lhs, LogicTreeNode):
-                #    log.debug(f"Registered logic for lhs:\n{pretty_print(self.current_module.get_signal(lhs.name))}")
-                #else:
-                #    log.debug(f"Registered logic for lhs:\n{pretty_print(self.current_module.get_signal(lhs))}")
-
-                if lhs is not None:
+            if isinstance(case_node, CaseStatement) and case_node.items:
+                #body0 = case_node.items[0].body              # always BlockStatement now
+                body0 = self._as_block(case_node.items[0].body) #normalize
+                #if isinstance(body0, list):
+                #    log.warning("body0 is a list")
+                #    log.debug(f"body0: {body0}")
+                assert(isinstance(body0, BlockStatement)), f"{type(body0).__name__}"
+                if body0.statements and hasattr(body0.statements[0], "lhs"):
+                    lhs = body0.statements[0].lhs
+                    # record the assignment target for the module
+                    # Option A: store the CaseStatement itself (later passes will lower it)
                     assign = LogicAssign(lhs=LogicVar(lhs.name), rhs=case_node, blocking=None)
                     self.current_module.assignments[lhs.name] = assign
+                else:
+                    log.warning("First case arm did not begin with an assignment")
+            return case_node
+        #elif ctx.case_statement():
+        #    log.debug("visitStatement case_statement")
+        #    case_node = self.visit(ctx.case_statement())
+        #    if isinstance(case_node, CaseStatement):
+        #        log.debug("Located a CaseStatement node!")
+        #        # Extract LHS from the first case item (assumes consistemnt assignment target)
+        #        if case_node.items and case_node.items[0].body:
+        #            #lhs = case_node.items[0].body[0].lhs
+        #            #body = unwrap_block(case_node.items[0].body)
+        #            body_node = case_node.items[0].body
+        #            log.info(f"Located body_node: {body_node}")
+        #            log.info(f"Located type(body_node): {type(body_node).__name__}")
+        #            if isinstance(body_node, BlockStatement):
+        #                if body_node.statements and hasattr(body_node.statements[0], "lhs"):
+        #                    lhs = body_node.statements[0].lhs
+        #                    log.info(f"lhs.name: {lhs.name}")
+        #                    self.current_module.signal_map[lhs.name] = case_node
 
-                #log.debug("case_node: %s", pretty_print(case_node))
-                #log.debug("assign: %s", pretty_print(assign))
-            return assign 
+        #                    if lhs is not None:
+        #                        assign = LogicAssign(lhs=LogicVar(lhs.name), rhs=case_node, blocking=None)
+        #                        #self.current_module.assignments[lhs.name] = assign
+        #                        log.debug("case_node: %s", pretty_print(case_node))
+        #                        log.debug("assign: %s", pretty_print(assign))
+        #                        return assign 
+        #                else:
+        #                    log.warning("CaseStatement BlockStatemnt had no LogicAssign in the body")
+        #                    return case_node
+        #            elif hasattr(body_node, "lhs"):
+        #                lhs = body_node.lhs
+        #                log.info(f"lhs.name: {lhs.name}")
+        #                self.current_module.signal_map[lhs.name] = case_node
+        #                if lhs is not None:
+        #                    assign = LogicAssign(lhs=LogicVar(lhs.name), rhs=case_node, blocking=None)
+        #                    #self.current_module.assignments[lhs.name] = assign
+        #                    log.debug(f"lhs.name: {lhs.name}")
+        #                    log.debug("case_node: %s", pretty_print(case_node))
+        #                    log.debug("assign: %s", pretty_print(assign))
+        #                    return assign 
+        #            else:
+        #                log.warning("CaseStatement body has no LogicAssign lhs")
+        #                return case_node
+
 
         elif ctx.blocking_assignment():
-            log.debug("visitStatement blocking_assigment")
+            log.info("visitStatement blocking_assigment")
             #assign_ctx = ctx.blocking_assignment()
             #lhs_name = assign_ctx.variable_lvalue().getText()
             #lhs = lhs_name
@@ -528,20 +566,20 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
             log.debug(f"assigning {assign_node}")
 
             # Put the assignment in the module's assignments
-            self.current_module.assignments[lhs_name] = assign_node
+            ##self.current_module.assignments[lhs_name] = assign_node
 
             # Keep signal_map entry as the LHS variable, not the RHS op
             self.current_module.signal_map[lhs_name] = lhs
 
-            #return assign_node
+            return assign_node
 
         elif ctx.nonblocking_assignment():
-            log.debug("visitStatement nonblocking_assigment")
+            log.info("visitStatement nonblocking_assigment")
             #self.visit(ctx.nonblocking_assignment())
             return self.visitNonblocking_assignment(ctx.nonblocking_assignment())
 
         elif ctx.expression():
-            log.debug("visitStatement expression: %s", ctx.expression().getText())
+            log.info("visitStatement expression: %s", ctx.expression().getText())
             return self.visit(ctx.expression())
         else:
             log.warning(f"Error unknown statement context: {type(ctx)}")
@@ -556,7 +594,7 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
         log.debug(f"Assigning signal_map.get() to current_module.assignments[{lhs}] = {node}")
         log.debug(f"{node.pretty_inline()}")
         log.debug(f"node.blocking: {node.blocking}")
-        self.current_module.assignments[lhs_var.name] = node
+        #self.current_module.assignments[lhs_var.name] = node
         log.debug(f"[statement assign] {node}")
         return node
 
@@ -569,7 +607,7 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
         log.debug(f"Assigning signal_map.get() to current_module.assignments[{lhs}] = {node}")
         log.debug(f"{node.pretty_inline()}")
         log.debug(f"node.blocking: {node.blocking}")
-        self.current_module.assignments[lhs_var.name] = node
+        #self.current_module.assignments[lhs_var.name] = node
         log.debug(f"[statement assign] {node}")
         return node
 
@@ -623,7 +661,7 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
         assert isinstance(assign.rhs, IfStatement), f"Got: {type(assign.rhs)}"
 
         self.current_module.signal_map[lhs_then.name] = if_stmt
-        self.current_module.assignments[lhs_then.name] = assign
+        #self.current_module.assignments[lhs_then.name] = assign
 
         return assign
 
@@ -750,33 +788,150 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
         
             raise  # re-raise so your test still fails
 
-    
-    def visitCase_statement(self, ctx):
-        unique = ctx.UNIQUE() is not None
-        selector_node = self.visit(ctx.expression())
-        items = []
-        for ci in ctx.case_item():
-            labels, is_default = self._labels_from_case_item(ci)
-            stmt_node = self.visit(ci.statement())
-            #body = self.visit(ci.statement())
-    
-            if stmt_node is None:
-                body = BlockStatement([])
-            elif isinstance(stmt_node, BlockStatement):
-                body = stmt_node
-            else:
-                body = BlockStatement([stmt_node])
+    def _as_block(self, node):
+        # Normalize anything (stmt | BlockStatement | list[stmt|BlockStatement]) to BlockStatement
+        if isinstance(node, BlockStatement):
+            return node
+        if isinstance(node, list):
+            flat = []
+            for s in node:
+                if isinstance(s, BlockStatement):
+                    flat.extend(s.statements)
+                else:
+                    flat.append(s)
+            return BlockStatement(statements=flat)
+        return BlockStatement(statements=[node])
 
-            # If default branch is empty/null, use EMPTY_BRANCH node
-            #if is_default and (body is None or isinstance(body, str) and body.strip() == ""):
-            if is_default and not body.statements:
-                log.debug("Inserting EMPTY_BRANCH into default case branch")
-                body = BlockStatement([EMPTY_BRANCH])
+    #def _as_block(self, node):
+    #    """Normalize any visited statement into a BlockStatement."""
+    #    if node is None:
+    #        return BlockStatement(statements=[])
+    #    if isinstance(node, BlockStatement):
+    #        return node
+    #    return BlockStatement(statements=[node])
     
-            case_item = CaseItem(labels=labels, default=is_default, body=body)
-            items.append(case_item)
-    
-        return CaseStatement(selector=selector_node, items=items, unique=unique)
+    def visitCase_item(self, ctx):
+        log.debug("visitCase_item")
+        if ctx.DEFAULT():
+            labels = ["default"]
+        else:
+            labels = [self.visit(e) for e in ctx.expression()]
+        body = self.visit(ctx.statement())
+        
+        body = self._as_block(body)
+        return CaseItem(labels=labels, body=body)
+
+    def visitCase_statement(self, ctx):
+        log.debug("visitCase_statement")
+        selector = self.visit(ctx.expression())
+        items = [self.visit(item) for item in ctx.case_item()]
+        return CaseStatement(selector=selector, items=items)
+    #def visitCase_statement(self, ctx):
+    #    log.debug("visitCase_statement")
+    #    unique = ctx.UNIQUE() is not None
+    #    selector_node = self.visit(ctx.expression())
+    #    items = []
+    #
+    #    for ci in ctx.case_item():
+    #        labels, is_default = self._labels_from_case_item(ci)
+    #
+    #        # Exactly ONE statement (or null) per case item in this grammar
+    #        stmt_ctx = ci.statement()
+    #        stmt_node = self.visit(stmt_ctx)           # visit once
+    #        body = self._as_block(stmt_node)           # normalize to BlockStatement
+    #
+    #        # If default is empty, make it explicit
+    #        if is_default and not body.statements:
+    #            body.statements.append(EMPTY_BRANCH)
+    #
+    #        items.append(CaseItem(labels=labels, default=is_default, body=body))
+    #
+    #    return CaseStatement(selector=selector_node, items=items, unique=unique)
+    #def visitCase_statement(self, ctx):
+    #    log.debug("visitCase_statement")
+    #    unique = ctx.UNIQUE() is not None
+    #    selector_node = self.visit(ctx.expression())
+    #    items = []
+    #
+    #    for ci in ctx.case_item():
+    #        labels, is_default = self._labels_from_case_item(ci)
+    #
+    #        # Normalize to a list of statement contexts (single or many)
+    #        stmt_ctxs = ci.statement()
+    #        if stmt_ctxs is None:
+    #            stmt_ctxs = []
+    #        elif not isinstance(stmt_ctxs, (list, tuple)):
+    #            stmt_ctxs = [stmt_ctxs]
+    #
+    #        stmts = []
+    #        for stmt_ctx in stmt_ctxs:
+    #            node = self.visit(stmt_ctx)
+    #            if node is None:
+    #                continue
+    #            if isinstance(node, BlockStatement):
+    #                # flatten nested begin/end
+    #                stmts.extend(node.statements)
+    #                log.debug(f"Flattened BlockStatement -> {len(node.statements)} stmts")
+    #            else:
+    #                stmts.append(node)
+    #                log.debug(f"Added stmt_node: {type(node).__name__}")
+    #
+    #        # Empty default branch gets an explicit sentinel
+    #        if is_default and not stmts:
+    #            log.debug("Inserting EMPTY_BRANCH into default case branch")
+    #            stmts.append(EMPTY_BRANCH)
+    #
+    #        body = BlockStatement(statements=stmts)
+    #        log.debug(f"Final case item body has {len(stmts)} stmts")
+    #
+    #        items.append(CaseItem(labels=labels, default=is_default, body=body))
+    #
+    #    return CaseStatement(selector=selector_node, items=items, unique=unique)
+    #def visitCase_statement(self, ctx):
+    #    log.debug("visitCase_statement")
+    #    unique = ctx.UNIQUE() is not None
+    #    selector_node = self.visit(ctx.expression())
+    #    items = []
+    #    for ci in ctx.case_item():
+    #        labels, is_default = self._labels_from_case_item(ci)
+    #        #stmt_node = self.visit(ci.statement())
+    #        #body = self.visit(ci.statement())
+    #        stmt_ctxs = ci.statement()
+    #        if stmt_ctxs is None:
+    #            stmt_ctxs = []
+    #        elif not isinstance(stmt_ctxs, (list, tuple)):
+    #            stmt_ctxs = [stmt_ctxs]
+
+    #        stmts = []
+    #        for stmt_ctx in stmt_ctxs:
+    #            stmt_node = self.visit(stmt_ctx)
+    #            if stmt_node is None:
+    #                continue
+    #            if isinstance(stmt_node, BlockStatement):
+    #                #body = stmt_node
+    #                stmts.extend(stmt_node.statements)
+    #                log.debug(f"found BlockStatement stmt_node stmts: {stmts}")
+    #                log.debug(f"Flattened BlockStatement -> {len(stmt_node.statements)} stmts")
+    #            elif stmt_node is not None:
+    #                #body = BlockStatement([stmt_node])
+    #                stmts.append(stmt_node)
+    #                log.debug(f"Added stmt_node: {type(stmt_node).__name__}")
+
+    #        # If default branch is empty/null, use EMPTY_BRANCH node
+    #        if is_default and not stmts:
+    #            log.debug("Inserting EMPTY_BRANCH into default case branch")
+    #            #body = BlockStatement([EMPTY_BRANCH])
+    #            stmts.append(EMPTY_BRANCH)
+    #            log.debug(f"stmts: {stmts}")
+
+    #        body = BlockStatement(statements=stmts)
+    #        log.debug(f"stmts: {stmts}")
+    #        log.debug(f"Final case item body has {len(stmts)} stmts")
+    #
+    #        case_item = CaseItem(labels=labels, default=is_default, body=body)
+    #        items.append(case_item)
+    #
+    #    return CaseStatement(selector=selector_node, items=items, unique=unique)
 
     def visitExpression(self, ctx):
         log.debug("visitExpression fallback hit")
