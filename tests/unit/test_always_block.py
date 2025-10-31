@@ -1,6 +1,5 @@
-import pytest
-from logictree.pipeline import lower_sv_text_to_logic
 from logictree.nodes.control.alwaysblock import AlwaysKind
+
 
 def test_always_at_star_and_paren(lower_sv_text_to_logic):
     sv = r"""

@@ -1,8 +1,10 @@
+import logging
+import re
 from pathlib import Path
+
 import schemdraw
 from schemdraw.parsing import logicparse
-import re
-import logging
+
 from logictree.transforms.to_primitives import to_primitives_logic_tree
 
 log = logging.getLogger(__name__)

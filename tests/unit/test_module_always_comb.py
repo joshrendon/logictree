@@ -1,12 +1,15 @@
-import pytest
-from logictree.pipeline import lower_sv_text_to_logic
+import logging
+
+from sympy import Piecewise, simplify, symbols
+
 from logictree.nodes.control.alwaysblock import AlwaysKind
 from logictree.nodes.control.assign import LogicAssign, ProceduralAssign
-from logictree.nodes.struct.statement import BlockStatement
 from logictree.nodes.ops.gates import OrOp
+from logictree.nodes.struct.statement import BlockStatement
+from logictree.pipeline import lower_sv_text_to_logic
 from logictree.transforms.to_sympy import to_sympy_expr
-from sympy import symbols, simplify, Piecewise
-from sympy.logic.boolalg import ITE
+
+log = logging.getLogger(__name__)
 
 def test_module_assign_and_always_comb():
     sv = r"""
@@ -38,8 +41,8 @@ def test_module_assign_and_always_comb():
 
     # Always block body should contain a LogicAssign
     assert len(ab.body.statements) == 1
-    assert isinstance(ab.body, BlockStatement), f"{type(s).__name__}"
     s = ab.body.statements[0]
+    assert isinstance(ab.body, BlockStatement), f"{type(s).__name__}"
     assert isinstance(s, ProceduralAssign)
     assert s.lhs.name == "y"
     assert isinstance(s.rhs, OrOp)
@@ -106,7 +109,10 @@ def test_module_always_multiple_assigns():
 
     # Run lowering to LogicTree IR and inspect final expression
     #y_expr = m.signal_map["y"].logic_expr.to_sympy()
-    y_expr = to_sympy_expr(m.signal_map["y"])
+    y_sig  = m.get_signal("y")
+    log.info(f"y_sig: {y_sig}")
+    log.info(f"type(y_sig): {type(y_sig).__name__}")
+    y_expr = to_sympy_expr(y_sig)
 
     # Expect: y = ite(b, 2, ite(a, 1, 0))
     a, b = symbols("a b")
@@ -117,4 +123,6 @@ def test_module_always_multiple_assigns():
         (1, a),
         (0, True)
     )
+    log.info(f"y_expr: {y_expr}")
+    log.info(f"expected: {expected}")
     assert simplify(y_expr - expected) == 0

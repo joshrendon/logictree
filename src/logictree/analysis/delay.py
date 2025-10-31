@@ -5,21 +5,35 @@ from logictree.nodes.control.assign import LogicAssign
 from logictree.nodes.control.case import CaseItem, CaseStatement
 from logictree.nodes.control.ifstatement import IfStatement
 from logictree.nodes.hole.hole import LogicHole
+from logictree.nodes.ops.arith import AddOp, DivOp, MulOp, SubOp
 from logictree.nodes.ops.comparison import EqOp, NeqOp
 from logictree.nodes.ops.empty import EmptyBranch
 from logictree.nodes.ops.gates import AndOp, NandOp, NorOp, NotOp, OrOp, XnorOp, XorOp
+from logictree.nodes.ops.ite import ITEOp
 from logictree.nodes.ops.mux import LogicMux
 from logictree.nodes.ops.ops import LogicConst, LogicVar
 from logictree.nodes.selects import BitSelect, Concat, PartSelect
 from logictree.nodes.struct.module import Module
 from logictree.nodes.struct.statement import BlockStatement
-from logictree.nodes.ops.ite import ITEOp
+from logictree.nodes.struct.structural import StructuralOp
 
 
 @singledispatch
 def delay(node: LogicTreeNode) -> int:
     raise NotImplementedError(f"No delay() for {type(node)}")
 
+@delay.register
+def _(node: StructuralOp):
+    raise NotImplementedError(
+        f"{type(node).__name__} is structural; delay undefined until lowered."
+    )
+
+@delay.register(AddOp)
+@delay.register(SubOp)
+@delay.register(MulOp)
+@delay.register(DivOp)
+def _(node) -> int:
+    return 1 + max((delay(c) for c in node.operands), default=0)
 
 # --- Leaves ---
 @delay.register(LogicVar)

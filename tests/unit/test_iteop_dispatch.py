@@ -1,15 +1,16 @@
-import pytest
-from sympy import Piecewise, true, simplify as sympy_simplify
+import logging
+
+from sympy import Piecewise, true
+from sympy import simplify as sympy_simplify
+
+from logictree.analysis.delay import delay
+from logictree.analysis.depth import depth
+from logictree.nodes.ops.gates import AndOp, OrOp
 from logictree.nodes.ops.ite import ITEOp
-from logictree.nodes.ops.ops import LogicVar, LogicConst, LogicOp
-from logictree.nodes.ops.gates import OrOp, AndOp, NotOp
+from logictree.nodes.ops.ops import LogicConst, LogicVar
 from logictree.transforms.simplify import simplify
 from logictree.transforms.to_primitives import to_primitives_logic_tree
-from logictree.analysis.depth import depth
-from logictree.analysis.delay import delay
 from logictree.transforms.to_sympy import to_sympy_expr
-from logictree.nodes.ops.ite import ITEOp
-import logging
 
 log = logging.getLogger(__name__)
 

@@ -59,28 +59,9 @@ class LogicMux(LogicTreeNode):
             | self.if_false.free_vars()
         )
 
-    #def to_primitives(self) -> LogicTreeNode:
-    #    """
-    #    Lower to AOI form:
-    #      mux(sel, a, b) = (sel AND a) OR (~sel AND b)
-    #    """
-    #    from logictree.nodes.ops.gates import AndOp, NotOp, OrOp
-
-    #    sel = self.selector
-    #    return OrOp(
-    #        AndOp(sel, self.if_true),
-    #        AndOp(NotOp(sel), self.if_false),
-    #    )
-
     def writes(self) -> set[str]:
         return set()
     
     def writes_must(self) -> set[str]:
         return set()
 
-    def to_sympy_expr(self, var_map=None):
-        from sympy import And, Not, Or
-        sel = self.selector.to_sympy_expr(var_map)
-        t_branch = self.if_true.to_sympy_expr(var_map)
-        f_branch = self.if_false.to_sympy_expr(var_map)
-        return Or(And(sel, t_branch), And(Not(sel), f_branch))

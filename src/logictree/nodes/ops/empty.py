@@ -1,6 +1,9 @@
+from dataclasses import dataclass
+
 from logictree.nodes.base.base import LogicTreeNode
 
 
+@dataclass(frozen=True)
 class EmptyBranch(LogicTreeNode):
     """Singleton node representing an empty else/default branch."""
 
@@ -29,12 +32,10 @@ class EmptyBranch(LogicTreeNode):
         return "(empty)"
 
     def to_sympy_expr(self):
-        # Treat as logic 0 or 'False'
-        from sympy import false
-        return false
+        raise NotImplementedError("Need to implement to_sympy_expr")
 
     def to_verilog(self):
-        return "1'b0"
+        raise NotImplementedError("Need to implement to_verilog")
 
     def free_vars(self):
         return set()

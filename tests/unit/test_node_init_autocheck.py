@@ -37,10 +37,13 @@ def test_node_init_autocheck(node_cls):
         # heuristic dummy values by arg name
         if "name" in name:
             kwargs[name] = "x"
-        elif "var" in name or "lhs" in name or "rhs" in name:
-            kwargs[name] = LogicVar("dummy")
         elif "value" in name:
-            kwargs[name] = True
+            if node_cls.__name__ == "LogicConst":
+                kwargs[name] = 1
+            else:
+                kwargs[name] = True
+        elif "a" in name or "b" in name or "x" in name or "y" in name or "var" in name or "lhs" in name or "rhs" in name:
+            kwargs[name] = LogicVar("dummy")
         elif "children" in name:
             kwargs[name] = [LogicVar("a")]
         elif "cases" in name:

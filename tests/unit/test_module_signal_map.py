@@ -1,11 +1,12 @@
-import pytest
-from logictree.pipeline import lower_sv_text_to_logic
-from logictree.nodes.ops.gates import OrOp, AndOp
-from logictree.nodes.ops.ops import LogicVar
-from logictree.nodes.control.assign import LogicAssign
-from logictree.utils.display import pretty_print
 import logging
+
+from logictree.nodes.control.assign import LogicAssign, ProceduralAssign
+from logictree.nodes.ops.ops import LogicVar
+from logictree.pipeline import lower_sv_text_to_logic
+from logictree.utils.display import pretty_print
+
 log = logging.getLogger(__name__)
+
 
 def test_no_operator_nodes_in_signal_map():
     sv = r"""
@@ -26,8 +27,11 @@ def test_no_operator_nodes_in_signal_map():
         assert isinstance(node, LogicVar), f"{name} -> {node} is not a LogicVar"
 
     # Driving logic is in assignments
-    assert isinstance(m.assignments["y"], LogicAssign)
-    assert isinstance(m.assignments["z"], LogicAssign)
+    assert isinstance(m.get_assignment("y"), LogicAssign)
+    z = m.get_procedural_assignment("z")
+    log.info(f"z: {z}")
+
+    assert isinstance(m.get_procedural_assignment("z"), ProceduralAssign)
 
 def test_only_vars_and_assigns_in_signal_map():
     sv = """

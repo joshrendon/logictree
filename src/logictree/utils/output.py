@@ -1,12 +1,11 @@
 import json
 import subprocess
 from pathlib import Path
-import graphviz
 
+import graphviz
 from logictree.nodes.base.base import LogicTreeNode
-from logictree.nodes.ops.ops import LogicVar, LogicConst, LogicOp
-from logictree.nodes.ops.gates import AndOp, OrOp, NotOp
-from logictree.utils.display import pretty_print
+from logictree.nodes.ops.gates import AndOp, NotOp, OrOp
+from logictree.nodes.ops.ops import LogicConst, LogicVar
 from logictree.utils.display import to_dot
 from logictree.utils.serialize import logic_tree_to_json
 

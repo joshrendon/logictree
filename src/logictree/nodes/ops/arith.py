@@ -1,13 +1,38 @@
+from abc import ABC
 from dataclasses import dataclass
-from logictree.nodes.ops.ops import LogicOp
+
 from logictree.nodes.base.base import LogicTreeNode
+from logictree.nodes.ops.ops import LogicConst, LogicOp
+from logictree.nodes.struct.structural import StructuralOp
 
 
 @dataclass(frozen=True)
-class ArithOp(LogicOp):
+class ArithOp(LogicOp, StructuralOp, ABC):
     """Base class for arithmetic operators."""
-    left: LogicTreeNode
-    right: LogicTreeNode
+    left: LogicTreeNode = LogicConst(0)
+    right: LogicTreeNode = LogicConst(0)
+
+    def __post_init__(self):
+        pass
+
+    def label(self):
+        return self.__class__.__name__
+
+    def to_json_dict(self):
+        return {"type": self.__class__.__name__}
+
+    def depth(self):
+        raise NotImplementedError(
+            f"{self.__class__.__name__} is a structural node; "
+            "depth undefined until lowered."
+        )
+
+    def delay(self):
+        raise NotImplementedError(
+            f"{self.__class__.__name__} is a structural node; "
+            "delay undefined until lowered."
+        )
+
 
 
 @dataclass(frozen=True)

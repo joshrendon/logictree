@@ -5,22 +5,23 @@ pytestmark = [pytest.mark.unit]
 from logictree.nodes.control.assign import LogicAssign
 from logictree.nodes.control.case import CaseItem, CaseStatement
 from logictree.nodes.ops.ops import LogicConst, LogicVar
+from logictree.nodes.struct.statement import BlockStatement
 
 
 def make_assign(lhs_name, rhs_name):
-    return LogicAssign(lhs=LogicVar(lhs_name), rhs=LogicVar(rhs_name))
+    return BlockStatement(statements=[LogicAssign(lhs=LogicVar(lhs_name), rhs=LogicVar(rhs_name))])
 
 def test_caseitem_label_rendering():
     # 1. Regular case item
-    item1 = CaseItem(labels=[LogicConst(0)], default=False, body=[make_assign("y", "a")])
+    item1 = CaseItem(labels=[LogicConst(0)], default=False, body=make_assign("y", "a"))
     assert item1.label() == "1'd0"
 
     # 2. Multiple labels
-    item2 = CaseItem(labels=[LogicConst(1), LogicConst(2)], default=False, body=[make_assign("y", "b")])
+    item2 = CaseItem(labels=[LogicConst(1), LogicConst(2)], default=False, body=make_assign("y", "b"))
     assert item2.label() == "1'd1, 2'd2"
 
     # 3. Default case
-    item3 = CaseItem(labels=[], default=True, body=[make_assign("y", "c")])
+    item3 = CaseItem(labels=[], default=True, body=make_assign("y", "c"))
     assert item3.label() == "default"
 
 def test_casestatement_label_propagation():
@@ -29,15 +30,20 @@ def test_casestatement_label_propagation():
     case_stmt = CaseStatement(
         selector=selector,
         items=[
-            CaseItem(labels=[LogicConst(0)], default=False, body=[make_assign("y", "a")]),
-            CaseItem(labels=[LogicConst(1)], default=False, body=[make_assign("y", "b")]),
-            CaseItem(labels=[], default=True, body=[make_assign("y", "c")])
+            CaseItem(labels=[LogicConst(0)], default=False, body=make_assign("y", "a")),
+            CaseItem(labels=[LogicConst(1)], default=False, body=make_assign("y", "b")),
+            CaseItem(labels=[], default=True, body=make_assign("y", "c"))
         ]
     )
 
     # Check label string generation of each item inside CaseStatement
-    expected_labels = ["1'd0", "1'd1", "default"]
+    #expected_labels = ["1'd0", "1'd1", "default"]
+    expected_labels = ["1'd0", "1'd1"]
     actual_labels = [item.label() for item in case_stmt.items]
+
+    assert case_stmt.default is not None
+    assert case_stmt.default.label() == "default"
+
     assert actual_labels == expected_labels
 
     # Check selector rendering
@@ -52,9 +58,9 @@ def test_case_statement_dot_and_json_outputs(tmp_path):
     case_stmt = CaseStatement(
         selector=selector,
         items=[
-            CaseItem(labels=[LogicConst(0)], default=False, body=[LogicAssign(lhs=y, rhs=LogicVar("a"))]),
-            CaseItem(labels=[LogicConst(1)], default=False, body=[LogicAssign(lhs=y, rhs=LogicVar("b"))]),
-            CaseItem(labels=[], default=True, body=[LogicAssign(lhs=y, rhs=LogicVar("c"))])
+            CaseItem(labels=[LogicConst(0)], body=BlockStatement(statements=[LogicAssign(lhs=y, rhs=LogicVar("a"))]), default=False),
+            CaseItem(labels=[LogicConst(1)], body=BlockStatement(statements=[LogicAssign(lhs=y, rhs=LogicVar("b"))]), default=False),
+            CaseItem(labels=[], default=True, body=BlockStatement(statements=[LogicAssign(lhs=y, rhs=LogicVar("c"))]))
         ]
     )
 
@@ -78,4 +84,6 @@ def test_case_statement_dot_and_json_outputs(tmp_path):
     assert data["selector"]["type"] == "LogicVar"
     assert data["selector"]["name"] == "sel"
     assert isinstance(data["items"], list)
-    assert len(data["items"]) == 3
+    assert len(data["items"]) == 2
+    case_stmt.default is not None
+    case_stmt.default.label() == "default"

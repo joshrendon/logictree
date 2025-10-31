@@ -1,10 +1,11 @@
-import pytest
 import logging
-from sympy import symbols, Or, And, Not, simplify as sympy_simplify
 
-from logictree.nodes.ops.ops import LogicVar, LogicConst
-from logictree.nodes.ops.gates import AndOp, OrOp, NotOp
+import pytest
+from sympy import Not, symbols
+from sympy import simplify as sympy_simplify
+
 from logictree.nodes.ops.ite import ITEOp
+from logictree.nodes.ops.ops import LogicConst, LogicVar
 from logictree.transforms.to_primitives import to_primitives_logic_tree
 from logictree.transforms.to_sympy import to_sympy_expr
 

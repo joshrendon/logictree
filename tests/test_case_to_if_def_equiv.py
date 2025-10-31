@@ -1,11 +1,17 @@
+import logging
+
 import pytest
 
 pytestmark = [pytest.mark.unit]
+log = logging.getLogger(__name__)
 
 import itertools
+import types
 
 from logictree.api import lower_sv_to_logic
 from logictree.eval import evaluate  # simple boolean evaluator
+from logictree.transforms.case_to_if import case_to_if_tree, transform_cases
+from logictree.utils.display import pretty_print
 
 
 def _assignments(vars_):
@@ -30,11 +36,17 @@ def test_case_to_if_define_equivalence_mux2_with_default():
       end
     endmodule
     """
-    orig_map = lower_sv_to_logic(sv)  # {out_name: LogicTree}
+    orig_map = lower_sv_to_logic(sv)
+    module = orig_map["m"]
+    log.info(f"module: type: {type(module).__name__}\n{pretty_print(module)}")
 
-    import types
+    assignments = module.assignments
+    #assert orig_map.default is not None
+    log.info(f"assignments:\npretty_print{assignments}")
 
-    from logictree.transforms.case_to_if import case_to_if_tree
+    for assign in module.get_assignments():
+        log.info(f"assign: {assign}")
+
     
     #print("DBG case_to_if_tree:", case_to_if_tree, type(case_to_if_tree))
     assert isinstance(case_to_if_tree, types.FunctionType), (
@@ -42,8 +54,10 @@ def test_case_to_if_define_equivalence_mux2_with_default():
     )
     
     assert callable(case_to_if_tree), type(case_to_if_tree)
-    from logictree.transforms.case_to_if import transform_cases
     lowered = {k: transform_cases(v) for k, v in orig_map.items()}
+
+    for k,v in lowered.items():
+        log.debug(f"lowered: {k} {pretty_print(v)}")
 
     vars_ = sorted({n.name for t in orig_map.values() for n in t.free_vars()})
     # vars_ should include s, a, b, c

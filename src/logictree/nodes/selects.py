@@ -122,6 +122,9 @@ class PartSelect(LogicTreeNode):
     
             width = abs(msb_val - lsb_val) + 1
             log.debug(f"width: {width}")
+        except TypeError:
+            log.error("[ERROR in PartSelect width calc] symbolic bounds, defering width = Unknown")
+            width = None
         except Exception as e:
             log.error(f"[ERROR in PartSelect width calc] {e.__class__.__name__}: {e}")
             import traceback
@@ -191,6 +194,8 @@ class Concat(LogicTreeNode):
 
     def __post_init__(self):
         total = 0
+        if not isinstance(self.parts, (list, tuple)):
+            object.__setattr__(self, "parts", [self.parts])
         for p in self.parts:
             if hasattr(p, "width"):
                 total += p.width

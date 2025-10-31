@@ -14,8 +14,11 @@ def simplify(node: LogicTreeNode) -> LogicTreeNode:
 @simplify.register(NotOp)
 def _(node: NotOp) -> LogicTreeNode:
     operand = simplify(node.operand)
+
+    # Not(Not(x)) -> x
     if isinstance(operand, NotOp):
-        return operand.operand
+        return simplify(node.operand)
+        #return operand.operand
     if isinstance(operand, LogicConst):
         return LogicConst(1 - operand.value)
     return NotOp(operand)
@@ -27,14 +30,22 @@ def _(node: AndOp):
     b = simplify(node.b)
 
     # domination / identity
+    # 0 & x -> 0
     if (isinstance(a, LogicConst) and a.value == 0) or (
         isinstance(b, LogicConst) and b.value == 0
     ):
         return LogicConst(0)
+
+    # 1 & x -> x
     if isinstance(a, LogicConst) and a.value == 1:
         return b
     if isinstance(b, LogicConst) and b.value == 1:
         return a
+
+    # Flatten nested AndOps: (a & (a&b)) -> (a&b)
+    if isinstance(b, AndOp) and (a == b.a or a == b.b):
+        other = b.b if a == b.a else b.a
+        return simplify(AndOp(a,other))
 
     # idempotence: a & a -> a
     if a.equals(b):
@@ -49,14 +60,21 @@ def _(node: OrOp):
     b = simplify(node.b)
 
     # domination / identity
+    # 1 | x -> 1
     if (isinstance(a, LogicConst) and a.value == 1) or (
         isinstance(b, LogicConst) and b.value == 1
     ):
         return LogicConst(1)
+    # (x | 0) -> x
     if isinstance(a, LogicConst) and a.value == 0:
         return b
     if isinstance(b, LogicConst) and b.value == 0:
         return a
+
+    # Flatten nested OrOps: (a | (a | b)) → (a | b)
+    if isinstance(b, OrOp) and (a == b.a or a == b.b):
+        other = b.b if a == b.a else b.a
+        return simplify(OrOp(a, other))
 
     # idempotence: a | a -> a
     if a.equals(b):

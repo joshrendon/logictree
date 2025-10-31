@@ -9,13 +9,10 @@ from logictree.pipeline import lower_sv_file_to_logic
 from logictree.transforms.case_to_if import case_to_if_tree
 from logictree.transforms.if_to_mux import if_to_mux_tree
 from logictree.transforms.signal_resolution import resolve_signal_vars
+from logictree.transforms.to_sympy import to_sympy_expr
 from logictree.utils.analysis import explain_logic_hash, get_logic_hash
 from logictree.utils.ascii_tree import logic_tree_to_ascii, to_ascii
-from logictree.utils.display import (
-    explain_expr_tree,
-    pretty_print
-)
-from logictree.transforms.to_sympy import to_sympy_expr
+from logictree.utils.display import explain_expr_tree, pretty_print
 from logictree.utils.graphviz_utils import to_png, to_svg
 from logictree.utils.reduce import balanced_tree_reduce
 from logictree.utils.utils_cli import check_against_golden, write_golden_file

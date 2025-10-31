@@ -1,12 +1,8 @@
-import pytest
 
-from logictree.nodes.struct.module import Module
-from logictree.nodes.ops.ops import LogicVar, LogicConst
-from logictree.nodes.control.assign import LogicAssign
+from logictree.nodes.control.assign import ProceduralAssign
 from logictree.nodes.control.ifstatement import IfStatement
-from logictree.transforms.if_to_ite import reduce_if_to_ite
-from logictree.nodes.ops.ite import ITEOp
-
+from logictree.nodes.struct.module import Module
+from logictree.utils.transforms import build_ite_chain
 
 
 def lower_procedural_assigns_to_signal_map(module: Module) -> None:

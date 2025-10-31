@@ -140,6 +140,7 @@ exclude = [
   "coverage_dashboard/",
   "coverage_dashboard_old/",
   "incomplete_scripts/",
+  "analysis/notebooks"
 ]
 [tool.ruff.lint]
 # Start small: only enforce core errors and import sorting

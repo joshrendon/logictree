@@ -1,10 +1,9 @@
-import pytest
 
-from logictree.nodes.ops.ops import LogicVar, LogicConst
 from logictree.nodes.control.assign import LogicAssign
 from logictree.nodes.control.ifstatement import IfStatement
-from logictree.transforms.if_to_ite import reduce_if_to_ite
 from logictree.nodes.ops.ite import ITEOp
+from logictree.nodes.ops.ops import LogicConst, LogicVar
+from logictree.transforms.if_to_ite import reduce_if_to_ite
 
 
 def test_simple_if_else_to_ite():

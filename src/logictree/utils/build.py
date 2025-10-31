@@ -6,11 +6,11 @@ from dd.autoref import BDD, Function
 
 from logictree.nodes.control.assign import LogicAssign
 from logictree.nodes.ops.comparison import EqOp, NeqOp
+from logictree.nodes.ops.empty import EmptyBranch
 from logictree.nodes.ops.gates import AndOp, NotOp, OrOp
 from logictree.nodes.ops.mux import LogicMux
 from logictree.nodes.ops.ops import LogicConst, LogicVar
 from logictree.nodes.selects import BitSelect, Concat, PartSelect
-from logictree.nodes.ops.empty import EmptyBranch
 
 log = logging.getLogger(__name__)
 

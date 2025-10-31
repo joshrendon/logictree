@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import FrozenSet, List, Optional
+from typing import FrozenSet, Iterator, List, Optional
 
+from logictree.nodes.base.base import LogicTreeNode
 from logictree.nodes.ops.ops import LogicVar
 
 
@@ -57,3 +58,18 @@ class BlockStatement(Statement):
             return frozenset()
         must_sets = [s.writes_must() for s in self.statements]
         return frozenset.intersection(*must_sets)
+
+    def __iter__(self) -> Iterator[LogicTreeNode]:
+        """Allow direct iteration over the statements in this block."""
+        return iter(self.statements)
+
+    def __len__(self) -> int:
+        return len(self.statements)
+
+    def __getitem__(self, index: int) -> LogicTreeNode:
+        return self.statements[index]
+
+    def __repr__(self):
+        inner = ", ".join(repr(s) for s in self.statements)
+        return f"BlockStatement([{inner}])"
+

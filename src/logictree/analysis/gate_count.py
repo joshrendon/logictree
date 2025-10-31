@@ -1,5 +1,7 @@
-from collections import Counter
 import logging
+from collections import Counter
+
+from logictree.transforms.to_primitives import to_primitives_logic_tree
 
 log = logging.getLogger(__name__)
 
@@ -10,15 +12,18 @@ CONTROL_NODES = {
     "CaseStatement",
     "CaseItem",
     "IfStatement",
+    "ITEOp",
+    "LogicMux",
     "LogicAssign",
+    "ContinuousAssign",
+    "ProceduralAssign"
 }
 
 def gate_count(root, *, primitives_only: bool = True) -> Counter:
-    node = (
-        root.to_primitives()
-        if primitives_only and hasattr(root, "to_primitives")
-        else root
-    )
+
+    if primitives_only and hasattr(root, "to_primitives"):
+        root = to_primitives_logic_tree(root)
+
     seen, counts = set(), Counter()
 
     def visit(n):
@@ -44,7 +49,7 @@ def gate_count(root, *, primitives_only: bool = True) -> Counter:
         for ch in kids:
             visit(ch)
 
-    visit(node)
+    visit(root)
     return counts
 
 def total_gates(root, **kw) -> int:

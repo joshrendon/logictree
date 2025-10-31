@@ -1,10 +1,11 @@
-import pytest
 import logging
 
-from logictree.nodes import LogicMux, LogicVar
-from logictree.nodes.ops.mux import LogicMux
+import pytest
+
+from logictree.nodes import LogicVar
 from logictree.nodes.control.assign import LogicAssign
 from logictree.nodes.control.ifstatement import IfStatement
+from logictree.nodes.ops.mux import LogicMux
 from logictree.transforms.if_to_mux import if_to_mux_tree
 from logictree.utils.output import write_dot_to_file
 

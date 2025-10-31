@@ -1,10 +1,8 @@
-import pytest
-from logictree.pipeline import lower_sv_text_to_logic
-from logictree.nodes.ops.gates import OrOp, AndOp
-from logictree.nodes.ops.ops import LogicVar
-from logictree.nodes.control.assign import LogicAssign, ContinuousAssign, ProceduralAssign
-from logictree.utils.display import pretty_print
 import logging
+
+from logictree.nodes.control.assign import ContinuousAssign, ProceduralAssign
+from logictree.pipeline import lower_sv_text_to_logic
+
 log = logging.getLogger(__name__)
 
 def test_continuous_assign_lowering():

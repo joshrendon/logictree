@@ -1,19 +1,22 @@
-import pytest
+import logging
 from pathlib import Path
-from sympy import Piecewise, true, simplify as sympy_simplify
-from logictree.nodes.ops.ops import LogicVar, LogicConst
-from logictree.nodes.ops.ite import ITEOp
-from logictree.analysis.depth import depth
+
+import pytest
+from sympy import Piecewise
+from sympy import simplify as sympy_simplify
+
 from logictree.analysis.delay import delay
+from logictree.analysis.depth import depth
+from logictree.nodes.ops.gates import AndOp, OrOp
+from logictree.nodes.ops.ite import ITEOp
+from logictree.nodes.ops.ops import LogicConst, LogicVar
 from logictree.transforms.simplify import simplify
 from logictree.transforms.to_primitives import to_primitives_logic_tree
-from logictree.utils.display import pretty_print, pretty_inline
 from logictree.transforms.to_sympy import to_sympy_expr
-from logictree.nodes.ops.gates import AndOp, OrOp
-from logictree.utils.schematic import render_schematic
+from logictree.utils.display import pretty_inline, pretty_print
 from logictree.utils.output import render_png_multi
+from logictree.utils.schematic import render_schematic
 from tests.utils.viz_helpers import assert_viz
-import logging
 
 log = logging.getLogger(__name__)
 

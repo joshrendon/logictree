@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 
 from ..base.base import LogicTreeNode
-from .ops import LogicOp
+from .ops import LogicOp, LogicVar
 
 __all__ = ["NotOp", "AndOp", "OrOp", "XorOp", "XnorOp", "NandOp", "NorOp"]
 
@@ -39,7 +39,12 @@ class NotOp(LogicOp):
         return "NOT"
 
     def label(self):
-        return self.op
+        if isinstance(self.operand, LogicVar):
+            return f"{self.operand.name} == 1'b0"
+        return f"~({self.operand.label() if hasattr(self.operand, 'label') else self.operand})"
+
+    #def label(self):
+    #    return self.op
 
     def default_label(self):
         return "NOT"

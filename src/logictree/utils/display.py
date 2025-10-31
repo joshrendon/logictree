@@ -1,26 +1,26 @@
+import logging
 import re
+
 import sympy as sympy
 from rich.console import Console
 from rich.text import Text
-from sympy import Piecewise, S, symbols, true
 
 import graphviz
-from logictree.nodes.control.assign import LogicAssign, ContinuousAssign, ProceduralAssign
+from logictree.nodes.control.alwaysblock import AlwaysBlock
+from logictree.nodes.control.assign import ContinuousAssign, LogicAssign, ProceduralAssign
 from logictree.nodes.control.case import CaseItem, CaseStatement
 from logictree.nodes.control.ifstatement import IfStatement
 from logictree.nodes.hole.hole import LogicHole
 from logictree.nodes.ops.comparison import EqOp, NeqOp
 from logictree.nodes.ops.empty import EmptyBranch
 from logictree.nodes.ops.gates import AndOp, NotOp, OrOp
+from logictree.nodes.ops.ite import ITEOp
 from logictree.nodes.ops.mux import LogicMux
 from logictree.nodes.ops.ops import LogicConst, LogicOp, LogicVar
-from logictree.nodes.selects import BitSelect, Concat, PartSelect
+from logictree.nodes.selects import BitSelect
 from logictree.nodes.struct.module import Module
 from logictree.nodes.struct.statement import BlockStatement
-from logictree.nodes.control.alwaysblock import AlwaysBlock
-from logictree.nodes.ops.ite import ITEOp
 
-import logging
 log = logging.getLogger(__name__)
 
 
@@ -149,6 +149,10 @@ def pretty_print(tree, indent=0):
         return f"{spacer}HOLE({tree.name})"
     elif isinstance(tree, EmptyBranch):
         return f"{spacer}EmptyBranch"
+    elif isinstance(tree, BlockStatement):
+        return f"{spacer}BlockStatement{pretty_print(tree.statements)}"
+    elif isinstance(tree, tuple):
+        return f"{spacer}tuple<{type(tree).__name__}>: {str(tree)}"
     elif isinstance(tree, list):
         return f"{spacer}LIST<{type(tree).__name__}>: {str(tree)}"
     else:
@@ -177,12 +181,11 @@ def pretty_inline(tree):
     Compact single-line representation for any LogicTree structure.
     Handles multi-bit results (lists of nodes) as well.
     """
-    from logictree.nodes.ops.ops import LogicOp, LogicVar, LogicConst
-    from logictree.nodes.ops.gates import AndOp, OrOp, NotOp, XorOp, XnorOp, NandOp
-    from logictree.nodes.control.ifstatement import IfStatement
-    from logictree.nodes.control.case import CaseStatement, CaseItem
     from logictree.nodes.control.assign import LogicAssign
+    from logictree.nodes.control.case import CaseItem, CaseStatement
+    from logictree.nodes.control.ifstatement import IfStatement
     from logictree.nodes.ops.ite import ITEOp
+    from logictree.nodes.ops.ops import LogicConst, LogicOp, LogicVar
 
     if isinstance(tree, LogicOp):
         child_strs = [pretty_inline(child) for child in tree.children]
@@ -191,6 +194,8 @@ def pretty_inline(tree):
         return tree.name
     elif isinstance(tree, LogicConst):
         return f"{tree.width}'d{tree.value}" if tree.width and tree.width > 1 else str(tree.value)
+    elif isinstance(tree, BlockStatement):
+        return f"BlockStatement({pretty_inline(tree.statements)})"
     elif isinstance(tree, ITEOp):
         return f"ITE({pretty_inline(tree.cond)}, {pretty_inline(tree.if_true)}, {pretty_inline(tree.if_false)})"
     elif isinstance(tree, IfStatement):
@@ -204,6 +209,8 @@ def pretty_inline(tree):
         return f"Item({labels} => {pretty_inline(tree.body)})"
     elif isinstance(tree, LogicAssign):
         return f"{pretty_inline(tree.lhs)}={pretty_inline(tree.rhs)}"
+    elif isinstance(tree, EmptyBranch):
+        return "EmptyBranch"
     elif isinstance(tree, list):
         return "[" + ", ".join(pretty_inline(x) for x in tree) + "]"
     else:
@@ -296,7 +303,7 @@ def to_dot(tree, g=None, parent=None, node_id_gen=[0]):
         g.edge(f"{my_id}:f", f_id)
     elif isinstance(tree, LogicOp):
         for child in tree.children:
-            child_id = to_dot(child, g, my_id, node_id_gen)
+            child_id = to_dot(child, g, my_id, node_id_gen) # noqa: F841  # side-effect: populates digraph
             #g.edge(my_id, child_id)
 
     elif isinstance(tree, (LogicAssign, ProceduralAssign, ContinuousAssign)):
@@ -312,7 +319,7 @@ def to_dot(tree, g=None, parent=None, node_id_gen=[0]):
             g.edge(my_id, else_id, label="else")
 
     elif isinstance(tree, CaseStatement):
-        sel_id = to_dot(tree.selector, g, my_id, node_id_gen)
+        sel_id = to_dot(tree.selector, g, my_id, node_id_gen) # noqa: F841  # side-effect: populates digraph
         for item in tree.items:
             item_id = to_dot(item, g, my_id, node_id_gen)
             g.edge(my_id, item_id)

@@ -6,28 +6,22 @@ from dataclasses import Field
 from pprint import pformat
 from typing import List, Tuple
 
-from logictree.constants import EMPTY_BRANCH
-from logictree.nodes import control, ops
-from logictree.nodes.base.base import LogicTreeNode
-from logictree.nodes.control.assign import LogicAssign, ContinuousAssign, ProceduralAssign
+from logictree.nodes.control.alwaysblock import AlwaysBlock, AlwaysKind
+from logictree.nodes.control.assign import ContinuousAssign, LogicAssign, ProceduralAssign
+from logictree.nodes.control.case import CaseItem, CaseStatement
 from logictree.nodes.control.ifstatement import IfStatement
-from logictree.nodes.control.case import CaseStatement, CaseItem
-from logictree.nodes.ops import LogicConst, LogicVar, LogicOp
+from logictree.nodes.ops import LogicConst, LogicOp, LogicVar
 from logictree.nodes.ops.comparison import EqOp, NeqOp
-from logictree.nodes.ops.gates import AndOp, OrOp, NotOp, XorOp, XnorOp
+from logictree.nodes.ops.gates import AndOp, NotOp, OrOp, XnorOp, XorOp
 from logictree.nodes.selects import BitSelect, Concat, PartSelect
 from logictree.nodes.struct.module import Module
-from logictree.nodes.struct.signal import LogicType, DataType
-from logictree.nodes.control.alwaysblock import AlwaysBlock, AlwaysKind
+from logictree.nodes.struct.signal import DataType, LogicType
 from logictree.nodes.struct.statement import BlockStatement
-from logictree.utils.display import pretty_print
-from logictree.utils.display import pretty_inline
-from logictree.utils.overlay import set_label
 from logictree.utils.debug import assert_no_fields
+from logictree.utils.display import pretty_inline, pretty_print
+from logictree.utils.overlay import set_label
 from sv_parser.SystemVerilogSubsetParser import SystemVerilogSubsetParser
 from sv_parser.SystemVerilogSubsetVisitor import SystemVerilogSubsetVisitor
-from sympy import symbols, simplify, Piecewise
-from sympy.logic.boolalg import ITE
 
 log = logging.getLogger(__name__)
 AssignStmtCtxtClass = SystemVerilogSubsetParser.Continuous_assignContext
@@ -458,14 +452,14 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
                 stmt_node = self.visit(child)
                 
                 if isinstance(stmt_node, BlockStatement):
-                    log.debug(f"stmt_node is BlockStatement")
+                    log.debug("stmt_node is BlockStatement")
                     # flaten nested block
                     stmts.extend(stmt_node.statements)
                 elif stmt_node is not None:
-                    log.debug(f"stmt_node is not None")
+                    log.debug("stmt_node is not None")
                     log.debug(f"stmt_node.type: {type(stmt_node).__name__}")
                     stmts.append(stmt_node)
-            log.debug(f"Wrapped statments in BlockStatement")
+            log.debug("Wrapped statments in BlockStatement")
             return BlockStatement(statements=stmts)
 
         elif ctx.if_statement():
@@ -824,8 +818,39 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
     def visitCase_statement(self, ctx):
         log.debug("visitCase_statement")
         selector = self.visit(ctx.expression())
-        items = [self.visit(item) for item in ctx.case_item()]
-        return CaseStatement(selector=selector, items=items)
+        items = []
+        default_body = None
+    
+        for ci_ctx in ctx.case_item():
+            ci = self.visit(ci_ctx)
+            if getattr(ci, "is_default", False):
+                default_body = ci
+            else:
+                items.append(ci)
+    
+        # Normalize default_body to Optional[List[Statement]]
+        if default_body is not None:
+            if isinstance(default_body, CaseItem):
+                body = getattr(default_body, "body", None)
+                if hasattr(body, "statements"):
+                    default_body = list(body.statements)
+                else:
+                    default_body = [body]
+            elif not isinstance(default_body, list):
+                default_body = [default_body]
+    
+        return CaseStatement(
+            selector=selector,
+            items=items,
+            default=default_body,
+        )
+    #def visitCase_statement(self, ctx):
+    #    log.debug("visitCase_statement")
+    #    selector = self.visit(ctx.expression())
+    #    items = [self.visit(item) for item in ctx.case_item()]
+    #    #default = ["default"]
+    #    #return CaseStatement(selector=selector, items=items, default=default)
+    #    return CaseStatement(selector=selector, items=items)
     #def visitCase_statement(self, ctx):
     #    log.debug("visitCase_statement")
     #    unique = ctx.UNIQUE() is not None
@@ -976,7 +1001,7 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
 
     def visitConcatExpr(self, ctx):
         parts = [self.visit(e) for e in ctx.expression()]
-        return Concat(parts)
+        return Concat(parts=parts)
 
     def visitLogicalNotExpr(self, ctx):
         log.debug("visitLogicalNotExpr")

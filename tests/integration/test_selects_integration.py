@@ -7,6 +7,7 @@ from logictree.nodes.control.ifstatement import IfStatement
 from logictree.nodes.ops.comparison import EqOp
 from logictree.nodes.ops.ops import LogicConst, LogicVar
 from logictree.nodes.selects import BitSelect, Concat, PartSelect
+from logictree.nodes.struct.statement import BlockStatement
 
 pytestmark = [pytest.mark.integration]
 
@@ -20,7 +21,7 @@ def test_bitselect_in_case_freevars_and_writes():
     case = CaseStatement(
         selector=s,
         items=[
-            CaseItem(labels=[LogicConst(0)], body=[LogicAssign(lhs=y, rhs=bit0)], default=False)
+            CaseItem(labels=[LogicConst(0)], body=BlockStatement(statements=[LogicAssign(lhs=y, rhs=bit0)]), default=False)
         ],
         default=None
     )
@@ -59,7 +60,7 @@ def test_concat_in_case_freevars_and_writes():
     case = CaseStatement(
         selector=a,
         items=[
-            CaseItem(labels=[LogicConst(1)], body=[LogicAssign(lhs=y, rhs=concat)], default=False)
+            CaseItem(labels=[LogicConst(1)], body=BlockStatement(statements=[LogicAssign(lhs=y, rhs=concat)]), default=False)
         ],
         default=None
     )
@@ -90,7 +91,7 @@ def test_evaluate_concat_inside_case():
         selector=a,
         items=[
             CaseItem(labels=[LogicConst(1)],
-                     body=[LogicAssign(lhs=y, rhs=concat)],
+                     body=BlockStatement([LogicAssign(lhs=y, rhs=concat)]),
                      default=False)
         ],
         default=None
@@ -100,7 +101,7 @@ def test_evaluate_concat_inside_case():
     assert {v.name for v in case.free_vars()} == {"a", "b"}
     # Evaluate the assignment body
     #stmts = case.items[0].body
-    stmt = case.items[0].body[0]
+    stmt = case.items[0].statements[0]
     assert isinstance(stmt, LogicAssign)
     rhs = stmt.rhs
     result = evaluate(rhs, env)

@@ -1,8 +1,9 @@
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
-from logictree.nodes.struct.statement import Statement, BlockStatement
-from logictree.nodes.ops.ops import LogicVar
+
+from logictree.nodes.struct.statement import BlockStatement, Statement
+
 
 class AlwaysKind(Enum):
     COMB = "comb"

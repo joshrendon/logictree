@@ -2,6 +2,7 @@ from logictree.nodes.control.assign import ProceduralAssign
 from logictree.nodes.control.ifstatement import IfStatement
 from logictree.nodes.ops.ite import ITEOp
 
+
 def lower_procedural_assigns_to_signal_map(module):
     """
     Collects sequential procedural assignments from always blocks

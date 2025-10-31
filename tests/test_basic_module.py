@@ -17,5 +17,5 @@ class TestSystemVerilogParser(unittest.TestCase):
         #    print(f"{k}: {type(v)}, label={getattr(v, 'label', lambda: '?')()}")
         mod = module_map["foo"]
         assert mod.name == "foo"
-        assert mod.assignments['b'].__class__.__name__ == "LogicAssign"
+        assert mod.assignments['b'].__class__.__name__ == "ContinuousAssign"
 

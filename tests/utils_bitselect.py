@@ -1,4 +1,5 @@
 # tests/util.py
+import inspect
 import itertools
 import logging
 import re
@@ -9,22 +10,29 @@ from logictree.nodes.control.assign import LogicAssign
 from logictree.nodes.control.case import CaseItem, CaseStatement
 from logictree.nodes.control.ifstatement import IfStatement
 from logictree.nodes.hole.hole import LogicHole
+from logictree.nodes.ops.arith import AddOp, DivOp, MulOp, SubOp
 from logictree.nodes.ops.comparison import EqOp, NeqOp
 from logictree.nodes.ops.empty import EmptyBranch
 from logictree.nodes.ops.gates import AndOp, NandOp, NorOp, NotOp, OrOp, XnorOp, XorOp
+from logictree.nodes.ops.ite import ITEOp
 from logictree.nodes.ops.mux import LogicMux
 from logictree.nodes.ops.ops import LogicConst, LogicVar
 from logictree.nodes.selects import BitSelect, Concat, PartSelect
+from logictree.nodes.struct.structural import StructuralOp
 from logictree.nodes.types import GATE_TYPES
 
 log = logging.getLogger(__name__)
 
 # Nodes to skip because they don't implement or need these methods
 EXCLUDED_CLASSES = {
-    'LogicVar', 'LogicConst', 'LogicAssign', 'LogicHole',
+    'CaseItem', 'LogicOp', 'ArithOp', 'StructuralOp', 'LogicTreeNode',
+    'LogicVar', 'LogicConst', 'LogicHole',
     'IfStatement', 'FlattenedIfStatement', 'CaseStatement',
-    'CaseItem', 'LogicOp',
 }
+
+def is_structural_class(cls):
+    """Return True if the class or one of its bases is StructuralOp."""
+    return issubclass(cls, StructuralOp) and not inspect.isabstract(cls)
 
 def LogicConstSV(literal: str) -> LogicConst:
     """
@@ -55,6 +63,7 @@ def safe_instantiate(cls):
     Return the instance or None if we don't know how / it's not constructible.
     """
     try:
+
         # --- leaf-ish ---
         if cls is LogicVar:
             return LogicVar("x")
@@ -69,6 +78,10 @@ def safe_instantiate(cls):
         if cls in (AndOp, OrOp, XorOp, XnorOp, NandOp, NorOp, EqOp, NeqOp):
             return cls(LogicVar("a"), LogicVar("b"))
 
+        if cls is ITEOp:
+            return ITEOp(cond=LogicVar("s"),
+                         if_true=LogicConst(0),
+                         if_false=LogicConst(1))
         # --- mux ---
         if cls is LogicMux:
             return LogicMux(selector=LogicVar("s"),
@@ -77,11 +90,15 @@ def safe_instantiate(cls):
 
         # --- selects ---
         if cls is BitSelect:
-            return BitSelect(base=LogicVar("v"), index=LogicConst(2), width=0)
+            return BitSelect(base=LogicVar("v"), index=LogicConst(2))
         if cls is PartSelect:
             return PartSelect(base=LogicVar("v"), msb=LogicConst(3), lsb=LogicConst(0))
         if cls is Concat:
             return Concat([LogicVar("a"), LogicVar("b")])
+
+        # --- Arith Ops ---
+        if cls in (AddOp, SubOp, MulOp, DivOp):
+            return cls(left=LogicVar("a"), right=LogicVar("b"))
 
         # --- control/structural ---
         if cls is LogicAssign:
@@ -113,36 +130,6 @@ def safe_instantiate(cls):
     except Exception as e:
         print(f"!!!INFO!!!: safe_instantiate failed for {cls.__name__}: {e}")
         return None
-#def safe_instantiate(cls):
-#    """
-#    Try to construct a minimal valid instance of a LogicTreeNode subclass.
-#    Return the instance or None if we don't know how / it's not constructible.
-#    """
-#    try:
-#        # Known leaf-ish nodes
-#        if cls is LogicVar:
-#            return LogicVar("x")
-#        if cls is LogicConst:
-#            return LogicConst(0)
-#
-#        # Common unary/binary gates
-#        if cls is NotOp:
-#            return NotOp(LogicVar("x"))
-#        if cls is AndOp:
-#            return AndOp(LogicVar("a"), LogicVar("b"))
-#        if cls is OrOp:
-#            return OrOp(LogicVar("a"), LogicVar("b"))
-#
-#        # Unknown or control-structure nodes: best effort by signature guesses
-#        # If the class takes no args, try to call it; otherwise, skip.
-#        try:
-#            print(f"!!!INFO!!!: safe_instantiate() type(cls): {type(cls).__name__}, cls.name: {cls.__name__}")
-#            return cls()  # may work for some simple utility nodes
-#        except TypeError:
-#            return None
-#    except Exception:
-#        # If anything unexpected happens, skip this class
-#        return None
 
 def _expr(node):
     """Unwrap LogicAssign to RHS; pass expressions unchanged."""
@@ -222,31 +209,6 @@ def _extract_eq_terms(rhs):
 
     walk(rhs)
     return terms
-#def _extract_eq_terms(rhs):
-#    """
-#    Recursively flatten an AND tree of EqOps(BitSelect, LogicConst)
-#    into a set of (bit_index, const_value) pairs.
-#
-#    Example:  (s[0] == 0) & (s[1] == 1)
-#    → { (0, 0), (1, 1) }
-#    """
-#    terms = []
-#
-#    def walk(node):
-#        if isinstance(node, AndOp):
-#            walk(node.left)
-#            walk(node.right)
-#        elif isinstance(node, EqOp):
-#            lhs, rhs_const = node.operands
-#            assert isinstance(lhs, BitSelect)
-#            assert isinstance(lhs.base, LogicVar)
-#            assert isinstance(rhs_const, LogicConst)
-#            terms.append((lhs.index, rhs_const.value))
-#        else:
-#            raise AssertionError(f"Unexpected node type in eq expansion: {node}")
-#
-#    walk(rhs)
-#    return set(terms)
 
 def assert_eq_const_terms(rhs, const_value: int, width: int, varname="s"):
     """
@@ -388,8 +350,30 @@ def gate_count(root):
         elif isinstance(node, EqOp):
             counts["EQ"] += 1
             log.info(f"Counted EqOp, count: {counts}")
-            walk(node.lhs)
-            walk(node.rhs)
+
+            lhs, rhs = node.lhs, node.rhs
+
+            const_side = None
+            other_side = None
+            if isinstance(rhs, LogicConst):
+                const_side = rhs
+                other_side = lhs
+            elif isinstance(lhs, LogicConst):
+                const_side = lhs
+                other_side = rhs
+
+            if (
+                const_side is not None
+                and isinstance(other_side, (LogicVar, BitSelect))
+                and getattr(other_side, "width", 1) == 1
+            ):
+                const_val = int(getattr(const_side, "value", const_side))
+                if const_val == 0:
+                    counts["NOT"] += 1
+                    log.info(f"Inferred NOT from EqOp == 0, count: {counts}")
+
+            walk(lhs)
+            walk(rhs)
 
         elif isinstance(node, NeqOp):
             counts["NEQ"] += 1
@@ -422,105 +406,6 @@ def gate_count(root):
         counts[gate]  # This forces defaultdict to initialize missing keys to 0
 
     return dict(counts)
-#def gate_count(root):
-#    """Count logic gates in the expression tree rooted at `root`."""
-#    counts = defaultdict(int)
-#
-#    def walk(node):
-#        if isinstance(node, AndOp):
-#            counts["AND"] += 1
-#            log.info(f"Counted AndOp, count: {counts}")
-#            walk(node.a)
-#            walk(node.b)
-#        elif isinstance(node, OrOp):
-#            counts["OR"] += 1
-#            log.info(f"Counted OrOp, count: {counts}")
-#            walk(node.a)
-#            walk(node.b)
-#        elif isinstance(node, XorOp):
-#            counts["XOR"] += 1
-#            log.info(f"Counted XorOp, count: {counts}")
-#            walk(node.a)
-#            walk(node.b)
-#        elif isinstance(node, NotOp):
-#            counts["NOT"] += 1
-#            log.info(f"Counted NotOp, count: {counts}")
-#            operand = getattr(node, "child", getattr(node, "operand", None))
-#            if operand:
-#                walk(operand)
-#        elif isinstance(node, BitSelect):
-#            log.info(f"Reached BitSelect")
-#            walk(node.base)
-#            walk(node.index)
-#        elif isinstance(node, (LogicVar, LogicConst)):
-#            log.info(f"Counted LogicVar or LogicConst")
-#            # Leaf node — stop recursion
-#            return
-#        elif isinstance(node, EqOp):
-#            counts["EQ"] += 1
-#            log.info(f"Counted EqOp, count {counts}")
-#            walk(node.lhs)
-#            walk(node.rhs)
-#        elif isinstance(node, NeqOp):
-#            counts["NEQ"] += 1
-#            log.info(f"Counted NeqOp, count {counts}")
-#            walk(node.lhs)
-#            walk(node.rhs)
-#        elif hasattr(node, "get_children"):
-#            log.info(f"Counted node that has attr get_children()")
-#            # Unknown node — safe fallback
-#            for child in node.get_children():
-#                walk(child)
-#        #elif hasattr(node, "children"):
-#        #    log.info(f"Counted node that has attr children")
-#        #    # Unknown node — safe fallback
-#        #    for child in node.children:
-#        #        walk(child)
-#        else:
-#            # Log unexpected node type
-#            log.info(f"[gate_count] Unexpected node type: {type(node).__name__}")
-#            log.info(f"node: {node}")
-#
-#    walk(root)
-#    
-#    # Normalize to include all gate types even if count is 0
-#    for gate in GATE_TYPES:
-#        counts[gate]
-#
-#    return dict(counts)
-#def gate_count(n):
-#    """Count gate node types in a binary/unary tree."""
-#    counts = defaultdict(int) #{"AND":0, "OR":0, "XOR":0, "NOT":0}
-#
-#    def walk(x):
-#        if isinstance(x, AndOp):
-#            counts["AND"] += 1
-#            log.info(f"Counted AndOp, count: {counts}")
-#            walk(x.a)
-#            walk(x.b)
-#        elif isinstance(x, OrOp):
-#            counts["OR"] += 1
-#            log.info(f"Counted OrOp, count: {counts}")
-#            walk(x.a)
-#            walk(x.a)
-#            walk(x.b)
-#        elif isinstance(x, XorOp):
-#            counts["XOR"] += 1
-#            log.info(f"Counted XorOp, count: {counts}")
-#            walk(x.a)
-#            walk(x.b)
-#        elif isinstance(x, NotOp):
-#            counts["NOT"] += 1
-#            log.info(f"Counted NotOp, count: {counts}")
-#            o = _unary_operand(x)
-#            if o is not None: walk(o)
-#        else:
-#            log.info(f"Hit unexpected op!: op: {x} type: {type(x).__name__}")
-#            # leaf-ish (BitSelect, Id, Const, etc.)
-#            pass
-#    log.info("Walking default path")
-#    walk(n)
-#    return counts
 
 def _unary_operand(n):
     # Support either .child or .operand
@@ -611,6 +496,15 @@ def literal_bit_comparisons(tree: LogicTreeNode, target_signal: str | None = Non
     comparisons = set()
 
     def _walk(node):
+        log.info(f"literal_bit_comparisons(node: {node})")
+        log.info(f"literal_bit_comparisons() type(node): {type(node).__name__}")
+
+        # --- new: handle raw lists safely ---
+        if isinstance(node, list):
+            for elem in node:
+                _walk(elem)
+            return
+
         if isinstance(node, EqOp):
             lhs, rhs = node.lhs, node.rhs
 
@@ -650,8 +544,9 @@ def literal_bit_comparisons(tree: LogicTreeNode, target_signal: str | None = Non
                         elif isinstance(part, BitSelect):
                             if target_signal is None or part.var.name == target_signal:
                                 comparisons.add((part.index.value, bit))
-
-        for child in node.children:
+         # traverse children if present
+        children = getattr(node, "children", [])
+        for child in children:
             _walk(child)
 
     _walk(tree)
@@ -665,38 +560,3 @@ def literal_sig_set(expr, target_signal: str) -> set[str]:
     Useful for matching signal bit positions regardless of polarity.
     """
     return {f"{target_signal}[{index}]" for index, _ in literal_bit_comparisons(expr, target_signal)}
-#def literal_sig_set(n, only_name=None):
-#    """
-#    Collect a set of literal signals seen in a conjunction.
-#
-#    If `only_name` is set, only signals matching that name are included.
-#    Returns:
-#        - (name, is_pos) for scalar vars
-#        - (name[idx], is_pos) for bit selects
-#    This is optimized for readability. For index-based analysis, see `literal_bit_comparisons()`.
-#    """
-#    out = set()
-#    for t in _flatten_and(n):
-#        log.info(f"Clause: t: {t}")
-#        log.info(f"Match: _literal_sig(t): {_literal_sig(t)}")
-#        name, idx, is_pos = _literal_sig(t)
-#        if name is None:
-#            continue
-#        if only_name is None or name == only_name:
-#            if idx is None:
-#                out.add((name, is_pos))
-#            else:
-#                out.add((f"{name}[{idx}]", is_pos))
-#    return out
-#
-#def literal_bit_comparisons(n, signal_name: str):
-#    """
-#    Return set of (bit_index, value) pairs for comparisons like s[i] == 0 or s[i] == 1.
-#    Only returns matches for the given signal_name.
-#    """
-#    out = set()
-#    for t in _flatten_and(n):
-#        name, idx, is_pos = _literal_sig(t)
-#        if name == signal_name and idx is not None:
-#            out.add((idx, is_pos))
-#    return out

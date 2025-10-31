@@ -1,10 +1,11 @@
-import pytest
+import logging
 from pathlib import Path
 
+import pytest
+
+from logictree.nodes.ops.gates import AndOp, NotOp, OrOp
 from logictree.nodes.ops.ops import LogicVar
-from logictree.nodes.ops.gates import AndOp, OrOp, NotOp
 from logictree.utils.schematic import render_schematic
-import logging
 
 log = logging.getLogger(__name__)
 

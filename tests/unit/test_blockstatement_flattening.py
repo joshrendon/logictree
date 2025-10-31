@@ -1,6 +1,8 @@
 
-from logictree.nodes.struct.statement import BlockStatement
 from logictree.nodes.control.assign import LogicAssign
+from logictree.nodes.struct.statement import BlockStatement
+from logictree.pipeline import lower_sv_text_to_logic
+
 
 def test_no_nested_blockstatements_in_always_body():
     sv = r"""
