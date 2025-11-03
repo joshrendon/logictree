@@ -84,7 +84,11 @@ jobs:
         run: pytest --cov=src/logictree --cov-append --maxfail=1 --disable-warnings || true
 
       - name: Generate coverage reports
-        run: coverage xml -o coverage.xml && coverage html -d htmlcov
+        run: |
+          coverage combine
+          coverage report
+          coverage xml -o coverage.xml
+          coverage html -d htmlcov
         #run: |
           #pytest -q -m "unit or props or diff" \
           #  --tb=short \
@@ -108,8 +112,8 @@ jobs:
         uses: codecov/codecov-action@v4
         with:
           #token: ${{ secrets.CODECOV_TOKEN }}
-          files: coverage.xml
-          #fail_ci_if_error: true
+          files: ./coverage.xml
+          fail_ci_if_error: true
 
       - name: Upload coverage HTML
         if: always()
