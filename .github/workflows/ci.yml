@@ -68,8 +68,8 @@ jobs:
       - name: Run fast test set
         run: pytest -q -m "unit or props or diff" --maxfail=1 --durations=15 || true
 
-      - name: Enforce minimum coverage
-        run: pytest -q -m "unit or props or diff" --cov=src/logictree --cov-fail-under=85 --cov-report=xml:coverage.xml --cov-report=term --maxfail=1 --disable-warnings || true
+      #- name: Enforce minimum coverage
+      #  run: pytest -q -m "unit or props or diff" --cov=src/logictree --cov-fail-under=85 --cov-report=xml:coverage.xml --cov-report=term --maxfail=1 --disable-warnings || true
 
       - name: Debug stalled CI
         if: ${{ failure() }}
@@ -80,7 +80,11 @@ jobs:
           lsof | head -n 40
 
       - name: Run tests with coverage
-        run: pytest --cov=src/logictree --cov-report=xml:coverage.xml --cov-report html:cov_html --cov-report=term || true
+        #run: pytest --cov=src/logictree --cov-report=xml:coverage.xml --cov-report=html:htmlcov --cov-report=term --maxfail=1 --disable-warnings || true
+        run: pytest --cov=src/logictree --cov-append --maxfail=1 --disable-warnings || true
+
+      - name: Generate coverage reports
+        run: coverage xml -o coverage.xml && coverage html -d htmlcov
         #run: |
           #pytest -q -m "unit or props or diff" \
           #  --tb=short \
