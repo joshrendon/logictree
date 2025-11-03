@@ -60,7 +60,7 @@ jobs:
         run: pytest -q -m "unit or props or diff" --maxfail=1 --durations=15 || true
 
       - name: Enforce minimum coverage
-        run: pytest -q -m "unit or props or diff" --cov=src/logictree --cov-fail-under=85 --cov-report=html --cov-report=xml --cov-report=term --maxfail=1 --disable-warnings || true
+        run: pytest -q -m "unit or props or diff" --cov=src/logictree --cov-fail-under=85 --cov-report=xml:coverage.xml --cov-report=term --maxfail=1 --disable-warnings || true
 
       - name: Debug stalled CI
         if: ${{ failure() }}
@@ -77,7 +77,7 @@ jobs:
             --cov=src/logictree \
             --cov-fail-under=85 \
             --cov-report=html \
-            --cov-report=xml \
+            --cov-report=xml:coverage.xml \
             --cov-report=term-missing \
             --maxfail=1 \
             --disable-warnings || true
@@ -90,7 +90,7 @@ jobs:
         uses: codecov/codecov-action@v4
         with:
           #token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./coverage.xml
+          files: coverage.xml
           #fail_ci_if_error: true
 
       - name: Upload coverage HTML
