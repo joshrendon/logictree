@@ -1,14 +1,14 @@
+import pytest
 import logging
 
-import pytest
-
 pytestmark = [pytest.mark.unit]
-from logictree.nodes.ops.comparison import EqOp
-from logictree.nodes.ops.ops import LogicVar
-from logictree.nodes.selects import Concat
 from logictree.pipeline import lower_sv_text_to_logic
+from tests.utils_bitselect import literal_sig_set, literal_bit_comparisons, gate_count
+from logictree.nodes.ops.comparison import EqOp
+from logictree.nodes.base.base import LogicTreeNode
+from logictree.nodes.selects import Concat
+from logictree.nodes.ops.ops import LogicVar
 from logictree.transforms.to_primitives import to_primitives_logic_tree
-from tests.utils_bitselect import gate_count, literal_bit_comparisons, literal_sig_set
 
 log = logging.getLogger(__name__)
 
@@ -34,7 +34,7 @@ def test_eq_bitvector_systematic(rng, kvals_base):
         endmodule
         """
 
-        log.info("Lowering Module:")
+        log.info(f"Lowering Module:")
         log.info(f"{sv}")
         m = lower_sv_text_to_logic(sv)["m"]
         rhs = m.assignments["y"].rhs
@@ -47,7 +47,7 @@ def test_eq_bitvector_systematic(rng, kvals_base):
         assert got == expect
 
         # gate counts: NOT = zeros, AND = width-1
-        log.debug(f"width: {width} bin(k).count(1): {bin(k).count("1")}")
+        log.debug(f"width: {width} bin(k).count(1): {bin(k).count('1')}")
         log.debug(f"k: {k}")
         zeros = width - bin(k).count("1")
         counts = gate_count(prims)

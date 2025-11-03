@@ -12,24 +12,30 @@ requires-python = ">=3.11"
 authors = [{name = "Joshua Rendon"}]
 dependencies = [
   # put runtime deps here, e.g. "graphviz", "sympy>=1.13"
+  "antlr4-python3-runtime>=4.13",
   "bitvector",
-  "rich",
-  "sympy",
   "dd", # BDD/ZDD library
-  "antlr4-python3-runtime>4.13",
-  "graphviz" # Python bindings
+  "graphviz>=0.20", # Python bindings
+  "schemdraw>=0.21",
+  "sympy>=1.13",
+  "rich>=14.0",
 ]
 
 # Optional: dev extras for contributors
 [project.optional-dependencies]
 dev = [
   "pytest>=8.0",
-  "pytest-cov",
-  "pytest-xdist",
-  "ruff",
-  "mypy",
-  "build", # `python -m build` to make wheels/sdist
-  "hypothesis" # property-based testing
+  "pytest-cov>=4.1",
+  "pytest-xdist>=3.0",
+  "pytest-html>=4.1",
+  "pytest-json-report>=1.5.0",
+  "ruff>=0.5",
+  "mypy>=1.11",
+  "hypothesis>=6.100", # property-based testing
+  "build>=1.2", # `python -m build` to make wheels/sdist
+  "types-colorama",
+  "types-pygments",
+  "tomli-sort>=0.24",
 ]
 
 # console script: `logictree`
