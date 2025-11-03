@@ -7,19 +7,19 @@ name = "logictree"
 version = "0.0.1"
 description = "Logictree — a Symbolic IR for SystemVerilog logic"
 readme = "README.md"
-license = {file = "LICENSE"}
+license = { file = "LICENSE" }
 requires-python = ">=3.11"
-authors = [{name = "Joshua Rendon"}]
+authors = [{ name = "Joshua Rendon" }]
 dependencies = [
   # put runtime deps here, e.g. "graphviz", "sympy>=1.13"
   "antlr4-python3-runtime>=4.13",
   "bitvector",
-  "dd", # BDD/ZDD library
-  "graphviz>=0.20", # Python bindings
+  "dd",                           # BDD/ZDD library
+  "graphviz>=0.20",               # Python bindings
   "schemdraw>=0.21",
   "sympy>=1.13",
   "rich>=14.0",
-  "pyparsing"
+  "pyparsing",
 ]
 
 # Optional: dev extras for contributors
@@ -32,8 +32,8 @@ dev = [
   "pytest-json-report>=1.5.0",
   "ruff>=0.5",
   "mypy>=1.11",
-  "hypothesis>=6.100", # property-based testing
-  "build>=1.2", # `python -m build` to make wheels/sdist
+  "hypothesis>=6.100",         # property-based testing
+  "build>=1.2",                # `python -m build` to make wheels/sdist
   "types-colorama",
   "types-pygments",
   "toml-sort>=0.24",
@@ -63,10 +63,7 @@ directory = "htmlcov"
 show_missing = true
 skip_covered = false
 # Keep reports clean
-omit = [
-  "tests/*",
-  "**/__init__.py"
-]
+omit = ["tests/*", "**/__init__.py"]
 
 [tool.coverage.run]
 branch = true
@@ -93,7 +90,7 @@ exclude = [
   "src/sv_parser/SystemVerilogSubsetLexer\\.py$",
   "src/sv_parser/SystemVerilogSubsetParser\\.py$",
   "src/sv_parser/SystemVerilogSubsetListener\\.py$",
-  "src/sv_parser/SystemVerilogSubsetVisitor\\.py$"
+  "src/sv_parser/SystemVerilogSubsetVisitor\\.py$",
 ]
 
 [[tool.mypy.overrides]]
@@ -134,7 +131,7 @@ markers = [
   "requires_sympy: Needs SymPy",
   "requires_graphviz: Needs Graphviz",
   "dev: exploratory / scratch tests (excluded from CI)",
-  "known_issue: tracks a bug under investigation (pairs with xfail)"
+  "known_issue: tracks a bug under investigation (pairs with xfail)",
 ]
 
 [tool.ruff]
@@ -148,7 +145,7 @@ exclude = [
   "coverage_dashboard/",
   "coverage_dashboard_old/",
   "incomplete_scripts/",
-  "analysis/notebooks"
+  "analysis/notebooks",
 ]
 [tool.ruff.lint]
 # Start small: only enforce core errors and import sorting
@@ -156,22 +153,22 @@ select = ["E4", "E7", "E9", "F", "I"]
 
 # Ignore noisy or style-only rules for now
 ignore = [
-  "F405",  # star imports
-  "E402",  # import not at top
-  "E701",  # multiple statements on one line
-  "E741",  # ambiguous variable names (too noisy at start)
+  "F405", # star imports
+  "E402", # import not at top
+  "E701", # multiple statements on one line
+  "E741", # ambiguous variable names (too noisy at start)
 ]
 
 # Per-file ignores for __init__.py (allow re-exports)
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401", "F403"]
-"src/sv_parser/SystemVerilogSubsetLexer.py"    = ["F403", "F405"]
-"src/sv_parser/SystemVerilogSubsetParser.py"   = ["F403", "F405", "E711"]
+"src/sv_parser/SystemVerilogSubsetLexer.py" = ["F403", "F405"]
+"src/sv_parser/SystemVerilogSubsetParser.py" = ["F403", "F405", "E711"]
 "src/sv_parser/SystemVerilogSubsetListener.py" = ["F403", "F405"]
 "src/sv_parser/SystemVerilogSubsetVisitor.py" = ["F403", "F405"]
 
 [tool.setuptools]
-package-dir = {"" = "src"}
+package-dir = { "" = "src" }
 
 # auto-discover packages under src/
 [tool.setuptools.packages.find]
