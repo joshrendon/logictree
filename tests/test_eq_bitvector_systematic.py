@@ -48,7 +48,7 @@ def test_eq_bitvector_systematic(rng, kvals_base):
         assert got == expect
 
         # gate counts: NOT = zeros, AND = width-1
-        log.debug(f"width: {width} bin(k).count(1): {bin(k).count("1")}")
+        log.debug(f"width: {width} bin(k).count(1): {bin(k).count('1')}")
         log.debug(f"k: {k}")
         zeros = width - bin(k).count("1")
         counts = gate_count(prims)
