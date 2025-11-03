@@ -1,9 +1,10 @@
 
-@pytest.mark.skipif(os.getenv("CI") == "true", reason="skipping GUI test in CI")
+import pytest
 import subprocess
+import os
 from pathlib import Path
 
-
+pytest.skip("Skipping CLI tests in CI", allow_module_level=True) if os.getenv("CI") == "true" else None
 def test_cli_lower_if():
     input_sv = Path("golden_circuits/if_tree_simple.sv")
     module_name = "if_tree_simple"
