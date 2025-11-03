@@ -51,7 +51,15 @@ jobs:
         run: pytest -q -m "unit or props or diff" --maxfail=1 --durations=15 || true
 
       - name: Enforce minimum coverage
-        run: pytest -q -m "unit or props or diff" --cov --cov-fail-under=85 || true
+        run: pytest -q -m "unit or props or diff" --cov=src/logictree --cov-fail-under=85 --maxfail=1 --disable-warnings --durations=10 -s -n 1 || true
+
+      - name: Debug stalled CI
+        if: ${{ failure() }}
+        run: |
+          echo "Dumping running processes..."
+          ps aux
+          echo "Checking open files..."
+          lsof | head -n 40
 
       - name: Run tests with coverage
         run: |

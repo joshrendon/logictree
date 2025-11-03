@@ -6,22 +6,28 @@ from dataclasses import Field
 from pprint import pformat
 from typing import List, Tuple
 
-from logictree.nodes.control.alwaysblock import AlwaysBlock, AlwaysKind
-from logictree.nodes.control.assign import ContinuousAssign, LogicAssign, ProceduralAssign
-from logictree.nodes.control.case import CaseItem, CaseStatement
+from logictree.constants import EMPTY_BRANCH
+from logictree.nodes import control, ops
+from logictree.nodes.base.base import LogicTreeNode
+from logictree.nodes.control.assign import LogicAssign, ContinuousAssign, ProceduralAssign
 from logictree.nodes.control.ifstatement import IfStatement
-from logictree.nodes.ops import LogicConst, LogicOp, LogicVar
+from logictree.nodes.control.case import CaseStatement, CaseItem
+from logictree.nodes.ops import LogicConst, LogicVar, LogicOp
 from logictree.nodes.ops.comparison import EqOp, NeqOp
-from logictree.nodes.ops.gates import AndOp, NotOp, OrOp, XnorOp, XorOp
+from logictree.nodes.ops.gates import AndOp, OrOp, NotOp, XorOp, XnorOp
 from logictree.nodes.selects import BitSelect, Concat, PartSelect
 from logictree.nodes.struct.module import Module
-from logictree.nodes.struct.signal import DataType, LogicType
+from logictree.nodes.struct.signal import LogicType, DataType
+from logictree.nodes.control.alwaysblock import AlwaysBlock, AlwaysKind
 from logictree.nodes.struct.statement import BlockStatement
-from logictree.utils.debug import assert_no_fields
-from logictree.utils.display import pretty_inline, pretty_print
+from logictree.utils.display import pretty_print
+from logictree.utils.display import pretty_inline
 from logictree.utils.overlay import set_label
+from logictree.utils.debug import assert_no_fields
 from sv_parser.SystemVerilogSubsetParser import SystemVerilogSubsetParser
 from sv_parser.SystemVerilogSubsetVisitor import SystemVerilogSubsetVisitor
+from sympy import symbols, simplify, Piecewise
+from sympy.logic.boolalg import ITE
 
 log = logging.getLogger(__name__)
 AssignStmtCtxtClass = SystemVerilogSubsetParser.Continuous_assignContext
@@ -452,14 +458,14 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
                 stmt_node = self.visit(child)
                 
                 if isinstance(stmt_node, BlockStatement):
-                    log.debug("stmt_node is BlockStatement")
+                    log.debug(f"stmt_node is BlockStatement")
                     # flaten nested block
                     stmts.extend(stmt_node.statements)
                 elif stmt_node is not None:
-                    log.debug("stmt_node is not None")
+                    log.debug(f"stmt_node is not None")
                     log.debug(f"stmt_node.type: {type(stmt_node).__name__}")
                     stmts.append(stmt_node)
-            log.debug("Wrapped statments in BlockStatement")
+            log.debug(f"Wrapped statments in BlockStatement")
             return BlockStatement(statements=stmts)
 
         elif ctx.if_statement():
@@ -620,17 +626,13 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
         if not isinstance(then_result, (LogicAssign, ProceduralAssign, ContinuousAssign)):
             log.warning("then_branch is not LogicAssign, wrapping in fallback")
 
-        if not isinstance(then_result, LogicAssign):
-            raise TypeError(
-                f"Expected LogicAssign from then-branch, got {type(then_result)}"
-            )
         lhs_then = then_result.lhs
         then_tree = then_result.rhs
         assert not isinstance(lhs_then, str)
 
         if else_stmt_ctx:
             else_result = self.visit(else_stmt_ctx)
-            if not isinstance(else_result, LogicAssign):
+            if not isinstance(else_result, (LogicAssign, ProceduralAssign, ContinuousAssign)):
                 raise TypeError(
                     f"Expected LogicAssign from else-branch, got {type(else_result)}"
                 )

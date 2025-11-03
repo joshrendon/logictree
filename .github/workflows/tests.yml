@@ -52,7 +52,7 @@ jobs:
               pytest -m "slow or mutation or props" || true
               ;;
             release)
-              pytest -q --tb=short --cov=logictree --cov=sv_parser \
+              pytest -q --tb=short --cov=src/logictree \
               --cov-fail-under=90 --cov-report=xml --cov-report=term-missing || true
               ;;
           esac
