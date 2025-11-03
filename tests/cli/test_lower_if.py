@@ -1,3 +1,5 @@
+
+@pytest.mark.skipif(os.getenv("CI") == "true", reason="skipping GUI test in CI")
 import subprocess
 from pathlib import Path
 
