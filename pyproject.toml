@@ -76,7 +76,8 @@ source = ["logictree", "sv_parser"]
 concurrency = ["thread", "multiprocessing"]
 parallel = true
 # Optional, sets a useful context tag (visible in HTML)
-dynamic_context = "test_function"
+#dynamic_context = "test_function"
+cov_context = test
 
 [tool.mypy]
 mypy_path = ["src"]
