@@ -30,7 +30,7 @@ jobs:
 
       - name: Install system dependencies
         run: |
-          sudo apt-get update && sudo apt-get install -y graphviz default-jre
+          sudo apt-get update && sudo apt-get install -y graphviz default-jdk
 
       - name: Install dependencies
         run: |
@@ -98,6 +98,12 @@ jobs:
         with:
           name: htmlcov
           path: htmlcov
+
+      - name: Coverage summary
+        if: always()
+        run: |
+          echo "Coverage summary:"
+          grep -A2 "TOTAL" coverage.xml || true
 
   nightly:
     if: github.event_name == 'schedule'
