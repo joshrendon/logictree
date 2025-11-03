@@ -81,6 +81,10 @@ jobs:
             --cov-report=term-missing \
             --maxfail=1 \
             --disable-warnings || true
+
+      - name: Check coverage file
+        run: ls -lh coverage.xml || (echo "Coverage file missing!" && exit 1)
+
       #- name: Run tests with coverage
       #  run: |
       #    #pytest -q --tb=short --cov=src/logictree --cov=src/sv_parser --cov-report=xml --cov-report=term-missing || true
