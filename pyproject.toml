@@ -35,7 +35,7 @@ dev = [
   "build>=1.2", # `python -m build` to make wheels/sdist
   "types-colorama",
   "types-pygments",
-  "tomli-sort>=0.24",
+  "toml-sort>=0.24",
 ]
 
 # console script: `logictree`
