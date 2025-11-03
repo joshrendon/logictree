@@ -118,7 +118,7 @@ ignore_errors = true
 
 # Centralize tool configs (optional but nice)
 [tool.pytest.ini_options]
-addopts = "--cov-context=test"
+addopts = "--tb=short --disable-warnings --maxfail=1"
 testpaths = ["tests"]
 markers = [
   "unit: fast constructor/init and isolate tests",
