@@ -19,6 +19,7 @@ dependencies = [
   "schemdraw>=0.21",
   "sympy>=1.13",
   "rich>=14.0",
+  "pyparsing"
 ]
 
 # Optional: dev extras for contributors
