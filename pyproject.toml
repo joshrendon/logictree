@@ -27,7 +27,7 @@ dependencies = [
 dev = [
   "pytest>=8.0",
   "pytest-cov>=4.1",
-  "pytest-xdist>=3.0",
+  #"pytest-xdist>=3.0",
   "pytest-html>=4.1",
   "pytest-json-report>=1.5.0",
   "ruff>=0.5",
@@ -69,8 +69,7 @@ omit = ["tests/*", "**/__init__.py"]
 branch = true
 # Only measure your packages (import names, not paths)
 source = ["src/logictree", "src/sv_parser"]
-# If you someday add xdist or multiprocessing:
-concurrency = ["thread", "multiprocessing"]
+concurrency = ["thread" ]
 parallel = true
 # Optional, sets a useful context tag (visible in HTML)
 #dynamic_context = "test_function"
