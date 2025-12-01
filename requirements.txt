@@ -8,7 +8,6 @@ graphviz==0.21
 importlib-metadata==8.7.0
 jaraco.collections==5.1.0
 kaleido==1.0.0
-logictree==0.0.1
 mpld3==0.5.11
 mypy==1.17.1
 pandas==2.3.1

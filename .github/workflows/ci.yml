@@ -66,7 +66,7 @@ jobs:
         run: pwd && ls
 
       - name: Run fast test set
-        run: pytest -q -m "unit or props or diff" --maxfail=1 --durations=15 || true
+        run: pytest -q -m "unit or props or diff" --maxfail=10 --durations=15 || true
 
       #- name: Enforce minimum coverage
       #  run: pytest -q -m "unit or props or diff" --cov=src/logictree --cov-fail-under=85 --cov-report=xml:coverage.xml --cov-report=term --maxfail=1 --disable-warnings || true
@@ -80,7 +80,7 @@ jobs:
           lsof | head -n 40
 
       - name: Run tests with coverage
-        run: pytest --cov=src/logictree --cov-report=xml:coverage.xml --cov-report=html:htmlcov --cov-report=term --maxfail=1 --disable-warnings || true
+        run: pytest --cov=src/logictree --cov-report=xml:coverage.xml --cov-report=html:htmlcov --cov-report=term --cov-append --maxfail=50 --disable-warnings || true
         #run: pytest --cov=src/logictree --cov-append --disable-warnings || true
 
       - name: Generate coverage reports

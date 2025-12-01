@@ -1,16 +1,18 @@
 import pytest
+import logging
 
 pytestmark = [pytest.mark.unit]
 
+from logictree.nodes.ops.ops import LogicVar
 from logictree.api import lower_sv_to_logic as lower_sv_text_to_logic
 from tests.utils_bitselect import gate_count, literal_sig_set
+from logictree.utils.display import pretty_print
+from logictree.transforms.if_to_mux import if_to_mux_tree
+from logictree.transforms.to_primitives import to_primitives
+from logictree.transforms.simplify import simplify
 
+log = logging.getLogger(__name__)
 
-def _rhs(sv, lower_sv_text_to_logic):
-    module = lower_sv_text_to_logic(sv)["m"]
-    print(f"assignment keys: {module.assignments.keys()}")
-    return module.assignments["y"].rhs
-    #return lower_sv_text_to_logic(sv)["m"].assignments["y"].rhs
 
 def test_if_true_false_becomes_identity():
     sv = """
@@ -20,16 +22,19 @@ def test_if_true_false_becomes_identity():
       end
     endmodule
     """
-    rhs = _rhs(sv, lower_sv_text_to_logic)
+    module = lower_sv_text_to_logic(sv)["m"]
+    if_tree  = module.signal_map["y"]
+    mux_tree = if_to_mux_tree(if_tree)
+    prims = to_primitives(mux_tree)
+    simp  = simplify(prims)
+    log.debug(f"pp(simp): {pretty_print(simp)}")
     # Expect y == a structurally; either just Id(a) or (a & 1) | (~a & 0) simplified
     # Gate count should be 0 after simplification, but be tolerant of 1-level identity.
-    cs = gate_count(rhs)
+    cs = gate_count(simp)
     assert cs["AND"] in (0, 1)
     assert cs["OR"] in (0, 1)
-    # Ensure 'a' is positively required when output is 1
-    # If you keep a simple Id, literal_sig_set returns {("a", True)}
-    lits = literal_sig_set(rhs)
-    assert ("a", True) in lits
+    assert isinstance(simp, LogicVar)
+    assert simp.name == "a"
 
 def test_if_else_selects_values():
     sv = """
@@ -39,9 +44,14 @@ def test_if_else_selects_values():
       end
     endmodule
     """
-    rhs = _rhs(sv, lower_sv_text_to_logic)
+    module = lower_sv_text_to_logic(sv)["m"]
+    if_tree  = module.signal_map["y"]
+    mux_tree = if_to_mux_tree(if_tree)
+    prims = to_primitives(mux_tree)
+    simp  = simplify(prims)
+    log.debug(f"pp(simp): {pretty_print(simp)}")
     # y == (a & b) | (~a & c)
-    cs = gate_count(rhs)
+    cs = gate_count(simp)
     assert cs["OR"] == 1 and cs["AND"] == 2 and cs["NOT"] == 1
 
 def test_if_elseif_else_three_way():
@@ -54,10 +64,15 @@ def test_if_elseif_else_three_way():
       end
     endmodule
     """
-    rhs = _rhs(sv, lower_sv_text_to_logic)
+    module = lower_sv_text_to_logic(sv)["m"]
+    if_tree  = module.signal_map["y"]
+    mux_tree = if_to_mux_tree(if_tree)
+    prims = to_primitives(mux_tree)
+    simp  = simplify(prims)
+    log.debug(f"pp(simp): {pretty_print(simp)}")
     # y == (s0 & d0) | (~s0 & s1 & d1) | (~s0 & ~s1 & d2)
     # Counts: OR=2, AND= (1 + 2 + 2) = 5, NOT=2
-    cs = gate_count(rhs)
+    cs = gate_count(simp)
     assert cs["OR"] == 2 
     assert cs["NOT"] == 2 
     
@@ -74,8 +89,13 @@ def test_if_w_eq_condition_reuses_equality():
       end
     endmodule
     """
-    rhs = _rhs(sv, lower_sv_text_to_logic)
+    module = lower_sv_text_to_logic(sv)["m"]
+    if_tree  = module.signal_map["y"]
+    mux_tree = if_to_mux_tree(if_tree)
+    prims = to_primitives(mux_tree)
+    simp  = simplify(prims)
+    log.debug(f"pp(simp): {pretty_print(simp)}")
     # Structure should contain equality expansion AND-ed with d0 path and its negation with d1
-    cs = gate_count(rhs)
+    cs = gate_count(simp)
     # Lower bound checks (exact numbers depend on your equality expansion shape)
     assert cs["OR"] >= 1 and cs["AND"] >= 1
