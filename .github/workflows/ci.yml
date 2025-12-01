@@ -69,13 +69,7 @@ jobs:
         run: pytest -q -m "unit or props or diff" --maxfail=10 --durations=15 || true
 
       - name: Enforce minimum coverage
-        run: pytest -q \
-             -m "unit or props or diff and not requires_graphviz and not integration" \
-             --cov=logictree \
-             --cov-report=xml:coverage.xml \
-             --cov-report=term \
-             --maxfail=50 \
-             --disable-warnings || true
+        run: pytest -q -m "unit or props or diff and not requires_graphviz and not integration" --cov=logictree --cov-report=xml:coverage.xml --cov-report=term --maxfail=50 --disable-warnings || true
 
       - name: Debug stalled CI
         if: ${{ failure() }}
@@ -86,14 +80,7 @@ jobs:
           lsof | head -n 40
 
       - name: Run tests with coverage
-        run: pytest \
-             -m "unit or props or diff and not requires_graphviz and not integration" \
-             --cov=logictree \
-             --cov-report=xml:coverage.xml \
-             --cov-report=html:htmlcov \
-             --cov-report=term \
-             --maxfail=50 \
-             --disable-warnings || true
+        run: pytest -m "unit or props or diff and not requires_graphviz and not integration" --cov=logictree --cov-report=xml:coverage.xml --cov-report=html:htmlcov --cov-report=term --maxfail=50 --disable-warnings || true
         #run: pytest --cov=logictree --disable-warnings || true
 
       - name: Generate coverage reports
