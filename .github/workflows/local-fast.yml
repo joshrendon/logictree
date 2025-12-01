@@ -1,0 +1,30 @@
+
+name: Local CI (fast)
+
+on:
+  push:
+    branches-ignore: ["main"]
+  pull_request:
+
+jobs:
+  local:
+    runs-on: [self-hosted, fedora]
+    env:
+      MPLBACKEND: Agg
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Python deps
+        run: |
+          pip install -e .
+          pip install -r requirements-dev.txt || true
+
+      - name: Run unit tests
+        run: pytest -q -m "unit" --maxfail=5 --disable-warnings
+
+      - name: Run integration tests
+        run: pytest -q -m "integration" --maxfail=5 --disable-warnings
+
+      - name: Run visualization tests
+        run: pytest -q -m "visual" --disable-warnings || true
