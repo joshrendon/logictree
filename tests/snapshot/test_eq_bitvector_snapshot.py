@@ -1,3 +1,4 @@
+import pytest
 import logging
 
 from logictree.api import lower_sv_text_to_logic
@@ -6,8 +7,8 @@ from logictree.utils.display import pretty_print
 from tests.utils_bitselect import gate_count, literal_bit_comparisons, literal_sig_set
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
 
+@pytest.mark.integration
 def test_eq_bitvector_snapshot():
     sv_code = """
     module m(input logic [1:0] s, output logic y);

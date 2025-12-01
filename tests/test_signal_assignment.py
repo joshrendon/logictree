@@ -1,6 +1,6 @@
 import pytest
 
-pytestmark = [pytest.mark.unit]
+pytestmark = [pytest.mark.integration]
 
 from logictree.nodes.control.assign import LogicAssign
 from logictree.nodes.ops import AndOp, LogicVar

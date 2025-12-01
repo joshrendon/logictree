@@ -1,6 +1,6 @@
 import pytest
 
-pytestmark = [pytest.mark.unit]
+pytestmark = [pytest.mark.integration]
 
 import itertools
 

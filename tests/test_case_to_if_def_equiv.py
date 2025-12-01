@@ -2,7 +2,7 @@ import logging
 
 import pytest
 
-pytestmark = [pytest.mark.unit]
+pytestmark = [pytest.mark.integration]
 log = logging.getLogger(__name__)
 
 import itertools

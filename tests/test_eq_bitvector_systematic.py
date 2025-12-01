@@ -1,7 +1,7 @@
 import pytest
 import logging
 
-pytestmark = [pytest.mark.unit]
+pytestmark = [pytest.mark.integration]
 from logictree.pipeline import lower_sv_text_to_logic
 from tests.utils_bitselect import literal_sig_set, literal_bit_comparisons, gate_count
 from logictree.nodes.ops.comparison import EqOp

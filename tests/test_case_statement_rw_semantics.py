@@ -24,7 +24,7 @@ analysis, and caching logic remain faithful to RTL expectations.
 """
 import pytest
 
-pytestmark = [pytest.mark.unit]
+pytestmark = [pytest.mark.integration]
 
 from logictree.constants import EMPTY_BRANCH
 from logictree.nodes.control.assign import LogicAssign

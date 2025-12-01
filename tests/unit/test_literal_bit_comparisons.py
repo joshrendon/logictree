@@ -1,9 +1,11 @@
+import pytest
+from logictree.nodes.ops.ops import LogicVar, LogicConst
+from logictree.nodes.ops.gates import AndOp, OrOp, NotOp
 from logictree.nodes.ops.comparison import EqOp
-from logictree.nodes.ops.gates import OrOp
-from logictree.nodes.ops.ops import LogicConst, LogicVar
-from logictree.nodes.selects import BitSelect, Concat, PartSelect
+from logictree.nodes.selects import BitSelect, PartSelect, Concat
 from tests.utils_bitselect import literal_bit_comparisons
 
+pytestmark = [pytest.mark.unit]
 
 def test_eqop_with_logicvar_and_const():
     lhs = LogicVar(name="x")

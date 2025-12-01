@@ -1,3 +1,6 @@
+import pytest
+
+pytestmark = [pytest.mark.integration]
 import logging
 
 from logictree.analysis.delay import delay

@@ -1,4 +1,7 @@
 import dataclasses
+import pytest
+
+pytestmark = [pytest.mark.integration]
 
 from logictree.nodes import AndOp, BitSelect, LogicVar, NotOp
 from logictree.pipeline import lower_sv_text_to_logic

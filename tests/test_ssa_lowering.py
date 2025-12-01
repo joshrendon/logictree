@@ -1,3 +1,6 @@
+import pytest
+
+pytestmark = [pytest.mark.integration]
 
 from logictree.nodes.control.assign import ProceduralAssign
 from logictree.nodes.control.ifstatement import IfStatement

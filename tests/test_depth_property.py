@@ -1,6 +1,8 @@
 
 import pytest
 
+pytestmark = [pytest.mark.integration]
+
 from logictree.nodes import LogicAssign
 from logictree.pipeline import lower_sv_text_to_logic
 

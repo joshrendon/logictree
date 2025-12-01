@@ -1,6 +1,6 @@
 import pytest
 
-pytestmark = [pytest.mark.unit]
+pytestmark = [pytest.mark.integration]
 import logging
 
 from logictree.constants import EMPTY_BRANCH

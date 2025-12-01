@@ -9,7 +9,9 @@ from logictree.utils.schematic import render_schematic
 
 log = logging.getLogger(__name__)
 
-@pytest.mark.unit
+@pytest.mark.integration
+@pytest.mark.requires_graphviz
+@pytest.mark.visual
 def test_render_schematic_simple(tmp_path: Path):
     """
     Construct a small Boolean circuit:

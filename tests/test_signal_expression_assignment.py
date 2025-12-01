@@ -2,7 +2,7 @@ import logging
 
 import pytest
 
-pytestmark = [pytest.mark.unit]
+pytestmark = [pytest.mark.integration]
 
 from pprint import pprint
 

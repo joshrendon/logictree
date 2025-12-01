@@ -1,4 +1,8 @@
 
+import pytest
+
+pytestmark = [pytest.mark.integration]
+
 from logictree.nodes.control.assign import LogicAssign
 from logictree.nodes.control.ifstatement import IfStatement
 from logictree.nodes.ops.ite import ITEOp

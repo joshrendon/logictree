@@ -1,10 +1,12 @@
-
 import pytest
+
 import subprocess
 import os
 from pathlib import Path
 
 pytestmark = pytest.mark.skip("Temporarily disabiling CLI lowering test")
+@pytest.mark.integration
+@pytest.mark.cli
 def test_cli_lower_if():
     input_sv = Path("golden_circuits/if_tree_simple.sv")
     module_name = "if_tree_simple"

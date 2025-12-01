@@ -1,3 +1,6 @@
+import pytest
+
+pytestmark = [pytest.mark.integration]
 import inspect
 
 from logictree.analysis.depth import depth

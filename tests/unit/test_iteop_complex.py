@@ -21,7 +21,9 @@ from tests.utils.viz_helpers import assert_viz
 log = logging.getLogger(__name__)
 
 
-@pytest.mark.unit
+@pytest.mark.integration
+@pytest.mark.requires_graphviz
+@pytest.mark.visual
 def test_nested_two_conditions():
     # y = if(b) 2 else if(a) 1 else 0
     a, b = LogicVar("a"), LogicVar("b")
@@ -65,7 +67,9 @@ def test_nested_two_conditions():
     log.info(f"Visualization written to {png}")
 
 
-@pytest.mark.unit
+@pytest.mark.integration
+@pytest.mark.requires_graphviz
+@pytest.mark.visual
 def test_three_way_priority_chain():
     # y = if(c) 3 else if(b) 2 else if(a) 1 else 0
     a, b, c = LogicVar("a"), LogicVar("b"), LogicVar("c")
@@ -125,7 +129,9 @@ def test_three_way_priority_chain():
     render_schematic(node, "output/ite_three_way_schematic.png")
 
 
-@pytest.mark.unit
+@pytest.mark.integration
+@pytest.mark.requires_graphviz
+@pytest.mark.visual
 def test_redundant_condition_simplification():
     # y = if(a) 1 else if(a) 2 else 0  -> should simplify to ITE(a, 1, 0)
     a = LogicVar("a")

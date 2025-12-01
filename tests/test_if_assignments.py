@@ -1,8 +1,6 @@
 import pytest
 import logging
 
-pytestmark = [pytest.mark.unit]
-
 from logictree.nodes.ops.ops import LogicVar
 from logictree.api import lower_sv_to_logic as lower_sv_text_to_logic
 from tests.utils_bitselect import gate_count, literal_sig_set
@@ -14,6 +12,7 @@ from logictree.transforms.simplify import simplify
 log = logging.getLogger(__name__)
 
 
+@pytest.mark.integration
 def test_if_true_false_becomes_identity():
     sv = """
     module m(input logic a, output logic y);
@@ -22,7 +21,7 @@ def test_if_true_false_becomes_identity():
       end
     endmodule
     """
-    module = lower_sv_text_to_logic(sv)["m"]
+    module   = lower_sv_text_to_logic(sv)["m"]
     if_tree  = module.signal_map["y"]
     mux_tree = if_to_mux_tree(if_tree)
     prims = to_primitives(mux_tree)
@@ -36,6 +35,7 @@ def test_if_true_false_becomes_identity():
     assert isinstance(simp, LogicVar)
     assert simp.name == "a"
 
+@pytest.mark.integration
 def test_if_else_selects_values():
     sv = """
     module m(input logic a,b,c, output logic y);
@@ -54,6 +54,7 @@ def test_if_else_selects_values():
     cs = gate_count(simp)
     assert cs["OR"] == 1 and cs["AND"] == 2 and cs["NOT"] == 1
 
+@pytest.mark.integration
 def test_if_elseif_else_three_way():
     sv = """
     module m(input logic s0,s1, d0,d1,d2, output logic y);
@@ -81,6 +82,7 @@ def test_if_elseif_else_three_way():
     # - simplified sharing of ~s0 → 4
     assert cs["AND"] in (4, 5)
 
+@pytest.mark.integration
 def test_if_w_eq_condition_reuses_equality():
     sv = """
     module m(input logic [3:0] s, input logic d0, d1, output logic y);

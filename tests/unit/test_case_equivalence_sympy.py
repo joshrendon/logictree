@@ -1,7 +1,9 @@
+import pytest
+
 from logictree.pipeline import lower_sv_text_to_logic
 from logictree.utils.assertion import assert_case_equivalence
 
-
+@pytest.mark.integration
 def test_case_equivalence_sympy():
     verilog_text = """
     module mux_case(input logic sel, a, b, output logic out);

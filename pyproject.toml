@@ -114,7 +114,7 @@ ignore_errors = true
 # Centralize tool configs (optional but nice)
 [tool.pytest.ini_options]
 #addopts = "--tb=short --disable-warnings --maxfail=1"
-addopts = "--cov-context=test"
+addopts = "--cov-context=test -m \"not visual\""
 testpaths = ["tests"]
 markers = [
   "unit: fast constructor/init and isolate tests",
@@ -122,6 +122,7 @@ markers = [
   "diff: Differential/equivalence tests",
   "integration: multi-node or lowering tests",
   "regression: golden reference or bugfix tests",
+  "visual: produces PNG/SVG via graphviz",
   "smoke: super-fast import/run sanity tests (CI pre-check)",
   "cli: tests for command-line interfaces",
   "slow: long-running tests (perf, stress, scalability)",

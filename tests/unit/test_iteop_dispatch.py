@@ -1,3 +1,5 @@
+import pytest
+
 import logging
 
 from sympy import Piecewise, true
@@ -14,6 +16,7 @@ from logictree.transforms.to_sympy import to_sympy_expr
 
 log = logging.getLogger(__name__)
 
+@pytest.mark.integration
 def test_iteop_end_to_end():
     a = LogicVar("a")
     b = LogicVar("b")

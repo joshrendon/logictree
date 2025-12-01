@@ -9,9 +9,9 @@ from logictree.nodes.ops.mux import LogicMux
 from logictree.transforms.if_to_mux import if_to_mux_tree
 from logictree.utils.output import write_dot_to_file
 
-pytestmark = [pytest.mark.unit]
 log = logging.getLogger(__name__)
 
+@pytest.mark.integration
 def test_if_to_mux_lowering_simple():
     a, b, sel = LogicVar("a"), LogicVar("b"), LogicVar("sel")
 
@@ -31,6 +31,7 @@ def test_if_to_mux_lowering_simple():
     assert {v.name for v in mux_tree.free_vars()} == {"a", "b", "sel"}
 
 
+@pytest.mark.integration
 def test_if_to_mux_viz(tmp_path):
     a, b, sel = LogicVar("a"), LogicVar("b"), LogicVar("sel")
     if_tree = IfStatement(

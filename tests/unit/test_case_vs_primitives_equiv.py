@@ -1,3 +1,5 @@
+import pytest
+
 from logictree.nodes.control.assign import LogicAssign
 from logictree.pipeline import lower_sv_text_to_logic
 from logictree.transforms.case_to_if import case_to_if_tree
@@ -6,6 +8,7 @@ from logictree.transforms.to_primitives import to_primitives_logic_tree
 from logictree.utils.assertion import assert_logic_equiv, exhaustive_input_equiv
 
 
+@pytest.mark.integration
 def test_case_vs_primitives_equiv():
     verilog_text = """
     module mux_case(input logic sel, a, b, output logic out);
@@ -40,6 +43,7 @@ def test_case_vs_primitives_equiv():
     # Will raise AssertionError if not equivalent
     assert_logic_equiv(mux_assign, prim_assign)
 
+@pytest.mark.integration
 def test_case_vs_primitives_exhaustive():
     verilog_text = """
     module mux_case(input logic sel, a, b, output logic out);

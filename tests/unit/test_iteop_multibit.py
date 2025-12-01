@@ -12,7 +12,7 @@ from logictree.transforms.to_sympy import to_sympy_expr
 log = logging.getLogger(__name__)
 
 
-@pytest.mark.unit
+@pytest.mark.integration
 def test_iteop_multibit_true_branch_expands():
     # y = if(b) 2(2’b10) else 0
     b = LogicVar("b")
@@ -38,7 +38,7 @@ def test_iteop_multibit_true_branch_expands():
         assert sympy_simplify(got - exp) == 0
 
 
-@pytest.mark.unit
+@pytest.mark.integration
 def test_iteop_multibit_false_branch_expands():
     # y = if(b) 0 else 3(2’b11)
     b = LogicVar("b")
@@ -60,7 +60,7 @@ def test_iteop_multibit_false_branch_expands():
         assert sympy_simplify(got - exp) == 0
 
 
-@pytest.mark.unit
+@pytest.mark.integration
 def test_iteop_multibit_both_branches():
     # y = if(b) 2(10₂) else 1(01₂)
     b = LogicVar("b")
