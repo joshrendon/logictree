@@ -44,3 +44,4 @@ jobs:
       - name: Run visualization tests
         run: pytest -m "visual" --disable-warnings --maxfail=9000 -o console_output_style=classic || true
 
+
