@@ -43,6 +43,9 @@ jobs:
       - name: Check pytest-cov presence
         run: python -m pip show pytest-cov || (echo "pytest-cov not installed!" && exit 1)
 
+      - name: Remove xdist
+        run: pip uninstall -y pytest-xdist
+
       - name: Cache ANTLR jar
         uses: actions/cache@v4
         with:
@@ -68,8 +71,8 @@ jobs:
       - name: Run fast test set
         run: pytest -q -m "unit or props or diff" --maxfail=10 --durations=15 || true
 
-      #- name: Enforce minimum coverage
-      #  run: pytest -q -m "unit or props or diff" --cov=src/logictree --cov-fail-under=85 --cov-report=xml:coverage.xml --cov-report=term --maxfail=1 --disable-warnings || true
+      - name: Enforce minimum coverage
+        run: pytest -q -m "unit or props or diff" --cov=src/logictree --cov-fail-under=85 --cov-report=xml:coverage.xml --cov-report=term --maxfail=50 --disable-warnings || true
 
       - name: Debug stalled CI
         if: ${{ failure() }}
