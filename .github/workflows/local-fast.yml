@@ -39,7 +39,7 @@ jobs:
         run: pytest -m "unit" --disable-warnings -o console_output_style=classic || true
 
       - name: Run integration tests
-        run: pytest -m "integration" --maxfail=9000 --disable-warnings -o console_output_style=classic || true
+        run: pytest -m "integration and not requires_graphviz" --maxfail=9000 --disable-warnings -o console_output_style=classic || true
 
       - name: Run visualization tests
         run: pytest -m "visual" --disable-warnings --maxfail=9000 -o console_output_style=classic || true
