@@ -15,6 +15,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Ensure ANTLR installed
+        run: |
+          if [ ! -f antlr-4.13.1-complete.jar ]; then
+            curl -O https://www.antlr.org/download/antlr-4.13.1-complete.jar
+          fi
+      
+      - name: Generate ANTLR parser
+        run: make gen-parser
+
       - name: Create venv
         run: python3 -m venv .venv
       
