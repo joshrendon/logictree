@@ -28,3 +28,4 @@ jobs:
 
       - name: Run visualization tests
         run: pytest -q -m "visual" --disable-warnings || true
+
