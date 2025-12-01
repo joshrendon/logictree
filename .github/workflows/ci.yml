@@ -80,8 +80,8 @@ jobs:
           lsof | head -n 40
 
       - name: Run tests with coverage
-        run: pytest --cov=src/logictree --cov-report=xml:coverage.xml --cov-report=html:htmlcov --cov-report=term --cov-append --maxfail=50 --disable-warnings || true
-        #run: pytest --cov=src/logictree --cov-append --disable-warnings || true
+        run: pytest -p no:xdist --cov=src/logictree --cov-report=xml:coverage.xml --cov-report=html:htmlcov --cov-report=term --maxfail=50 --disable-warnings || true
+        #run: pytest --cov=src/logictree --disable-warnings || true
 
       - name: Generate coverage reports
         run: |
