@@ -2,11 +2,18 @@
 name: CI
 
 on:
+  workflow_dispatch:
   push:
     branches-ignore: [ "main" ]
   pull_request:
-jobs: test: runs-on: ubuntu-latest env: MPLBACKEND: Agg
+
+jobs: 
+  test: 
+    runs-on: ubuntu-latest
+    env:
+      MPLBACKEND: Agg
       DISPLAY: ":99"
+
     strategy:
       matrix:
         python-version: ["3.11", "3.12", "3.13"]

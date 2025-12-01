@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pytest
 
+pytestmark = pytest.mark.visual
 from logictree.nodes.ops.gates import AndOp, NotOp, OrOp
 from logictree.nodes.ops.ops import LogicVar
 from logictree.utils.schematic import render_schematic

@@ -2,6 +2,7 @@ import logging
 
 import pytest
 
+pytestmark = pytest.mark.visual
 from logictree.api import lower_sv_to_logic as lower_sv_text_to_logic
 from logictree.utils.output import render_png, write_dot_to_file
 from tests.utils.viz_helpers import assert_viz
