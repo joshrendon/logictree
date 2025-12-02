@@ -15,10 +15,10 @@ jobs:
       MPLBACKEND: Agg
       DISPLAY: ":99"
 
-    strategy:
-      matrix:
-        python-version: ["3.11", "3.12", "3.13"]
-      fail-fast: false
+    #strategy:
+    #  matrix:
+    #    python-version: ["3.11", "3.12", "3.13"]
+    #  fail-fast: false
 
     steps:
       - uses: actions/checkout@v4
