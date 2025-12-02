@@ -43,12 +43,12 @@ jobs:
 
       #- name: Run visualization tests
       #  run: pytest -m "visual" --disable-warnings --maxfail=9000 -o console_output_style=classic || true
-      - name: Generate coverage reports
-        run: |
-          coverage combine
-          coverage xml -o coverage.xml
-          coverage html
-          coverage report
+      #- name: Generate coverage reports
+      #  run: |
+      #    coverage combine
+      #    coverage xml -o coverage.xml
+      #    coverage html
+      #    coverage report
         #run: |
           #pytest -q -m "unit or props or diff" \
           #  --tb=short \
