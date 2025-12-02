@@ -9,7 +9,8 @@ on:
 
 jobs: 
   test: 
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, fedora]
+    #runs-on: ubuntu-latest
     env:
       MPLBACKEND: Agg
       DISPLAY: ":99"

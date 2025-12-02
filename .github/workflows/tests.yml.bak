@@ -10,7 +10,8 @@ on:
 
 jobs:
   pytest:
-    runs-on: ubuntu-latest
+    #runs-on: ubuntu-latest
+    runs-on: [self-hosted, fedora]
     strategy:
       matrix:
         target: [smoke, nightly, weekly, release]
