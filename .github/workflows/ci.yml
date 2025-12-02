@@ -95,7 +95,7 @@ jobs:
           lsof | head -n 40
 
       - name: Run tests with coverage
-        run: pytest -m "unit or integration" --cov=logictree --cov-report=xml:coverage.xml --cov-report=html --cov-report=term --maxfail=9000 --disable-warnings -o console_output_style=classic || true
+        run: pytest -m "unit or integration and not requires_graphviz" --cov=logictree --cov-report=xml:coverage.xml --cov-report=html --cov-report=term --maxfail=9000 --disable-warnings -o console_output_style=classic || true
         #run: pytest --cov=logictree --disable-warnings || true
 
       #- name: Generate coverage reports
@@ -120,7 +120,6 @@ jobs:
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
-          #token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage.xml
           fail_ci_if_error: true
 
@@ -135,4 +134,4 @@ jobs:
         if: always()
         run: |
           echo "Coverage summary:"
-          grep -A2 "TOTAL" coverage.xml || true
+          grep -A2 "TOTAL" ./coverage.xml || true
