@@ -39,15 +39,16 @@ jobs:
         run: pytest -m "unit" --disable-warnings --cov=logictree --cov-report=html --cov-report=xml:coverage.xml --cov-append --cov-report=term --maxfail=9000 -o console_output_style=classic || true
 
       - name: Run integration tests
-        run: pytest -m "integration and not requires_graphviz" --maxfail=9000 --disable-warnings -o console_output_style=classic || true
+        run: pytest -m "integration and not requires_graphviz" --cov=logictree --cov-report=html --cov-report=xml:coverage.xml --cov-append --cov-report=term --maxfail=9000 --disable-warnings -o console_output_style=classic || true
 
       #- name: Run visualization tests
       #  run: pytest -m "visual" --disable-warnings --maxfail=9000 -o console_output_style=classic || true
       - name: Generate coverage reports
         run: |
           coverage combine
-          coverage report
           coverage xml -o coverage.xml
+          coverage html
+          coverage report
         #run: |
           #pytest -q -m "unit or props or diff" \
           #  --tb=short \
