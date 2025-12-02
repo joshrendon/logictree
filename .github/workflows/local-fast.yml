@@ -36,7 +36,7 @@ jobs:
           .venv/bin/pip install -e .[dev]
 
       - name: Run unit tests
-        run: pytest -m "unit" --disable-warnings --cov=logictree --cov-report=xml:coverage.xml --append-coverage --cov-report=term --maxfail=9000 -o console_output_style=classic || true
+        run: pytest -m "unit" --disable-warnings --cov=logictree --cov-report=xml:coverage.xml --cov-append --cov-report=term --maxfail=9000 -o console_output_style=classic || true
 
       - name: Run integration tests
         run: pytest -m "integration and not requires_graphviz" --maxfail=9000 --disable-warnings -o console_output_style=classic || true
