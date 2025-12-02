@@ -171,7 +171,7 @@ def to_sympy_expr(node: LogicTreeNode) -> sp.Expr:
     Convert a LogicTreeNode (CaseStatement, LogicMux, or primitive-lowered tree)
     into a sympy Boolean expression.
     """
-    from logictree.utils.display import to_sympy_expr as _to_sympy_expr
+    from logictree.transforms.to_sympy import to_sympy_expr as _to_sympy_expr
     return _to_sympy_expr(node)
 
 def assert_logic_equiv(lhs: LogicTreeNode, rhs: LogicTreeNode) -> None:
@@ -179,6 +179,8 @@ def assert_logic_equiv(lhs: LogicTreeNode, rhs: LogicTreeNode) -> None:
     rhs_expr = to_sympy_expr(rhs)
 
     diff = lhs_expr ^ rhs_expr
+    #diff = simplify_logic(Eq(lhs_expr, rhs_expr))
+    #assert diff == True
     simplified = sp.simplify_logic(diff, form='dnf')
 
     # Debug traces

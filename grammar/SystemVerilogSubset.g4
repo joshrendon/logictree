@@ -4,6 +4,7 @@ grammar SystemVerilogSubset;
 COLON: ':' ;
 COMMA: ',' ;
 SEMICOLON: ';' ;
+NBASSIGN: '<=' ;
 ASSIGN: '=' ;
 DEFAULT: 'default' ;
 CASE: 'case' ;
@@ -12,54 +13,88 @@ BEGIN: 'begin' ;
 END: 'end' ;
 IF: 'if' ;
 ELSE: 'else' ;
+UNIQUE: 'unique' ;
+PRIORITY: 'priority' ;
 
-compilation_unit: module_declaration+ ;
+compilation_unit
+    : module_declaration+
+    ;
 
-module_declaration:
-    'module' module_identifier '(' port_list? ')' ';'
+module_declaration
+    : 'module' module_identifier '(' port_list? ')' ';'
     module_item*
     'endmodule'
     ;
 
 module_identifier
-      : Identifier
-      ;
-
-port_list: port (',' port)* ;
-port:
-      ('input' | 'output') data_type range? Identifier (',' Identifier)*
+    : Identifier
     ;
-range: '[' expression ':' expression ']';
 
-data_type: 'logic' ;
+port_list
+    : port (',' port)*
+    ;
+port
+    : ('input' | 'output') (data_type)? (range)? Identifier (',' Identifier)*
+    ;
 
-module_item:
-      net_declaration
+module_item
+    : net_declaration
     | continuous_assign
-    | always_comb_block
+    | always_construct
     ;
 
 net_declaration
-    : ('logic' | 'wire') range? Identifier (',' Identifier)* SEMICOLON
+    : (data_type)? Identifier (',' Identifier)* SEMICOLON
     ;
 
-continuous_assign:
-    'assign' variable_lvalue ASSIGN expression SEMICOLON
+range
+    : '[' expression ':' expression ']'
     ;
 
-always_comb_block:
-    'always_comb' statement ;
+data_type
+    : 'logic' (range)?
+    | 'wire'  (range)?
+    | 'reg'   (range)?
+    ;
 
-statement:
-      '{' statement* '}'                   
-    | begin_end_block
-    | blocking_assignment
-    | if_statement
+continuous_assign
+    : 'assign' variable_lvalue ASSIGN expression SEMICOLON
+    ;
+
+always_construct
+    : 'always' event_control statement
+    | 'always_comb' statement
+    ;
+
+event_control
+    : '@' '*'         # wildcardSensitivityBare
+    | '@' '(' '*' ')' # wildcardSensitivityParen
+    | '@' '(' event_expression ')' # explicitSensitivity
+    ;
+
+event_expression
+    : edge_identifier? expression ( 'or' edge_identifier? expression )*
+    ;
+
+edge_identifier
+    : 'posedge'
+    | 'negedge'
+    ;
+
+statement
+    : blocking_assignment
+    | nonblocking_assignment
     | case_statement
+    | if_statement
+    | begin_end_block
     ;
 
 blocking_assignment
     : variable_lvalue ASSIGN expression SEMICOLON
+    ;
+
+nonblocking_assignment
+    : variable_lvalue NBASSIGN expression SEMICOLON
     ;
 
 variable_lvalue
@@ -67,24 +102,24 @@ variable_lvalue
     ;
 
 begin_end_block
-    : BEGIN statement* END
+    : 'begin' (':' Identifier)? statement* 'end'
     ;
 
 if_statement
     : IF '(' expression ')' statement (ELSE statement)?
     ;
 
-case_statement:
-    CASE '(' expression ')' case_item+ ENDCASE
+case_statement
+    : (UNIQUE)? CASE '(' expression ')' case_item+ ENDCASE
     ;
 
 case_item
-    : expression_list COLON statement
+    : expression (COLON expression)* COLON statement
     | DEFAULT COLON statement
     ;
-expression_list
-    : expression (COMMA expression)*
-    ;
+//expression_list
+//    : expression (COMMA expression)*
+//    ;
 
 expression
     : '!' expression                               #LogicalNotExpr
@@ -104,8 +139,8 @@ expression
     | Identifier                                   #IdExpr
     ;
 
-literal:
-      DecimalNumber
+literal
+    : DecimalNumber
     | BinaryLiteral
     | HexLiteral
     | DecLiteral

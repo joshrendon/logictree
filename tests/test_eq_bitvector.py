@@ -1,12 +1,13 @@
 import pytest
 
-pytestmark = [pytest.mark.unit]
-
-import logging
+pytestmark = [pytest.mark.integration]
 
 from logictree.pipeline import lower_sv_text_to_logic
+from logictree.utils.display import pretty_print
+from tests.utils_bitselect import gate_count, literal_sig_set, literal_bit_comparisons
 from logictree.transforms.to_primitives import to_primitives_logic_tree
-from tests.utils_bitselect import gate_count, literal_bit_comparisons, literal_sig_set
+
+import logging
 
 log = logging.getLogger(__name__)
 

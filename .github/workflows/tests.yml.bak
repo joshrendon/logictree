@@ -4,14 +4,14 @@ name: Tests
 on:
   push:
     branches: [main]
-  pull_request:
   schedule:
     - cron: "0 0 * * *"   # nightly
     - cron: "0 0 * * 0"   # weekly
 
 jobs:
   pytest:
-    runs-on: ubuntu-latest
+    #runs-on: ubuntu-latest
+    runs-on: [self-hosted, fedora]
     strategy:
       matrix:
         target: [smoke, nightly, weekly, release]
@@ -52,6 +52,21 @@ jobs:
               pytest -m "slow or mutation or props" || true
               ;;
             release)
-              pytest -q --tb=short --cov=logictree --cov-fail-under=90 || true
+              pytest -q --tb=short --cov=src/logictree \
+              --cov-fail-under=90 --cov-report=xml --maxfail=50 --cov-report=term-missing || true
               ;;
           esac
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage.xml
+          fail_ci_if_error: true
+
+      - name: Upload coverage HTML
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: htmlcov
+          path: htmlcov

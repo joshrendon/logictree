@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 
 from ..base.base import LogicTreeNode
-from .ops import LogicOp
+from .ops import LogicOp, LogicVar
 
 __all__ = ["NotOp", "AndOp", "OrOp", "XorOp", "XnorOp", "NandOp", "NorOp"]
 
@@ -32,13 +32,19 @@ class NotOp(LogicOp):
     def __post_init__(self):
         assert not isinstance(self.operand, list), "NotOp operand should be a single LogicTreeNode"
         object.__setattr__(self, "operand", LogicTreeNode._normalize(self.operand))
+        object.__setattr__(self, "width", 1)
 
     @property
     def op(self):
         return "NOT"
 
     def label(self):
-        return self.op
+        if isinstance(self.operand, LogicVar):
+            return f"{self.operand.name} == 1'b0"
+        return f"~({self.operand.label() if hasattr(self.operand, 'label') else self.operand})"
+
+    #def label(self):
+    #    return self.op
 
     def default_label(self):
         return "NOT"
@@ -74,6 +80,7 @@ class AndOp(LogicOp):
     def __post_init__(self):
         object.__setattr__(self, "a", self._normalize(self.a))
         object.__setattr__(self, "b", self._normalize(self.b))
+        object.__setattr__(self, "width", 1)
 
     @property
     def op(self) -> str:
@@ -120,6 +127,7 @@ class OrOp(LogicOp):
     def __post_init__(self):
         object.__setattr__(self, "a", self._normalize(self.a))
         object.__setattr__(self, "b", self._normalize(self.b))
+        object.__setattr__(self, "width", 1)
 
     @property
     def op(self) -> str:
@@ -166,6 +174,7 @@ class XorOp(LogicOp):
     def __post_init__(self):
         object.__setattr__(self, "a", LogicTreeNode._normalize(self.a))
         object.__setattr__(self, "b", LogicTreeNode._normalize(self.b))
+        object.__setattr__(self, "width", 1)
 
     @property
     def op(self) -> str:
@@ -209,6 +218,7 @@ class XnorOp(LogicOp):
     def __post_init__(self):
         object.__setattr__(self, "a", self._normalize(self.a))
         object.__setattr__(self, "b", self._normalize(self.b))
+        object.__setattr__(self, "width", 1)
 
     @property
     def op(self) -> str:
@@ -252,6 +262,7 @@ class NandOp(LogicOp):
     def __post_init__(self):
         object.__setattr__(self, "a", self._normalize(self.a))
         object.__setattr__(self, "b", self._normalize(self.b))
+        object.__setattr__(self, "width", 1)
 
     @property
     def op(self) -> str:
@@ -295,6 +306,7 @@ class NorOp(LogicOp):
     def __post_init__(self):
         object.__setattr__(self, "a", self._normalize(self.a))
         object.__setattr__(self, "b", self._normalize(self.b))
+        object.__setattr__(self, "width", 1)
 
     @property
     def op(self) -> str:

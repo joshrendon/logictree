@@ -9,27 +9,41 @@ from typing import List, Tuple
 from logictree.constants import EMPTY_BRANCH
 from logictree.nodes import control, ops
 from logictree.nodes.base.base import LogicTreeNode
-from logictree.nodes.control.assign import LogicAssign
+from logictree.nodes.control.assign import LogicAssign, ContinuousAssign, ProceduralAssign
 from logictree.nodes.control.ifstatement import IfStatement
-from logictree.nodes.ops import LogicConst, LogicVar
+from logictree.nodes.control.case import CaseStatement, CaseItem
+from logictree.nodes.ops import LogicConst, LogicVar, LogicOp
 from logictree.nodes.ops.comparison import EqOp, NeqOp
-from logictree.nodes.ops.gates import AndOp, OrOp
+from logictree.nodes.ops.gates import AndOp, OrOp, NotOp, XorOp, XnorOp
 from logictree.nodes.selects import BitSelect, Concat, PartSelect
 from logictree.nodes.struct.module import Module
+from logictree.nodes.struct.signal import LogicType, DataType
+from logictree.nodes.control.alwaysblock import AlwaysBlock, AlwaysKind
+from logictree.nodes.struct.statement import BlockStatement
 from logictree.utils.display import pretty_print
+from logictree.utils.display import pretty_inline
+from logictree.utils.overlay import set_label
+from logictree.utils.debug import assert_no_fields
 from sv_parser.SystemVerilogSubsetParser import SystemVerilogSubsetParser
 from sv_parser.SystemVerilogSubsetVisitor import SystemVerilogSubsetVisitor
+from sympy import symbols, simplify, Piecewise
+from sympy.logic.boolalg import ITE
 
 log = logging.getLogger(__name__)
 AssignStmtCtxtClass = SystemVerilogSubsetParser.Continuous_assignContext
 IfStmtCtxtClass = SystemVerilogSubsetParser.If_statementContext
-Expression_listCtxClass = SystemVerilogSubsetParser.Expression_listContext
+Expression_CtxClass = SystemVerilogSubsetParser.ExpressionContext
 
 _BINARY_RE = re.compile(
     r"^(?P<width>\d+)\s*'\s*(?P<base>[bBoOdDhH])\s*(?P<digits>[_0-9a-fA-FxzXZ]+)$"
 )
 _RANGE_RE = re.compile(r"\[\s*(\d+)\s*:\s*(\d+)\s*\]")
 
+def unwrap_block(node):
+    """Return a list of contained statements if this is a BlockStatement, else wrap it in a list."""
+    if isinstance(node, BlockStatement):
+        return node.statements
+    return [node]
 
 def contains_field_object(obj):
     for name, val in vars(obj).items():
@@ -75,7 +89,7 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
         for k, v in signal_map.items():
             if not isinstance(k, str):
                 raise TypeError(f"[BUG] Signal map key must be str, got {type(k).__name__}: {k!r}")
-            if not isinstance(v, (LogicTreeNode, IfStatement)):
+            if not isinstance(v, (LogicVar, LogicAssign, CaseStatement, IfStatement)):
                 raise TypeError(f"[BUG] Signal map value must be LogicTreeNode, got {type(v).__name__}: {v!r}")
 
     def _labels_from_case_item(self, ctx) -> Tuple[List[LogicConst], bool]:
@@ -85,10 +99,10 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
     
         labels: List[LogicConst] = []
     
-        # FIX: pull expressions from inside the expression_list context
-        expr_list_ctx = ctx.expression_list()
+        expr_list_ctx = ctx.expression()
         if expr_list_ctx is not None:
-            for expr_ctx in expr_list_ctx.expression():
+            #for expr_ctx in expr_list_ctx.expression():
+            for expr_ctx in expr_list_ctx:
                 expr_node = self.visit(expr_ctx)
                 if not isinstance(expr_node, LogicConst):
                     raise TypeError(
@@ -235,7 +249,7 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
             self.visitPort_list(port_list_ctx)
 
         #ports = list(self.output_signals)
-        log.debug(f"port_list_ctx: {port_list_ctx}")
+        log.debug(f"port_list_ctx: {port_list_ctx.getText()}")
         #log.debug(f"ports: {ports}")
 
         for item in ctx.module_item():
@@ -243,7 +257,6 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
             self.visitModule_item(item)
 
         mod_obj.signal_map.update(self.current_module.signal_map)
-        #mod_obj.ports.append(ports)
         mod_obj.vector_widths.update(self.current_module.vector_widths)
 
         # Output debug summaries
@@ -264,6 +277,7 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
 
     def visitModule_item(self, ctx):
         log.debug("visitModule_item")
+
         # log.debug(f"ctx.getChildren(): {ctx.getChildren()}")
         for child in ctx.getChildren():
             log.debug(
@@ -271,8 +285,59 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
             )
             if isinstance(child, SystemVerilogSubsetParser.Continuous_assignContext):
                 log.debug("Detected Continuous_assignContext")
-                return self.visitContinuous_assign(child)
+                #return self.visitContinuous_assign(child)
+        if ctx.net_declaration():
+            return self.visit(ctx.net_declaration())
+        elif ctx.continuous_assign():
+            #assign = self.visit(ctx.continuous_assign())
+            assign = self.visit(ctx.continuous_assign())
+            self.current_module.assignments[assign.lhs.name] = assign
+        elif ctx.always_construct():
+            ab = self.visit(ctx.always_construct())
+            if ab is not None:
+                self.current_module.always_blocks.append(ab)
+            return ab
         return self.visitChildren(ctx)
+
+    def visitAlways_construct(self, ctx):
+        label = None
+        kind = AlwaysKind.COMB  # default
+    
+        if ctx.event_control():
+            ec = ctx.event_control()
+            # Check which alt we matched
+            if isinstance(ec, SystemVerilogSubsetParser.WildcardSensitivityBareContext):
+                kind = AlwaysKind.COMB
+            elif isinstance(ec, SystemVerilogSubsetParser.WildcardSensitivityParenContext):
+                kind = AlwaysKind.COMB
+            elif isinstance(ec, SystemVerilogSubsetParser.ExplicitSensitivityContext):
+                # Check for posedge/negedge inside event_expression
+                if ec.event_expression().edge_identifier():
+                    kind = AlwaysKind.SEQ
+                else:
+                    kind = AlwaysKind.COMB
+        elif ctx.getText().startswith("always_comb"):
+            kind = AlwaysKind.COMB
+    
+        # Body
+        body_stmt = self.visit(ctx.statement())
+        if not isinstance(body_stmt, BlockStatement):
+            body = BlockStatement(statements=[body_stmt] if body_stmt else [])
+        else:
+            body = body_stmt
+        #if isinstance(body_stmt, list):
+        #    log.debug(f"Wrapped statments in BlockStatement")
+        #    body = BlockStatement(statements=body_stmt)
+        #else:
+        #    body = BlockStatement(statements=[body_stmt])
+    
+        # Label from begin : myblk
+        if ctx.statement().begin_end_block():
+            label_ctx = ctx.statement().begin_end_block().Identifier()
+            if label_ctx:
+                label = label_ctx.getText()
+    
+        return AlwaysBlock(kind=kind, label=label, body=body)
 
     def visitPort_list(self, ctx):
         log.debug("visitPort_list")
@@ -324,10 +389,37 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
             self.logger.debug(f"Port {direction_tok:<6} {name:<10} width={width_str}")
 
     def visitData_type(self, ctx):
-        return self.visitChildren(ctx)
+        log.debug("visitData_type()")
+        if ctx.LOGIC():
+            kind = DataType.LOGIC
+        elif ctx.REG():
+            kind = DataType.REG
+        elif ctx.WIRE():
+            kind = DataType.WIRE
+        else:
+            kind = DataType.LOGIC  # fallback (shouldn't happen)
+        width = 1
+        if ctx.range():
+            msb = int(ctx.range().constant_expression(0).getText())
+            lsb = int(ctx.range().constant_expression(1).getText())
+            width = abs(msb - lsb) + 1
+        return LogicType(kind=kind, width=width)
 
     def visitNet_declaration(self, ctx):
-        return self.visitChildren(ctx)
+        log.debug("visitNet_declaration()")
+
+        if ctx.data_type():
+            dtype = self.visit(ctx.data_type())
+        else:
+            # Default fallback
+            dtype = LogicType(kind=DataType.LOGIC, width=1)
+
+        # Get identifiers
+        for ident_ctx in ctx.list_of_net_identifiers().identifier():
+            name = ident_ctx.getText()
+            self.current_module.signal_map[name] = dtype
+            self.logger.info(f"Signal {name} has no explicit type; defaulting to logic [0:0]" if not ctx.data_type() else f"Declared {dtype} {name}")
+        return None
 
     def visitAlways_comb_block(self, ctx):
         log.debug("vistAlways_comb_block")
@@ -344,9 +436,9 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
         if ctx.if_else_if_chain():
             log.debug("visitStatement_item if_else_if_chain!")
             return self.visit(ctx.if_else_if_chain())
-        if ctx.non_blocking_assignment():
-            log.debug("visitStatement_item non_blocking_assignment")
-            return self.visit(ctx.non_blocking_assignment())
+        if ctx.nonblocking_assignment():
+            log.debug("visitStatement_item nonblocking_assignment")
+            return self.visit(ctx.nonblocking_assignment())
         if ctx.blocking_assignment():
             log.debug("visitStatement_item blocking_assignment")
             return self.visit(ctx.blocking_assignment())
@@ -357,59 +449,137 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
         return None
 
     def visitStatement(self, ctx):
-        log.debug(f"visitStatement() - ctx: {ctx.getText()}")
+        log.info(f"visitStatement - ctx: {ctx.getText()}")
         if ctx.begin_end_block():
-            log.debug("visitStatement begin_end_block")
+            log.info("visitStatement begin_end_block")
             block = ctx.begin_end_block()
-            results = []
-            for stmt in block.statement():
-                result = self.visit(stmt)
-                results.append(result)
-            # Return last assignment result
-            return results[-1] if results else (None, None)
+            stmts = []
+            for child in block.statement():
+                stmt_node = self.visit(child)
+                
+                if isinstance(stmt_node, BlockStatement):
+                    log.debug(f"stmt_node is BlockStatement")
+                    # flaten nested block
+                    stmts.extend(stmt_node.statements)
+                elif stmt_node is not None:
+                    log.debug(f"stmt_node is not None")
+                    log.debug(f"stmt_node.type: {type(stmt_node).__name__}")
+                    stmts.append(stmt_node)
+            log.debug(f"Wrapped statments in BlockStatement")
+            return BlockStatement(statements=stmts)
 
         elif ctx.if_statement():
-            log.debug("visitStatement if_statement")
+            log.info("visitStatement if_statement")
             return self.visit(ctx.if_statement())
 
         elif ctx.case_statement():
-            log.debug("visitStatement case_statement")
+            log.info("visitStatement case_statement")
             case_node = self.visit(ctx.case_statement())
-            if isinstance(case_node, control.CaseStatement):
-                log.debug("Located a CaseStatement node!")
-                # Extract LHS from the first case item (assumes consistemnt assignment target)
-                if case_node.items and case_node.items[0].body:
-                    lhs = case_node.items[0].body[0].lhs
-                assert not isinstance(lhs, str)
-                self.current_module.signal_map[lhs.name] = case_node
-                log.debug(f"Registered logic for lhs: {lhs}")
-                #if isinstance(lhs, LogicTreeNode):
-                #    log.debug(f"Registered logic for lhs:\n{pretty_print(self.current_module.get_signal(lhs.name))}")
-                #else:
-                #    log.debug(f"Registered logic for lhs:\n{pretty_print(self.current_module.get_signal(lhs))}")
-
-                if lhs is not None:
-                    assign = LogicAssign(lhs=LogicVar(lhs.name), rhs=case_node)
+            if isinstance(case_node, CaseStatement) and case_node.items:
+                #body0 = case_node.items[0].body              # always BlockStatement now
+                body0 = self._as_block(case_node.items[0].body) #normalize
+                #if isinstance(body0, list):
+                #    log.warning("body0 is a list")
+                #    log.debug(f"body0: {body0}")
+                assert(isinstance(body0, BlockStatement)), f"{type(body0).__name__}"
+                if body0.statements and hasattr(body0.statements[0], "lhs"):
+                    lhs = body0.statements[0].lhs
+                    # record the assignment target for the module
+                    # Option A: store the CaseStatement itself (later passes will lower it)
+                    assign = LogicAssign(lhs=LogicVar(lhs.name), rhs=case_node, blocking=None)
                     self.current_module.assignments[lhs.name] = assign
+                else:
+                    log.warning("First case arm did not begin with an assignment")
+            return case_node
+        #elif ctx.case_statement():
+        #    log.debug("visitStatement case_statement")
+        #    case_node = self.visit(ctx.case_statement())
+        #    if isinstance(case_node, CaseStatement):
+        #        log.debug("Located a CaseStatement node!")
+        #        # Extract LHS from the first case item (assumes consistemnt assignment target)
+        #        if case_node.items and case_node.items[0].body:
+        #            #lhs = case_node.items[0].body[0].lhs
+        #            #body = unwrap_block(case_node.items[0].body)
+        #            body_node = case_node.items[0].body
+        #            log.info(f"Located body_node: {body_node}")
+        #            log.info(f"Located type(body_node): {type(body_node).__name__}")
+        #            if isinstance(body_node, BlockStatement):
+        #                if body_node.statements and hasattr(body_node.statements[0], "lhs"):
+        #                    lhs = body_node.statements[0].lhs
+        #                    log.info(f"lhs.name: {lhs.name}")
+        #                    self.current_module.signal_map[lhs.name] = case_node
 
-                #log.debug("case_node: %s", pretty_print(case_node))
-                #log.debug("assign: %s", pretty_print(assign))
-            return assign 
+        #                    if lhs is not None:
+        #                        assign = LogicAssign(lhs=LogicVar(lhs.name), rhs=case_node, blocking=None)
+        #                        #self.current_module.assignments[lhs.name] = assign
+        #                        log.debug("case_node: %s", pretty_print(case_node))
+        #                        log.debug("assign: %s", pretty_print(assign))
+        #                        return assign 
+        #                else:
+        #                    log.warning("CaseStatement BlockStatemnt had no LogicAssign in the body")
+        #                    return case_node
+        #            elif hasattr(body_node, "lhs"):
+        #                lhs = body_node.lhs
+        #                log.info(f"lhs.name: {lhs.name}")
+        #                self.current_module.signal_map[lhs.name] = case_node
+        #                if lhs is not None:
+        #                    assign = LogicAssign(lhs=LogicVar(lhs.name), rhs=case_node, blocking=None)
+        #                    #self.current_module.assignments[lhs.name] = assign
+        #                    log.debug(f"lhs.name: {lhs.name}")
+        #                    log.debug("case_node: %s", pretty_print(case_node))
+        #                    log.debug("assign: %s", pretty_print(assign))
+        #                    return assign 
+        #            else:
+        #                log.warning("CaseStatement body has no LogicAssign lhs")
+        #                return case_node
+
 
         elif ctx.blocking_assignment():
-            log.debug("visitStatement blocking_assigment")
+            log.info("visitStatement blocking_assigment")
+            #assign_ctx = ctx.blocking_assignment()
+            #lhs_name = assign_ctx.variable_lvalue().getText()
+            #lhs = lhs_name
+            #rhs_expr = assign_ctx.expression()
+            #rhs_tree = self.visit(rhs_expr)
+            #assign_node = LogicAssign(lhs=lhs, rhs=rhs_tree, blocking=True)
+            #log.debug(f"assigning LogicAssign(lhs={lhs}, rhs={rhs_tree})")
+            #log.debug(f"!! rhs_tree.name: {rhs_tree.name}")
+            #self.current_module.signal_map[rhs_tree.name] = rhs_tree
+            #log.debug(f"[statement assign] {assign_node}")
+            #return assign_node
             assign_ctx = ctx.blocking_assignment()
             lhs_name = assign_ctx.variable_lvalue().getText()
-            lhs = lhs_name
-            rhs_expr = assign_ctx.expression()
-            rhs_tree = self.visit(rhs_expr)
-            assign_node = control.LogicAssign(lhs=lhs, rhs=rhs_tree)
-            self.current_module.signal_map[rhs_tree.name] = rhs_tree
-            log.debug(f"[statement assign] {assign_node}")
+            lhs = LogicVar(lhs_name)  # wrap as LogicVar for consistency
+            rhs_tree = self.visit(assign_ctx.expression())
+
+            #if lhs in self.current_module.signal_map and self.current_module.signal_map[lhs] is not None:
+            #    # Already has an expression, so wrap it into an ITE
+            #    old_expr = self.current_module.signal_map[lhs].expr
+            #    new_expr = ITE(cond, rhs, old_expr)  # or Piecewise if numeric
+            #    log.debug(f"found old lhs in signal_map: lhs: {lhs}")
+            #    log.debug(f"old_expr: {old_expr}")
+            #    log.debug(f"assigning {new_expr}")
+            #    self.current_module.signal_map[lhs] = new_expr
+            #else:
+            # First Assignment
+            assign_node = ProceduralAssign(lhs=lhs, rhs=rhs_tree, blocking=True)
+            log.debug(f"assigning {assign_node}")
+
+            # Put the assignment in the module's assignments
+            ##self.current_module.assignments[lhs_name] = assign_node
+
+            # Keep signal_map entry as the LHS variable, not the RHS op
+            self.current_module.signal_map[lhs_name] = lhs
+
             return assign_node
 
+        elif ctx.nonblocking_assignment():
+            log.info("visitStatement nonblocking_assigment")
+            #self.visit(ctx.nonblocking_assignment())
+            return self.visitNonblocking_assignment(ctx.nonblocking_assignment())
+
         elif ctx.expression():
-            log.debug("visitStatement expression: %s", ctx.expression().getText())
+            log.info("visitStatement expression: %s", ctx.expression().getText())
             return self.visit(ctx.expression())
         else:
             log.warning(f"Error unknown statement context: {type(ctx)}")
@@ -420,10 +590,24 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
         lhs = ctx.variable_lvalue().getText()
         rhs_tree = self.visit(ctx.expression())
         lhs_var = self.current_module.get_signal(lhs)
-        node = LogicAssign(lhs=lhs_var, rhs=rhs_tree)
+        node = ProceduralAssign(lhs=lhs_var, rhs=rhs_tree, blocking=True)
         log.debug(f"Assigning signal_map.get() to current_module.assignments[{lhs}] = {node}")
         log.debug(f"{node.pretty_inline()}")
-        self.current_module.assignments[lhs_var.name] = node
+        log.debug(f"node.blocking: {node.blocking}")
+        #self.current_module.assignments[lhs_var.name] = node
+        log.debug(f"[statement assign] {node}")
+        return node
+
+    def visitNonblocking_assignment(self, ctx):
+        log.debug("visitNonblocking_assignment")
+        lhs = ctx.variable_lvalue().getText()
+        rhs_tree = self.visit(ctx.expression())
+        lhs_var = self.current_module.get_signal(lhs)
+        node = ProceduralAssign(lhs=lhs_var, rhs=rhs_tree, blocking=False)
+        log.debug(f"Assigning signal_map.get() to current_module.assignments[{lhs}] = {node}")
+        log.debug(f"{node.pretty_inline()}")
+        log.debug(f"node.blocking: {node.blocking}")
+        #self.current_module.assignments[lhs_var.name] = node
         log.debug(f"[statement assign] {node}")
         return node
 
@@ -434,21 +618,21 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
         then_stmt_ctx = ctx.statement(0)
         else_stmt_ctx = ctx.statement(1) if ctx.ELSE() else None
 
+        log.debug(f"then_stmt_ctx: {then_stmt_ctx.getText()}")
+        
+        log.debug(f"else_stmt_ctx: {else_stmt_ctx.getText()}") if else_stmt_ctx is not None else ""
+
         then_result = self.visit(then_stmt_ctx)
-        if not isinstance(then_result, LogicAssign):
+        if not isinstance(then_result, (LogicAssign, ProceduralAssign, ContinuousAssign)):
             log.warning("then_branch is not LogicAssign, wrapping in fallback")
 
-        if not isinstance(then_result, LogicAssign):
-            raise TypeError(
-                f"Expected LogicAssign from then-branch, got {type(then_result)}"
-            )
         lhs_then = then_result.lhs
         then_tree = then_result.rhs
         assert not isinstance(lhs_then, str)
 
         if else_stmt_ctx:
             else_result = self.visit(else_stmt_ctx)
-            if not isinstance(else_result, LogicAssign):
+            if not isinstance(else_result, (LogicAssign, ProceduralAssign, ContinuousAssign)):
                 raise TypeError(
                     f"Expected LogicAssign from else-branch, got {type(else_result)}"
                 )
@@ -456,7 +640,7 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
             else_tree = else_result.rhs
         else:
             lhs_else = lhs_then
-            else_tree = ops.LogicConst(0)
+            else_tree = LogicConst(0)
 
         if lhs_then != lhs_else:
             raise NotImplementedError("Mismatched lhs in if/else assignment")
@@ -467,19 +651,29 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
             else_branch=else_tree,
         )
     
-        assign = LogicAssign(lhs=lhs_then, rhs=if_stmt)
+        assign = LogicAssign(lhs=lhs_then, rhs=if_stmt, blocking=None)
 
         # Add a temporary assertion right before return in visitIf_statement
         assert isinstance(assign.rhs, IfStatement), f"Got: {type(assign.rhs)}"
 
         self.current_module.signal_map[lhs_then.name] = if_stmt
-        self.current_module.assignments[lhs_then.name] = assign
+        #self.current_module.assignments[lhs_then.name] = assign
 
         return assign
 
     def visitExpression_list(self, ctx):
         log.debug("visitExpression_list")
         return self.visitChildren(ctx)
+
+    def probe_tree(self, node, depth=0):
+        pad = "  " * depth
+        log.debug(f"{pad}{type(node).__name__}: {node}")
+        for attr in ("left", "right", "rhs", "value"):
+            if hasattr(node, attr):
+                child = getattr(node, attr)
+                log.debug(f"{pad}  .{attr} -> {child}")
+                if isinstance(child, (LogicOp, LogicVar, LogicConst)):  # your node base classes
+                    self.probe_tree(child, depth + 1)
 
     def visitContinuous_assign(self, ctx):
         log.debug("!!visitContinuous_assign")
@@ -518,16 +712,18 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
             rhs_tree = self.visit(rhs_ctx)  # must dispatch visitor!
             log.debug(f"assign LHS = {lhs}, RHS tree = {rhs_tree}")
             log.debug(f"RHS tree = {repr(rhs_tree)}")
-            log.debug(f"RHS.right probe: {rhs_tree.right}")
-            rhs_right = rhs_tree.right
-            log.debug(f"right.rhs: {rhs_right.rhs}")
-            log.debug(f"right.rhs.value: {rhs_right.rhs.value}")
-            log.debug(f"right.rhs: type {type(rhs_right.rhs).__name__}")
-
-            from logictree.utils.debug import assert_no_fields
+            self.probe_tree(rhs_tree)
+            #rhs_right = rhs_tree.right
+            #if hasattr(rhs_right, "rhs"):
+            #    log.debug(f"RHS.right probe: {rhs_tree.right}")
+            #    log.debug(f"right.rhs: {rhs_right.rhs}")
+            #    log.debug(f"right.rhs.value: {rhs_right.rhs.value}")
+            #    log.debug(f"right.rhs: type {type(rhs_right.rhs).__name__}")
+            #else:
+            #    log.debug(f"rhs_right is a leaf: {rhs_tree}")
 
             log.debug(f"Creating assign: {lhs_var} = {rhs_tree.label()}")
-            assign_node = LogicAssign(lhs=lhs_var, rhs=rhs_tree)
+            assign_node = ContinuousAssign(lhs=lhs_var, rhs=rhs_tree, blocking=None)
 
             field_name, field_val = contains_field_object(assign_node)
             if field_name:
@@ -550,9 +746,6 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
 
             # optional viz label
             try:
-                from logictree.utils.display import pretty_inline
-                from logictree.utils.overlay import set_label
-
                 set_label(rhs_tree, f"{lhs} = {pretty_inline(rhs_tree)}")
                 # rhs_tree.set_viz_label(f"{lhs} = {pretty_inline(rhs_tree)}")
             except Exception as e:
@@ -591,23 +784,181 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
         
             raise  # re-raise so your test still fails
 
+    def _as_block(self, node):
+        # Normalize anything (stmt | BlockStatement | list[stmt|BlockStatement]) to BlockStatement
+        if isinstance(node, BlockStatement):
+            return node
+        if isinstance(node, list):
+            flat = []
+            for s in node:
+                if isinstance(s, BlockStatement):
+                    flat.extend(s.statements)
+                else:
+                    flat.append(s)
+            return BlockStatement(statements=flat)
+        return BlockStatement(statements=[node])
+
+    #def _as_block(self, node):
+    #    """Normalize any visited statement into a BlockStatement."""
+    #    if node is None:
+    #        return BlockStatement(statements=[])
+    #    if isinstance(node, BlockStatement):
+    #        return node
+    #    return BlockStatement(statements=[node])
     
+    def visitCase_item(self, ctx):
+        log.debug("visitCase_item")
+        if ctx.DEFAULT():
+            labels = ["default"]
+        else:
+            labels = [self.visit(e) for e in ctx.expression()]
+        body = self.visit(ctx.statement())
+        
+        body = self._as_block(body)
+        return CaseItem(labels=labels, body=body)
+
     def visitCase_statement(self, ctx):
-        selector_node = self.visit(ctx.expression())
+        log.debug("visitCase_statement")
+        selector = self.visit(ctx.expression())
         items = []
-        for ci in ctx.case_item():
-            labels, is_default = self._labels_from_case_item(ci)
-            body = self.visit(ci.statement())
+        default_body = None
     
-            # If default branch is empty/null, use EMPTY_BRANCH node
-            if is_default and (body is None or isinstance(body, str) and body.strip() == ""):
-                log.debug("Inserting EMPTY_BRANCH into default case branch")
-                body = EMPTY_BRANCH
+        for ci_ctx in ctx.case_item():
+            ci = self.visit(ci_ctx)
+            if getattr(ci, "is_default", False):
+                default_body = ci
+            else:
+                items.append(ci)
     
-            case_item = control.CaseItem(labels=labels, default=is_default, body=body)
-            items.append(case_item)
+        # Normalize default_body to Optional[List[Statement]]
+        if default_body is not None:
+            if isinstance(default_body, CaseItem):
+                body = getattr(default_body, "body", None)
+                if hasattr(body, "statements"):
+                    default_body = list(body.statements)
+                else:
+                    default_body = [body]
+            elif not isinstance(default_body, list):
+                default_body = [default_body]
     
-        return control.CaseStatement(selector=selector_node, items=items)
+        return CaseStatement(
+            selector=selector,
+            items=items,
+            default=default_body,
+        )
+    #def visitCase_statement(self, ctx):
+    #    log.debug("visitCase_statement")
+    #    selector = self.visit(ctx.expression())
+    #    items = [self.visit(item) for item in ctx.case_item()]
+    #    #default = ["default"]
+    #    #return CaseStatement(selector=selector, items=items, default=default)
+    #    return CaseStatement(selector=selector, items=items)
+    #def visitCase_statement(self, ctx):
+    #    log.debug("visitCase_statement")
+    #    unique = ctx.UNIQUE() is not None
+    #    selector_node = self.visit(ctx.expression())
+    #    items = []
+    #
+    #    for ci in ctx.case_item():
+    #        labels, is_default = self._labels_from_case_item(ci)
+    #
+    #        # Exactly ONE statement (or null) per case item in this grammar
+    #        stmt_ctx = ci.statement()
+    #        stmt_node = self.visit(stmt_ctx)           # visit once
+    #        body = self._as_block(stmt_node)           # normalize to BlockStatement
+    #
+    #        # If default is empty, make it explicit
+    #        if is_default and not body.statements:
+    #            body.statements.append(EMPTY_BRANCH)
+    #
+    #        items.append(CaseItem(labels=labels, default=is_default, body=body))
+    #
+    #    return CaseStatement(selector=selector_node, items=items, unique=unique)
+    #def visitCase_statement(self, ctx):
+    #    log.debug("visitCase_statement")
+    #    unique = ctx.UNIQUE() is not None
+    #    selector_node = self.visit(ctx.expression())
+    #    items = []
+    #
+    #    for ci in ctx.case_item():
+    #        labels, is_default = self._labels_from_case_item(ci)
+    #
+    #        # Normalize to a list of statement contexts (single or many)
+    #        stmt_ctxs = ci.statement()
+    #        if stmt_ctxs is None:
+    #            stmt_ctxs = []
+    #        elif not isinstance(stmt_ctxs, (list, tuple)):
+    #            stmt_ctxs = [stmt_ctxs]
+    #
+    #        stmts = []
+    #        for stmt_ctx in stmt_ctxs:
+    #            node = self.visit(stmt_ctx)
+    #            if node is None:
+    #                continue
+    #            if isinstance(node, BlockStatement):
+    #                # flatten nested begin/end
+    #                stmts.extend(node.statements)
+    #                log.debug(f"Flattened BlockStatement -> {len(node.statements)} stmts")
+    #            else:
+    #                stmts.append(node)
+    #                log.debug(f"Added stmt_node: {type(node).__name__}")
+    #
+    #        # Empty default branch gets an explicit sentinel
+    #        if is_default and not stmts:
+    #            log.debug("Inserting EMPTY_BRANCH into default case branch")
+    #            stmts.append(EMPTY_BRANCH)
+    #
+    #        body = BlockStatement(statements=stmts)
+    #        log.debug(f"Final case item body has {len(stmts)} stmts")
+    #
+    #        items.append(CaseItem(labels=labels, default=is_default, body=body))
+    #
+    #    return CaseStatement(selector=selector_node, items=items, unique=unique)
+    #def visitCase_statement(self, ctx):
+    #    log.debug("visitCase_statement")
+    #    unique = ctx.UNIQUE() is not None
+    #    selector_node = self.visit(ctx.expression())
+    #    items = []
+    #    for ci in ctx.case_item():
+    #        labels, is_default = self._labels_from_case_item(ci)
+    #        #stmt_node = self.visit(ci.statement())
+    #        #body = self.visit(ci.statement())
+    #        stmt_ctxs = ci.statement()
+    #        if stmt_ctxs is None:
+    #            stmt_ctxs = []
+    #        elif not isinstance(stmt_ctxs, (list, tuple)):
+    #            stmt_ctxs = [stmt_ctxs]
+
+    #        stmts = []
+    #        for stmt_ctx in stmt_ctxs:
+    #            stmt_node = self.visit(stmt_ctx)
+    #            if stmt_node is None:
+    #                continue
+    #            if isinstance(stmt_node, BlockStatement):
+    #                #body = stmt_node
+    #                stmts.extend(stmt_node.statements)
+    #                log.debug(f"found BlockStatement stmt_node stmts: {stmts}")
+    #                log.debug(f"Flattened BlockStatement -> {len(stmt_node.statements)} stmts")
+    #            elif stmt_node is not None:
+    #                #body = BlockStatement([stmt_node])
+    #                stmts.append(stmt_node)
+    #                log.debug(f"Added stmt_node: {type(stmt_node).__name__}")
+
+    #        # If default branch is empty/null, use EMPTY_BRANCH node
+    #        if is_default and not stmts:
+    #            log.debug("Inserting EMPTY_BRANCH into default case branch")
+    #            #body = BlockStatement([EMPTY_BRANCH])
+    #            stmts.append(EMPTY_BRANCH)
+    #            log.debug(f"stmts: {stmts}")
+
+    #        body = BlockStatement(statements=stmts)
+    #        log.debug(f"stmts: {stmts}")
+    #        log.debug(f"Final case item body has {len(stmts)} stmts")
+    #
+    #        case_item = CaseItem(labels=labels, default=is_default, body=body)
+    #        items.append(case_item)
+    #
+    #    return CaseStatement(selector=selector_node, items=items, unique=unique)
 
     def visitExpression(self, ctx):
         log.debug("visitExpression fallback hit")
@@ -652,47 +1003,47 @@ class SVToLogicTreeLowerer(SystemVerilogSubsetVisitor):
 
     def visitConcatExpr(self, ctx):
         parts = [self.visit(e) for e in ctx.expression()]
-        return Concat(parts)
+        return Concat(parts=parts)
 
     def visitLogicalNotExpr(self, ctx):
         log.debug("visitLogicalNotExpr")
         expr = self.visit(ctx.expression())
-        return ops.NotOp(expr)
+        return NotOp(expr)
 
     def visitBitwiseNotExpr(self, ctx):
         log.debug("visitBitwiseNotExpr")
         expr = self.visit(ctx.expression())
-        return ops.NotOp(expr)  # or differentiate if needed
+        return NotOp(expr)  # or differentiate if needed
 
     def visitNegateExpr(self, ctx):
         log.debug("visitNegateExpr")
         expr = self.visit(ctx.expression())
         # Treat -a as NOT(a) for logic, or raise NotImplementedError if arithmetic
-        return ops.NotOp(expr)
+        return NotOp(expr)
 
     def visitAndExpr(self, ctx):
         log.debug("visitAndExpr")
         lhs = self.visit(ctx.expression(0))
         rhs = self.visit(ctx.expression(1))
-        return ops.AndOp(lhs, rhs)
+        return AndOp(lhs, rhs)
 
     def visitOrExpr(self, ctx):
         log.debug("visitOrExpr")
         lhs = self.visit(ctx.expression(0))
         rhs = self.visit(ctx.expression(1))
-        return ops.OrOp(lhs, rhs)
+        return OrOp(lhs, rhs)
 
     def visitXorExpr(self, ctx):
         log.debug("visitXorExpr")
         lhs = self.visit(ctx.expression(0))
         rhs = self.visit(ctx.expression(1))
-        return ops.XorOp(lhs, rhs)
+        return XorOp(lhs, rhs)
 
     def visitXnorExpr(self, ctx):
         log.debug("visitXnorExpr")
         lhs = self.visit(ctx.expression(0))
         rhs = self.visit(ctx.expression(1))
-        return ops.XnorOp(lhs, rhs)
+        return XnorOp(lhs, rhs)
 
     def visitEqExpr(self, ctx):
         log.debug("vsitEqExpr")

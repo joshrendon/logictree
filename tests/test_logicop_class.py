@@ -1,3 +1,5 @@
+import inspect
+
 import pytest
 
 pytestmark = [pytest.mark.unit]
@@ -5,8 +7,14 @@ pytestmark = [pytest.mark.unit]
 from logictree.analysis.delay import delay
 from logictree.analysis.depth import depth
 from logictree.analysis.to_json_dict import to_json_dict
+from logictree.nodes.ops.arith import ArithOp
 from logictree.nodes.ops.ops import LogicTreeNode
-from tests.utils_bitselect import EXCLUDED_CLASSES, all_subclasses, safe_instantiate
+from tests.utils_bitselect import (
+    EXCLUDED_CLASSES,
+    all_subclasses,
+    is_structural_class,
+    safe_instantiate,
+)
 
 
 def test_all_gates_implement_operands():
@@ -86,8 +94,19 @@ def test_all_gates_implement_depth_and_delay():
         if cls.__name__ in EXCLUDED_CLASSES:
             continue
         instance = safe_instantiate(cls)
+        if inspect.isabstract(cls):
+        #if is_structural_class(cls):
+            assert instance is None, f"{cls.__name__} should not instantiate (abstract class)"
+            return
         if instance is None:
             continue
+
+        #if is_structural_class(cls):
+        #    with pytest.raises(NotImplementedError):
+        #        depth(instance)
+        #    with pytest.raises(NotImplementedError):
+        #        delay(instance)
+        #    continue
         try:
             d = depth(instance)
             assert isinstance(d, int)
@@ -112,9 +131,13 @@ subclasses = sorted(
 @pytest.mark.parametrize("cls", subclasses, ids=lambda c: c.__name__)
 def test_label_method(cls):
     instance = safe_instantiate(cls)
+    if inspect.isabstract(cls):
+        assert instance is None, f"{cls.__name__} should not instantiate (abstract class)"
+        return
     assert instance is not None, f"Failed to instantiate {cls.__name__}"
     label = instance.label()
     assert isinstance(label, str), f"{cls.__name__}.label() did not return a string"
+    # structural nodes may just return class name so no further checking
 
 
 # Properties like these are NOT callable
@@ -130,10 +153,17 @@ ANALYSIS_METHODS = {
 @pytest.mark.parametrize("cls", subclasses, ids=lambda c: c.__name__)
 def test_method_implementation(cls, method_name):
     instance = safe_instantiate(cls)
+    if inspect.isabstract(cls):
+        assert instance is None, f"{cls.__name__} should not instantiate (abstract class)"
+        return
     assert instance is not None, f"Could not instantiate {cls.__name__}"
-    
     #attr = getattr(instance, method_name, None)
     #assert attr is not None, f"{cls.__name__} is missing `{method_name}`"
+
+    if is_structural_class(cls) and not issubclass(cls, ArithOp) and method_name in ("depth", "delay"):
+        with pytest.raises(NotImplementedError):
+            ANALYSIS_METHODS[method_name](instance)
+        return
 
     if method_name in ANALYSIS_METHODS:
         func = ANALYSIS_METHODS[method_name]

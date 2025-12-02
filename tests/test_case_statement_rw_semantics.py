@@ -24,11 +24,13 @@ analysis, and caching logic remain faithful to RTL expectations.
 """
 import pytest
 
-pytestmark = [pytest.mark.unit]
+pytestmark = [pytest.mark.integration]
 
+from logictree.constants import EMPTY_BRANCH
 from logictree.nodes.control.assign import LogicAssign
 from logictree.nodes.control.case import CaseItem, CaseStatement
 from logictree.nodes.ops.ops import LogicConst, LogicVar
+from logictree.nodes.struct.statement import BlockStatement
 
 
 def test_case_statement_rw_with_default_total_assignment():
@@ -38,19 +40,19 @@ def test_case_statement_rw_with_default_total_assignment():
             CaseItem(
                 match=[LogicConst(0)], 
                 labels=[LogicConst(0)],
-                body=LogicAssign(lhs=LogicVar("y"), rhs=LogicVar("a")),
+                body=BlockStatement(statements=[LogicAssign(lhs=LogicVar("y"), rhs=LogicVar("a"))]),
                 default=False
             ),
             CaseItem(
                 match=[LogicConst(1)],
                 labels=[LogicConst(1)],
-                body=LogicAssign(lhs=LogicVar("y"), rhs=LogicVar("b")),
+                body=BlockStatement(statements=[LogicAssign(lhs=LogicVar("y"), rhs=LogicVar("b"))]),
                 default=False
             ),
         ),
         default=CaseItem(
-            labels=[],
-            body=LogicAssign(lhs=LogicVar("y"), rhs=LogicVar("c")),
+            labels=["default"],
+            body=BlockStatement(statements=[LogicAssign(lhs=LogicVar("y"), rhs=LogicVar("c"))]),
             default=True
         )
     )
@@ -70,10 +72,10 @@ def test_case_statement_rw_without_default_partial_assignment():
     case = CaseStatement(
         selector=LogicVar("sel"),
         items=[
-            CaseItem(labels=[LogicConst(0)], body=LogicAssign(lhs=LogicVar("y"), rhs=LogicVar("a")), default=False),
-            CaseItem(labels=[LogicConst(1)], body=LogicAssign(lhs=LogicVar("y"), rhs=LogicVar("b")), default=False),
+            CaseItem(labels=[LogicConst(0)], body=BlockStatement(statements=[LogicAssign(lhs=LogicVar("y"), rhs=LogicVar("a"))]), default=False),
+            CaseItem(labels=[LogicConst(1)], body=BlockStatement(statements=[LogicAssign(lhs=LogicVar("y"), rhs=LogicVar("b"))]), default=False),
         ],
-        default=None
+        default=EMPTY_BRANCH
     )
 
     # Selector and both RHS vars appear in free_vars
@@ -88,10 +90,10 @@ def test_case_statement_multiple_outputs_and_partial_must_write():
     case = CaseStatement(
         selector=LogicVar("mode"),
         items=[
-            CaseItem(labels=[LogicConst(0)], body=LogicAssign(lhs=LogicVar("a"), rhs=LogicVar("x")), default=False),
-            CaseItem(labels=[LogicConst(1)], body=LogicAssign(lhs=LogicVar("b"), rhs=LogicVar("y")), default=False),
+            CaseItem(labels=[LogicConst(0)], body=BlockStatement(statements=[LogicAssign(lhs=LogicVar("a"), rhs=LogicVar("x"))]), default=False),
+            CaseItem(labels=[LogicConst(1)], body=BlockStatement(statements=[LogicAssign(lhs=LogicVar("b"), rhs=LogicVar("y"))]), default=False),
         ],
-        default=CaseItem(labels=[], body=LogicAssign(lhs=LogicVar("a"), rhs=LogicVar("z")), default=True),
+        default=CaseItem(labels=["default"], body=BlockStatement(statements=[LogicAssign(lhs=LogicVar("a"), rhs=LogicVar("z"))]), default=True),
     )
 
     # Collectively, assignments can reach both a and b
@@ -109,9 +111,9 @@ def test_case_statement_single_branch_with_default_covers_all():
     case = CaseStatement(
         selector=LogicVar("mode"),
         items=(
-            CaseItem(labels=[LogicConst(0)], body=LogicAssign(lhs=LogicVar("a"), rhs=LogicVar("x")), default=False),
+            CaseItem(labels=[LogicConst(0)], body=BlockStatement(statements=[LogicAssign(lhs=LogicVar("a"), rhs=LogicVar("x"))]), default=False),
         ),
-        default=CaseItem(labels=[], body=LogicAssign(lhs=LogicVar("a"), rhs=LogicVar("z")), default=True),
+        default=CaseItem(labels=["default"], body=BlockStatement(statements=[LogicAssign(lhs=LogicVar("a"), rhs=LogicVar("z"))]), default=True),
     )
 
     # Both branches assign to 'a'

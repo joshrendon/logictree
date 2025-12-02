@@ -39,9 +39,11 @@ def test_case_to_mux_roundtrip():
     module_map = lower_sv_text_to_logic(verilog_text)
     mod = module_map["mux_case"]
 
+    log.debug(f"module: mux_case: {mod}")
     # Confirm assignment exists
     assert "out" in mod.assignments
     top_assign = mod.assignments["out"]
+    log.debug(f"top_assign: {top_assign}")
     assert isinstance(top_assign, LogicAssign)
 
     # Lower: case → if
@@ -50,7 +52,7 @@ def test_case_to_mux_roundtrip():
     assert hasattr(if_tree, "cond")
 
     # Lower: if → mux
-    mux_tree = if_to_mux_tree(if_tree)
+    mux_tree = if_to_mux_tree(if_tree, target_lhs_name=top_assign.lhs.name)
     mux_assign = LogicAssign(lhs=top_assign.lhs, rhs=mux_tree)
     from logictree.utils.display import pretty_print
     print("Final lowered mux tree:")
@@ -65,6 +67,7 @@ def test_case_to_mux_roundtrip():
 
     # Structural assertions
     assert mux.selector.label() == "sel == 1'b0" or mux.selector.label() == "sel == 1'b1"
+    log.info(f"mux.if_true type: {type(mux.if_true).__name__}")
     assert isinstance(mux.if_true, LogicVar)
 
     # Utility: drill down mux chain to final if_false

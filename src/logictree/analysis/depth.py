@@ -5,20 +5,41 @@ from logictree.nodes.control.assign import LogicAssign
 from logictree.nodes.control.case import CaseItem, CaseStatement
 from logictree.nodes.control.ifstatement import IfStatement
 from logictree.nodes.hole.hole import LogicHole
+from logictree.nodes.ops.arith import AddOp, ArithOp, DivOp, MulOp, SubOp
 from logictree.nodes.ops.comparison import EqOp, NeqOp
 from logictree.nodes.ops.empty import EmptyBranch
 from logictree.nodes.ops.gates import AndOp, NandOp, NorOp, NotOp, OrOp, XnorOp, XorOp
+from logictree.nodes.ops.ite import ITEOp
 from logictree.nodes.ops.mux import LogicMux
 from logictree.nodes.ops.ops import LogicConst, LogicVar
 from logictree.nodes.selects import BitSelect, Concat, PartSelect
 from logictree.nodes.struct.module import Module
 from logictree.nodes.struct.statement import BlockStatement
+from logictree.nodes.struct.structural import StructuralOp
 
 
 @singledispatch
 def depth(node: LogicTreeNode) -> int:
     raise NotImplementedError(f"No depth() for {type(node)}")
 
+@depth.register
+def _(node: ArithOp):
+    raise NotImplementedError(
+        f"{type(node).__name__} is structural; depth undefined until lowered."
+    )
+
+@depth.register
+def _(node: StructuralOp):
+    raise NotImplementedError(
+        f"{type(node).__name__} is structural; depth undefined until lowered."
+    )
+
+@depth.register(AddOp)
+@depth.register(SubOp)
+@depth.register(MulOp)
+@depth.register(DivOp)
+def _(node) -> int:
+    return 1 + max((depth(c) for c in node.operands), default=0)
 
 # --- Leaves ---
 @depth.register
@@ -41,6 +62,7 @@ def _(node: NotOp) -> int:
 
 
 # --- N-ary ops ---
+# logic ops - one level of logic depth per gate
 @depth.register(AndOp)
 @depth.register(OrOp)
 @depth.register(XorOp)
@@ -59,14 +81,8 @@ def _(node: LogicMux) -> int:
     # selector doesn't add depth
     return 1 + max(depth(c) for c in node.operands)
 
-#def depth(self) -> int:
-#    inputs = [self.if_true, self.if_false]
-#    input_depths = [inp.depth for inp in inputs if inp]
-#    sel_depth = self.selector.depth if self.selector else 0
-#    return 1 + max(input_depths + [sel_depth], default=0)
-
-
 # --- Selects ---
+# Wiring ops - no aditional depth
 @depth.register
 def _(node: BitSelect) -> int:
     return max((depth(c) for c in node.operands), default=0)
@@ -79,13 +95,6 @@ def _(node: PartSelect) -> int:
 def _(node: Concat) -> int:
     return max((depth(c) for c in node.operands), default=0)
 
-#@depth.register(BitSelect)
-#@depth.register(PartSelect)
-#@depth.register(Concat)
-#def _(node) -> int:
-#    return max((depth(c) for c in node.operands), default=0)
-
-
 # --- Control ---
 @depth.register
 def _(node: LogicAssign) -> int:
@@ -97,16 +106,19 @@ def _(node: IfStatement) -> int:
 
 @depth.register
 def _(node: CaseItem) -> int:
-    return depth(node.statement)
+    return 1 + max((depth(ch) for ch in node.children), default=0)
 
 @depth.register
 def _(node: CaseStatement) -> int:
-    return 1 + max((depth(ci) for ci in node.case_items), default=0)
+    return 1 + max((depth(ci) for ci in node.items), default=0)
 
 @depth.register
 def _(node: BlockStatement) -> int:
     return max((depth(s) for s in node.statements), default=0)
 
+@depth.register
+def _(node: ITEOp) -> int:
+    return 1 + max((depth(ch) for ch in node.children), default=0)
 
 # --- Structural Module ---
 @depth.register

@@ -1,0 +1,31 @@
+
+name: Nightly
+
+on:
+  schedule:
+    - cron: "0 7 * * *"
+
+jobs:
+  nightly:
+    #runs-on: ubuntu-latest
+    runs-on: [self-hosted, fedora]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y graphviz default-jdk
+          pip install -e .[dev]
+
+      - name: Generate parser
+        run: make gen-parser
+
+      - name: Full test suite (with slow + mutation)
+        run: pytest --full -m "unit or integration or slow or mutation or props" --durations=25

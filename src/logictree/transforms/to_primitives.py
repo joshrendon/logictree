@@ -5,6 +5,7 @@ from logictree.nodes.base import LogicTreeNode
 from logictree.nodes.ops import LogicConst, LogicVar
 from logictree.nodes.ops.comparison import EqOp, NeqOp
 from logictree.nodes.ops.gates import AndOp, NandOp, NorOp, NotOp, OrOp, XnorOp, XorOp
+from logictree.nodes.ops.ite import ITEOp
 from logictree.nodes.ops.mux import LogicMux
 from logictree.nodes.selects import BitSelect
 
@@ -108,6 +109,60 @@ def _(node: LogicMux):
         AndOp(sel, a),
         AndOp(NotOp(sel), b)
     )
+
+#@to_primitives.register
+#def _(node: ITEOp):
+#    # ITE(c, t, f) → (c & t) | (~c & f)
+#    c = to_primitives(node.cond)
+#    t = to_primitives(node.if_true)
+#    f = to_primitives(node.if_false)
+#    return OrOp(
+#        AndOp(c, t),
+#        AndOp(NotOp(c), f)
+#    )
+
+@to_primitives.register
+def _(node: ITEOp):
+    cond = to_primitives_logic_tree(node.cond)
+    t = to_primitives_logic_tree(node.if_true)
+    f = to_primitives_logic_tree(node.if_false)
+
+    # normalize to per-bit vectors
+    def as_bitlist(x, width):
+        if isinstance(x, LogicConst):
+            return [(x.value >> i) & 1 for i in range(width)]
+        elif isinstance(x, list):
+            return x  # already list of bit exprs
+        else:
+            return [x] * width
+
+    # compute max width
+    width = 1
+    if isinstance(node.if_true, LogicConst):
+        width = max(width, node.if_true.width or 1)
+    if isinstance(node.if_false, LogicConst):
+        width = max(width, node.if_false.width or 1)
+
+    t_bits = as_bitlist(t, width)
+    f_bits = as_bitlist(f, width)
+
+    bit_exprs = []
+    for i in range(width):
+        t_bit = t_bits[i]
+        f_bit = f_bits[i]
+
+        if isinstance(t_bit, int):
+            t_bit = LogicConst(t_bit)
+        if isinstance(f_bit, int):
+            f_bit = LogicConst(f_bit)
+
+        bit_expr = OrOp(
+            AndOp(cond, t_bit),
+            AndOp(NotOp(cond), f_bit),
+        )
+        bit_exprs.append(bit_expr)
+
+    return bit_exprs if width > 1 else bit_exprs[0]
 
 
 to_primitives_logic_tree = to_primitives
